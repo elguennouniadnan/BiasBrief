@@ -8,17 +8,38 @@ import type { Article } from "@/lib/types"
 import { formatDate } from "@/lib/utils"
 import Link from "next/link"
 import { getCategoryColor } from "@/lib/utils"
+import { useEffect, useRef, useState } from "react"
 
 interface ArticleCardProps {
   article: Article
   isBiasedMode: boolean
   isBookmarked: boolean
   toggleBookmark: (id: number) => void
+  cardSize: number
 }
 
-export function ArticleCard({ article, isBiasedMode, isBookmarked, toggleBookmark }: ArticleCardProps) {
+export function ArticleCard({ article, isBiasedMode, isBookmarked, toggleBookmark, cardSize }: ArticleCardProps) {
   const title = isBiasedMode ? article.titleBiased : article.titleUnbiased
-  const categoryColor = getCategoryColor(article.category)
+  const categoryColor = getCategoryColor(article.category) // Using pillarName for color
+  const contentRef = useRef<HTMLDivElement>(null)
+  const [contentHeight, setContentHeight] = useState<number>(0)
+
+  const imageSize = cardSize === 1 ? "15rem" : "8rem"
+  const isSingleColumn = cardSize === 1
+  const isCompactLayout = cardSize === 4
+
+  useEffect(() => {
+    if (!isSingleColumn || !contentRef.current) return
+
+    const resizeObserver = new ResizeObserver(entries => {
+      for (const entry of entries) {
+        setContentHeight(entry.contentRect.height)
+      }
+    })
+
+    resizeObserver.observe(contentRef.current)
+    return () => resizeObserver.disconnect()
+  }, [isSingleColumn])
 
   return (
     <Card
@@ -28,10 +49,10 @@ export function ArticleCard({ article, isBiasedMode, isBookmarked, toggleBookmar
       <Link href={`/article/${article.id}`} className="flex-grow flex flex-col">
         <div className="absolute inset-0 bg-gradient-to-br from-white/5 to-transparent dark:from-black/5 opacity-0 group-hover:opacity-100 transition-opacity duration-300 pointer-events-none" />
 
-        <CardHeader className="p-4 pb-2 flex flex-col gap-4">
+        <CardHeader className={`p-2 sm:p-4 pb-1 sm:pb-2 flex flex-col gap-2 sm:gap-4 ${isSingleColumn ? 'flex-1' : ''}`}>
           <Badge
             variant="outline"
-            className="self-start mb-1 font-medium transition-colors duration-300"
+            className="self-start mb-0.5 sm:mb-1 font-medium transition-colors duration-300"
             style={{
               backgroundColor: `${categoryColor}15`,
               color: categoryColor,
@@ -41,14 +62,47 @@ export function ArticleCard({ article, isBiasedMode, isBookmarked, toggleBookmar
             {article.category}
           </Badge>
 
-          <div className="flex gap-4 items-start">
-            <div className="flex-1">
-              <h3 className="text-lg font-bold leading-tight group-hover:text-primary transition-colors duration-300">
-                {title}
-              </h3>
+          <div className={`${isSingleColumn ? 'grid grid-cols-[2fr_1fr] gap-6 flex-1' : 'flex flex-col gap-2 sm:gap-4'} h-full`}>
+            <div className="flex gap-2 sm:gap-4 items-start">
+              <div className="flex-1">
+                <h3 className="text-lg font-bold leading-tight group-hover:text-primary transition-colors duration-300">
+                  {title}
+                </h3>
+              </div>
+              {article.imageUrl && !isSingleColumn && (
+                <div 
+                  className="flex-shrink-0 rounded-md overflow-hidden shadow-sm"
+                  style={{ 
+                    width: imageSize,
+                    height: imageSize
+                  }}
+                >
+                  <img
+                    src={article.imageUrl || "/placeholder.svg"}
+                    alt=""
+                    className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-110"
+                  />
+                </div>
+              )}
             </div>
-            {article.imageUrl && (
-              <div className="flex-shrink-0 w-24 h-24 rounded-md overflow-hidden shadow-sm">
+
+            {!isCompactLayout && (
+              <div ref={contentRef} className="flex-grow">
+                <p className="text-base text-gray-500 dark:text-gray-400">
+                  {article.snippet}
+                </p>
+              </div>
+            )}
+
+            {article.imageUrl && isSingleColumn && (
+              <div 
+                className="w-full max-w-md justify-self-end self-start rounded-md overflow-hidden shadow-sm"
+                style={{ 
+                  width: 'auto',
+                  height: `${Math.min(contentHeight * 1.5, 300)}px`,
+                  minHeight: '200px'
+                }}
+              >
                 <img
                   src={article.imageUrl || "/placeholder.svg"}
                   alt=""
@@ -58,14 +112,19 @@ export function ArticleCard({ article, isBiasedMode, isBookmarked, toggleBookmar
             )}
           </div>
         </CardHeader>
-        <CardContent className="p-4 pt-2 flex-grow">
-          <p className="text-sm text-gray-500 dark:text-gray-400 line-clamp-3">{article.snippet}</p>
-        </CardContent>
+
+        {isCompactLayout && (
+          <CardContent className="p-2 sm:p-4 pt-1 sm:pt-2 flex-grow">
+            <p className="text-base text-gray-500 dark:text-gray-400">
+              {article.snippet}
+            </p>
+          </CardContent>
+        )}
       </Link>
-      <CardFooter className="p-4 pt-0 flex justify-between items-center border-t border-gray-100 dark:border-gray-800">
-        <div className="flex flex-col text-sm">
+      <CardFooter className="p-2 sm:p-4 pt-0 flex justify-between items-center border-t border-gray-100 dark:border-gray-800">
+        <div className="flex flex-col gap-0.5 text-sm mt-2">
           <span className="font-medium text-gray-700 dark:text-gray-300">{article.source}</span>
-          <span className="text-gray-500 dark:text-gray-400">{formatDate(article.date)}</span>
+          <span className="text-gray-500 dark:text-gray-400 text-xs">{formatDate(article.date)}</span>
         </div>
         <Button
           variant="ghost"
@@ -77,14 +136,10 @@ export function ArticleCard({ article, isBiasedMode, isBookmarked, toggleBookmar
           className={
             isBookmarked
               ? "text-primary hover:text-primary/80 hover:bg-primary/10"
-              : "text-gray-400 hover:text-gray-500 dark:text-gray-500 dark:hover:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-800"
+              : "text-muted-foreground hover:text-primary"
           }
         >
-          <Bookmark
-            className={`h-5 w-5 transition-all duration-300 ${isBookmarked ? "scale-110" : "scale-100"}`}
-            fill={isBookmarked ? "currentColor" : "none"}
-          />
-          <span className="sr-only">{isBookmarked ? "Remove bookmark" : "Add bookmark"}</span>
+          <Bookmark className={`h-4 w-4 ${isBookmarked ? "fill-current" : ""}`} />
         </Button>
       </CardFooter>
     </Card>

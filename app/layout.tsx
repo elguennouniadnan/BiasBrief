@@ -2,18 +2,27 @@ import type React from "react"
 import "./globals.css"
 import { ThemeProvider } from "@/components/theme-provider"
 
+export const metadata = {
+  title: 'BiasBrief - Understand Media Bias',
+  description: 'Compare biased and unbiased versions of news articles to better understand media bias.',
+  generator: 'BiasBrief'
+}
+
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
     <html lang="en" suppressHydrationWarning>
-      <body>
-        <ThemeProvider attribute="class" defaultTheme="system" enableSystem>
-          {children}
+      <body className="antialiased" suppressHydrationWarning>
+        <ThemeProvider
+          attribute="class"
+          defaultTheme="system"
+          enableSystem={false}
+          disableTransitionOnChange
+        >
+          <div className="container mx-auto px-2 sm:px-2 lg:px-2 max-w-7xl">
+            {children}
+          </div>
         </ThemeProvider>
       </body>
     </html>
   )
 }
-
-export const metadata = {
-      generator: 'v0.dev'
-    };

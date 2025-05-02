@@ -3,7 +3,13 @@ import { twMerge } from "tailwind-merge"
 
 export function formatDate(dateString: string): string {
   const date = new Date(dateString)
-  const options: Intl.DateTimeFormatOptions = { year: "numeric", month: "long", day: "numeric" }
+  const options: Intl.DateTimeFormatOptions = { 
+    year: "numeric", 
+    month: "long", 
+    day: "numeric",
+    hour: "2-digit",
+    minute: "2-digit"
+  }
   return date.toLocaleDateString(undefined, options)
 }
 
@@ -13,12 +19,18 @@ export function cn(...inputs: ClassValue[]) {
 
 export function getCategoryColor(category: string): string {
   const colors: Record<string, string> = {
-    Politics: "#3b82f6", // blue
-    Technology: "#8b5cf6", // violet
-    Health: "#10b981", // emerald
-    Sports: "#ef4444", // red
-    Entertainment: "#f59e0b", // amber
-    "World News": "#6366f1", // indigo
+    News: "#2196f3", // blue
+    Opinion: "#ff9800", // orange
+    Sport: "#f44336", // red
+    Culture: "#e91e63", // pink
+    Lifestyle: "#4caf50", // green
+    Arts: "#9c27b0", // purple
+    // Fallbacks for section names if pillar name is not available
+    Politics: "#3b82f6",
+    Technology: "#8b5cf6",
+    Health: "#10b981",
+    Entertainment: "#f59e0b",
+    "World News": "#6366f1",
   }
 
   return colors[category] || "#6b7280" // gray as default

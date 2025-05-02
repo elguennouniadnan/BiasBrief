@@ -19,7 +19,7 @@ export function AuthModal({ isOpen, onClose, defaultTab = "sign-in" }: AuthModal
     <Dialog open={isOpen} onOpenChange={(open) => !open && onClose()}>
       <DialogContent className="sm:max-w-[425px]">
         <DialogHeader>
-          <DialogTitle>Welcome to NewsApp</DialogTitle>
+          <DialogTitle>Welcome to BiasBrief</DialogTitle>
           <DialogDescription>
             {activeTab === "sign-in"
               ? "Sign in to access your personalized news experience."

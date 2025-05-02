@@ -1,16 +1,15 @@
 "use client"
 
-import { useEffect, useState } from "react"
+import { useEffect, useState, useMemo } from "react"
 import { Navbar } from "@/components/navbar"
 import { CategoryFilter } from "@/components/category-filter"
 import { ArticleList } from "@/components/article-list"
 import { Pagination } from "@/components/pagination"
-import { mockArticles } from "@/lib/mock-data"
-import { ThemeProvider } from "@/components/theme-provider"
 import { AuthProvider } from "@/lib/auth"
+import { useTheme } from "next-themes"
+import type { Article } from "@/lib/types"
 
 export function NewsApp() {
-  const [articles, setArticles] = useState(mockArticles)
   const [searchQuery, setSearchQuery] = useState("")
   const [selectedCategory, setSelectedCategory] = useState("All")
   const [isBiasedMode, setIsBiasedMode] = useState(false)
@@ -18,180 +17,267 @@ export function NewsApp() {
   const [showBookmarksOnly, setShowBookmarksOnly] = useState(false)
   const [preferredCategories, setPreferredCategories] = useState<string[]>([])
   const [defaultBiasMode, setDefaultBiasMode] = useState(false)
-  const [defaultDarkMode, setDefaultDarkMode] = useState(false)
+  const [themePreference, setThemePreference] = useState(false)
   const [fontSize, setFontSize] = useState("medium")
   const [articlesPerPage, setArticlesPerPage] = useState(9)
   const [currentPage, setCurrentPage] = useState(1)
-
-  // Load bookmarks from localStorage on initial render
-  useEffect(() => {
-    const savedBookmarks = localStorage.getItem("bookmarks")
-    if (savedBookmarks) {
-      setBookmarks(JSON.parse(savedBookmarks))
-    }
-  }, [])
-
-  // Save bookmarks to localStorage when they change
-  useEffect(() => {
-    localStorage.setItem("bookmarks", JSON.stringify(bookmarks))
-  }, [bookmarks])
+  const [cardSize, setCardSize] = useState(3)
+  const [allArticles, setAllArticles] = useState<Article[]>([])
+  const [categories, setCategories] = useState<string[]>(["All"])
+  const [isLoading, setIsLoading] = useState(true)
+  const [sortOrder, setSortOrder] = useState<'new-to-old' | 'old-to-new'>('new-to-old');
+  
+  const { setTheme } = useTheme()
+  const [mounted, setMounted] = useState(false)
 
   // Toggle bookmark status for an article
   const toggleBookmark = (articleId: number) => {
-    setBookmarks((prev) => {
-      if (prev.includes(articleId)) {
-        return prev.filter((id) => id !== articleId)
-      } else {
-        return [...prev, articleId]
+    const newBookmarks = bookmarks.includes(articleId)
+      ? bookmarks.filter((id) => id !== articleId)
+      : [...bookmarks, articleId]
+    
+    setBookmarks(newBookmarks)
+    localStorage.setItem("bookmarks", JSON.stringify(newBookmarks))
+  }
+
+  // Fetch all articles from our API
+  const fetchArticles = async () => {
+    try {
+      setIsLoading(true)
+      
+      // Build query parameters
+      const params = new URLSearchParams()
+      
+      if (searchQuery) {
+        params.append('q', searchQuery)
       }
-    })
+      
+      const response = await fetch(`/api/news?${params.toString()}`)
+      
+      if (!response.ok) {
+        throw new Error('Failed to fetch articles')
+      }
+      
+      const data = await response.json()
+      
+      if (data.articles) {
+        setAllArticles(data.articles)
+        if (data.categories) {
+          setCategories(data.categories)
+        }
+      }
+      
+    } catch (error) {
+      console.error('Error fetching articles:', error)
+    } finally {
+      setIsLoading(false)
+    }
   }
 
   // Load user preferences from localStorage
   useEffect(() => {
-    const savedPreferredCategories = localStorage.getItem("preferredCategories")
-    if (savedPreferredCategories) {
-      setPreferredCategories(JSON.parse(savedPreferredCategories))
-    } else {
-      // Default to all categories if not set
-      setPreferredCategories(Array.from(new Set(articles.map((article) => article.category))))
-    }
+    if (typeof window !== 'undefined') {
+      const savedBookmarks = localStorage.getItem("bookmarks")
+      if (savedBookmarks) {
+        setBookmarks(JSON.parse(savedBookmarks))
+      }
 
-    const savedDefaultBiasMode = localStorage.getItem("defaultBiasMode")
-    if (savedDefaultBiasMode) {
-      const biasMode = savedDefaultBiasMode === "true"
-      setDefaultBiasMode(biasMode)
-      setIsBiasedMode(biasMode)
-    }
+      const savedPreferredCategories = localStorage.getItem("preferredCategories")
+      if (savedPreferredCategories) {
+        setPreferredCategories(JSON.parse(savedPreferredCategories))
+      }
 
-    const savedDefaultDarkMode = localStorage.getItem("defaultDarkMode")
-    if (savedDefaultDarkMode) {
-      setDefaultDarkMode(savedDefaultDarkMode === "true")
-    }
+      const savedDefaultBiasMode = localStorage.getItem("defaultBiasMode")
+      if (savedDefaultBiasMode) {
+        const biasMode = savedDefaultBiasMode === "true"
+        setDefaultBiasMode(biasMode)
+        setIsBiasedMode(biasMode)
+      }
 
-    const savedFontSize = localStorage.getItem("fontSize")
-    if (savedFontSize) {
-      setFontSize(savedFontSize)
-    }
+      const savedThemePreference = localStorage.getItem("themePreference")
+      if (savedThemePreference) {
+        const isDark = savedThemePreference === "true"
+        setThemePreference(isDark)
+      }
 
-    const savedArticlesPerPage = localStorage.getItem("articlesPerPage")
-    if (savedArticlesPerPage) {
-      setArticlesPerPage(Number(savedArticlesPerPage))
+      const savedFontSize = localStorage.getItem("fontSize")
+      if (savedFontSize) {
+        setFontSize(savedFontSize)
+      }
+
+      const savedArticlesPerPage = localStorage.getItem("articlesPerPage")
+      if (savedArticlesPerPage) {
+        setArticlesPerPage(Number(savedArticlesPerPage))
+      }
+
+      const savedCardSize = localStorage.getItem("cardSize")
+      if (savedCardSize) {
+        setCardSize(parseInt(savedCardSize))
+      }
+
+      setMounted(true)
     }
   }, [])
 
-  // Save user preferences to localStorage when they change
+  // Fetch articles when component mounts or when search query changes
   useEffect(() => {
-    if (preferredCategories.length > 0) {
+    if (mounted) {
+      fetchArticles()
+    }
+  }, [mounted, searchQuery])
+
+  // Handle theme changes
+  useEffect(() => {
+    if (mounted) {
+      setTheme(themePreference ? "dark" : "light")
+      localStorage.setItem("themePreference", themePreference.toString())
+    }
+  }, [themePreference, setTheme, mounted])
+
+  // Save preferences to localStorage
+  useEffect(() => {
+    if (mounted) {
+      localStorage.setItem("bookmarks", JSON.stringify(bookmarks))
+    }
+  }, [bookmarks, mounted])
+
+  useEffect(() => {
+    if (mounted && preferredCategories.length > 0) {
       localStorage.setItem("preferredCategories", JSON.stringify(preferredCategories))
     }
-  }, [preferredCategories])
+  }, [preferredCategories, mounted])
 
   useEffect(() => {
-    localStorage.setItem("defaultBiasMode", defaultBiasMode.toString())
-  }, [defaultBiasMode])
+    if (mounted) {
+      localStorage.setItem("defaultBiasMode", defaultBiasMode.toString())
+    }
+  }, [defaultBiasMode, mounted])
 
   useEffect(() => {
-    localStorage.setItem("defaultDarkMode", defaultDarkMode.toString())
-  }, [defaultDarkMode])
+    if (mounted) {
+      localStorage.setItem("fontSize", fontSize)
+    }
+  }, [fontSize, mounted])
 
   useEffect(() => {
-    localStorage.setItem("fontSize", fontSize)
-  }, [fontSize])
+    if (mounted) {
+      localStorage.setItem("articlesPerPage", articlesPerPage.toString())
+    }
+  }, [articlesPerPage, mounted])
 
   useEffect(() => {
-    localStorage.setItem("articlesPerPage", articlesPerPage.toString())
-  }, [articlesPerPage])
+    if (mounted) {
+      localStorage.setItem("cardSize", cardSize.toString())
+    }
+  }, [cardSize, mounted])
 
   // Reset to first page when filters change
   useEffect(() => {
     setCurrentPage(1)
-  }, [searchQuery, selectedCategory, showBookmarksOnly, preferredCategories])
+  }, [selectedCategory, showBookmarksOnly, preferredCategories])
 
-  // Filter articles based on search, category, and bookmarks
-  const filteredArticles = articles.filter((article) => {
-    const matchesSearch =
-      searchQuery === "" ||
-      (isBiasedMode
-        ? article.titleBiased.toLowerCase().includes(searchQuery.toLowerCase())
-        : article.titleUnbiased.toLowerCase().includes(searchQuery.toLowerCase())) ||
-      article.snippet.toLowerCase().includes(searchQuery.toLowerCase())
+  // Filter and paginate articles
+  const { filteredArticles, totalPages } = useMemo(() => {
+    // Apply all filters
+    let filtered = allArticles.filter((article) => {
+      const matchesCategory = selectedCategory === "All" || article.section === selectedCategory
+      const matchesPreferences = preferredCategories.length === 0 || preferredCategories.includes(article.category)
+      const matchesBookmarks = !showBookmarksOnly || bookmarks.includes(article.id)
+      return matchesCategory && matchesPreferences && matchesBookmarks
+    });
 
-    const matchesCategory = selectedCategory === "All" || article.category === selectedCategory
+    // Apply sorting
+    filtered = [...filtered].sort((a, b) => {
+      const dateA = new Date(a.date).getTime();
+      const dateB = new Date(b.date).getTime();
+      return sortOrder === 'new-to-old' ? dateB - dateA : dateA - dateB;
+    });
 
-    const matchesPreferences = preferredCategories.length === 0 || preferredCategories.includes(article.category)
+    // Calculate pagination
+    const total = Math.ceil(filtered.length / articlesPerPage)
+    const start = (currentPage - 1) * articlesPerPage
+    const end = start + articlesPerPage
+    const paginatedArticles = filtered.slice(start, end)
 
-    const matchesBookmarks = !showBookmarksOnly || bookmarks.includes(article.id)
+    return {
+      filteredArticles: paginatedArticles,
+      totalPages: total
+    }
+  }, [allArticles, selectedCategory, preferredCategories, showBookmarksOnly, bookmarks, currentPage, articlesPerPage, sortOrder]);
 
-    return matchesSearch && matchesCategory && matchesBookmarks && matchesPreferences
-  })
-
-  // Paginate articles
-  const totalPages = Math.ceil(filteredArticles.length / articlesPerPage)
-  const paginatedArticles = filteredArticles.slice((currentPage - 1) * articlesPerPage, currentPage * articlesPerPage)
-
-  // Get unique categories from articles
-  const categories = ["All", ...Array.from(new Set(articles.map((article) => article.category)))]
-
-  // Font size class
-  const fontSizeClass = {
-    small: "text-sm",
-    medium: "text-base",
-    large: "text-lg",
-  }[fontSize]
-
-  // Apply font size to document root for global effect
+  // Apply font size to document root
   useEffect(() => {
-    document.documentElement.style.fontSize = {
-      small: "0.925rem",
-      medium: "1rem",
-      large: "1.125rem",
-    }[fontSize]
-  }, [fontSize])
+    if (mounted) {
+      const fontSizes = {
+        small: "0.925rem",
+        medium: "1rem",
+        large: "1.125rem"
+      }
+      document.documentElement.style.fontSize = fontSizes[fontSize as keyof typeof fontSizes] || "1rem"
+    }
+  }, [fontSize, mounted])
 
   return (
     <AuthProvider>
-      <ThemeProvider attribute="class" defaultTheme={defaultDarkMode ? "dark" : "light"} enableSystem>
-        <div className={`flex flex-col min-h-screen bg-white dark:bg-gray-950 transition-colors duration-200`}>
-          <Navbar
-            searchQuery={searchQuery}
-            setSearchQuery={setSearchQuery}
-            isBiasedMode={isBiasedMode}
-            setIsBiasedMode={setIsBiasedMode}
-            showBookmarksOnly={showBookmarksOnly}
-            setShowBookmarksOnly={setShowBookmarksOnly}
-            preferredCategories={preferredCategories}
-            setPreferredCategories={setPreferredCategories}
-            defaultBiasMode={defaultBiasMode}
-            setDefaultBiasMode={setDefaultBiasMode}
-            defaultDarkMode={defaultDarkMode}
-            setDefaultDarkMode={setDefaultDarkMode}
-            fontSize={fontSize}
-            setFontSize={setFontSize}
-            articlesPerPage={articlesPerPage}
-            setArticlesPerPage={setArticlesPerPage}
-          />
-          <CategoryFilter
-            categories={categories}
-            selectedCategory={selectedCategory}
-            setSelectedCategory={setSelectedCategory}
-          />
-          <main className="flex-1 container mx-auto px-4 py-6">
-            <ArticleList
-              articles={paginatedArticles}
-              isBiasedMode={isBiasedMode}
-              bookmarks={bookmarks}
-              toggleBookmark={toggleBookmark}
-            />
-
-            {totalPages > 1 && (
-              <div className="mt-8">
-                <Pagination currentPage={currentPage} totalPages={totalPages} onPageChange={setCurrentPage} />
-              </div>
-            )}
-          </main>
-        </div>
-      </ThemeProvider>
+      <div className="flex flex-col min-h-screen bg-background text-foreground">
+        <Navbar
+          searchQuery={searchQuery}
+          setSearchQuery={setSearchQuery}
+          isBiasedMode={isBiasedMode}
+          setIsBiasedMode={setIsBiasedMode}
+          showBookmarksOnly={showBookmarksOnly}
+          setShowBookmarksOnly={setShowBookmarksOnly}
+          preferredCategories={preferredCategories}
+          setPreferredCategories={setPreferredCategories}
+          defaultBiasMode={defaultBiasMode}
+          setDefaultBiasMode={setDefaultBiasMode}
+          themePreference={themePreference}
+          setThemePreference={setThemePreference}
+          fontSize={fontSize}
+          setFontSize={setFontSize}
+          articlesPerPage={articlesPerPage}
+          setArticlesPerPage={setArticlesPerPage}
+          cardSize={cardSize}
+          setCardSize={setCardSize}
+          sortOrder={sortOrder}
+          setSortOrder={setSortOrder}
+        />
+        <CategoryFilter
+          categories={categories}
+          selectedCategory={selectedCategory}
+          setSelectedCategory={setSelectedCategory}
+        />
+        <main className="flex-1 container mx-auto px-4 py-6">
+          {isLoading ? (
+            <div className="flex items-center justify-center h-64">
+              <div className="text-lg">Loading articles...</div>
+            </div>
+          ) : filteredArticles.length > 0 ? (
+            <>
+              <ArticleList
+                articles={filteredArticles}
+                isBiasedMode={isBiasedMode}
+                isBookmarked={(id: number) => bookmarks.includes(id)}
+                toggleBookmark={toggleBookmark}
+                cardSize={cardSize}
+              />
+              {totalPages > 1 && (
+                <div className="mt-8">
+                  <Pagination 
+                    currentPage={currentPage} 
+                    totalPages={totalPages} 
+                    onPageChange={setCurrentPage} 
+                  />
+                </div>
+              )}
+            </>
+          ) : (
+            <div className="flex items-center justify-center h-64">
+              <div className="text-lg">No articles found</div>
+            </div>
+          )}
+        </main>
+      </div>
     </AuthProvider>
   )
 }

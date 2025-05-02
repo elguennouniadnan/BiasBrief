@@ -17,11 +17,12 @@ import { Switch } from "@/components/ui/switch"
 import { ScrollArea } from "@/components/ui/scroll-area"
 import { Input } from "@/components/ui/input"
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form"
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { useForm } from "react-hook-form"
 import { zodResolver } from "@hookform/resolvers/zod"
 import * as z from "zod"
 import { useAuth } from "@/lib/auth"
-import { Loader2 } from "lucide-react"
+import { Loader2, ChevronDown } from "lucide-react"
 
 interface SettingsDialogProps {
   open: boolean
@@ -31,12 +32,16 @@ interface SettingsDialogProps {
   setPreferredCategories: (categories: string[]) => void
   defaultBiasMode: boolean
   setDefaultBiasMode: (biased: boolean) => void
-  defaultDarkMode: boolean
-  setDefaultDarkMode: (dark: boolean) => void
+  themePreference: boolean
+  setThemePreference: (dark: boolean) => void
   fontSize: string
   setFontSize: (size: string) => void
   articlesPerPage: number
   setArticlesPerPage: (count: number) => void
+  cardSize?: number
+  setCardSize: (size: number) => void
+  sortOrder: 'new-to-old' | 'old-to-new'
+  setSortOrder: (order: 'new-to-old' | 'old-to-new') => void
 }
 
 export function SettingsDialog({
@@ -47,19 +52,25 @@ export function SettingsDialog({
   setPreferredCategories,
   defaultBiasMode,
   setDefaultBiasMode,
-  defaultDarkMode,
-  setDefaultDarkMode,
+  themePreference,
+  setThemePreference,
   fontSize,
   setFontSize,
   articlesPerPage,
   setArticlesPerPage,
+  cardSize = 100,
+  setCardSize,
+  sortOrder,
+  setSortOrder,
 }: SettingsDialogProps) {
   const { user, updateEmail, updatePassword, updateUser } = useAuth()
   const [localPreferredCategories, setLocalPreferredCategories] = useState<string[]>(preferredCategories)
   const [localDefaultBiasMode, setLocalDefaultBiasMode] = useState(defaultBiasMode)
-  const [localDefaultDarkMode, setLocalDefaultDarkMode] = useState(defaultDarkMode)
+  const [localThemePreference, setLocalThemePreference] = useState(themePreference)
   const [localFontSize, setLocalFontSize] = useState(fontSize)
   const [localArticlesPerPage, setLocalArticlesPerPage] = useState(articlesPerPage)
+  const [localCardSize, setLocalCardSize] = useState<number>(cardSize)
+  const [localSortOrder, setLocalSortOrder] = useState<'new-to-old' | 'old-to-new'>(sortOrder)
   const [activeTab, setActiveTab] = useState("content")
   const [emailUpdateSuccess, setEmailUpdateSuccess] = useState(false)
   const [passwordUpdateSuccess, setPasswordUpdateSuccess] = useState(false)
@@ -71,20 +82,24 @@ export function SettingsDialog({
     if (open) {
       setLocalPreferredCategories(preferredCategories)
       setLocalDefaultBiasMode(defaultBiasMode)
-      setLocalDefaultDarkMode(defaultDarkMode)
+      setLocalThemePreference(themePreference)
       setLocalFontSize(fontSize)
       setLocalArticlesPerPage(articlesPerPage)
+      setLocalCardSize(cardSize)
+      setLocalSortOrder(sortOrder)
       setEmailUpdateSuccess(false)
       setPasswordUpdateSuccess(false)
     }
-  }, [open, preferredCategories, defaultBiasMode, defaultDarkMode, fontSize, articlesPerPage])
+  }, [open, preferredCategories, defaultBiasMode, themePreference, fontSize, articlesPerPage, cardSize, sortOrder])
 
   const handleSave = () => {
     setPreferredCategories(localPreferredCategories)
     setDefaultBiasMode(localDefaultBiasMode)
-    setDefaultDarkMode(localDefaultDarkMode)
+    setThemePreference(localThemePreference)
     setFontSize(localFontSize)
     setArticlesPerPage(localArticlesPerPage)
+    setCardSize(localCardSize)
+    setSortOrder(localSortOrder)
 
     // Update user preferences if logged in
     if (user) {
@@ -196,11 +211,11 @@ export function SettingsDialog({
         <Tabs defaultValue="content" value={activeTab} onValueChange={setActiveTab} className="mt-4">
           <TabsList className={`grid w-full ${user ? "grid-cols-3" : "grid-cols-2"}`}>
             <TabsTrigger value="content">Content</TabsTrigger>
-            <TabsTrigger value="appearance">Appearance</TabsTrigger>
+            <TabsTrigger value="appearance">Display</TabsTrigger>
             {user && <TabsTrigger value="account">Account</TabsTrigger>}
           </TabsList>
 
-          <TabsContent value="content" className="space-y-4 mt-4">
+          <TabsContent value="content" className="space-y-6 mt-4 px-2">
             <div>
               <h3 className="text-sm font-medium mb-2">Preferred Categories</h3>
               <p className="text-sm text-muted-foreground mb-4">Select which categories you want to see in your feed</p>
@@ -214,7 +229,7 @@ export function SettingsDialog({
                 </Button>
               </div>
 
-              <ScrollArea className="h-[200px] rounded-md border p-4">
+              <ScrollArea className="h-[140px] rounded-md border p-4">
                 <div className="space-y-4">
                   {categories
                     .filter((category) => category !== "All")
@@ -233,7 +248,7 @@ export function SettingsDialog({
             </div>
 
             <div>
-              <h3 className="text-sm font-medium mb-2">Default Content View</h3>
+              <h2 className="text-sm font-medium mb-2">Default Content View</h2>
               <div className="flex items-center justify-between">
                 <Label htmlFor="default-bias-mode">Default to biased titles</Label>
                 <Switch
@@ -243,17 +258,36 @@ export function SettingsDialog({
                 />
               </div>
             </div>
+
+            <div>
+              <h3 className="text-sm font-medium mb-2">Sort Articles</h3>
+              <div className="grid gap-2">
+                <Label htmlFor="sort-order">Sort Order</Label>
+                <Select
+                  value={localSortOrder}
+                  onValueChange={(value: 'new-to-old' | 'old-to-new') => setLocalSortOrder(value)}
+                >
+                  <SelectTrigger>
+                    <SelectValue placeholder="Select sort order" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="new-to-old">New to Old</SelectItem>
+                    <SelectItem value="old-to-new">Old to New</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+            </div>
           </TabsContent>
 
-          <TabsContent value="appearance" className="space-y-4 mt-4">
+          <TabsContent value="appearance" className="space-y-6 mt-4 px-2">
             <div>
               <h3 className="text-sm font-medium mb-2">Theme Preference</h3>
               <div className="flex items-center justify-between">
-                <Label htmlFor="default-dark-mode">Default to dark mode</Label>
+                <Label htmlFor="theme-preference">Default to dark mode</Label>
                 <Switch
-                  id="default-dark-mode"
-                  checked={localDefaultDarkMode}
-                  onCheckedChange={setLocalDefaultDarkMode}
+                  id="theme-preference"
+                  checked={localThemePreference}
+                  onCheckedChange={setLocalThemePreference}
                 />
               </div>
             </div>
@@ -290,21 +324,64 @@ export function SettingsDialog({
 
             <div>
               <h3 className="text-sm font-medium mb-2">Articles Per Page</h3>
-              <select
-                className="w-full p-2 border rounded-md bg-background"
-                value={localArticlesPerPage}
-                onChange={(e) => setLocalArticlesPerPage(Number(e.target.value))}
-              >
-                <option value="6">6 articles</option>
-                <option value="9">9 articles</option>
-                <option value="12">12 articles</option>
-                <option value="15">15 articles</option>
-              </select>
+              <div className="relative">
+                <select
+                  className="w-full appearance-none rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50 pr-8"
+                  value={localArticlesPerPage}
+                  onChange={(e) => setLocalArticlesPerPage(Number(e.target.value))}
+                >
+                  <option value="6">6 articles</option>
+                  <option value="9">9 articles</option>
+                  <option value="12">12 articles</option>
+                  <option value="15">15 articles</option>
+                  <option value="18">18 articles</option>
+                  <option value="21">21 articles</option>
+                </select>
+                <ChevronDown className="absolute right-3 top-1/2 h-4 w-4 -translate-y-1/2 opacity-50" />
+              </div>
+            </div>
+
+            <div>
+              <h3 className="text-sm font-medium mb-2">Cards per Row</h3>
+              <div className="grid grid-cols-4 gap-2">
+                <Button
+                  variant={localCardSize === 1 ? "default" : "outline"}
+                  size="sm"
+                  onClick={() => setLocalCardSize(1)}
+                  className={`w-full ${localCardSize === 1 ? "bg-primary hover:bg-primary/90" : ""}`}
+                >
+                  <span>1</span>
+                </Button>
+                <Button
+                  variant={localCardSize === 2 ? "default" : "outline"}
+                  size="sm"
+                  onClick={() => setLocalCardSize(2)}
+                  className={`w-full ${localCardSize === 2 ? "bg-primary hover:bg-primary/90" : ""}`}
+                >
+                  <span>2</span>
+                </Button>
+                <Button
+                  variant={localCardSize === 3 ? "default" : "outline"}
+                  size="sm"
+                  onClick={() => setLocalCardSize(3)}
+                  className={`w-full ${localCardSize === 3 ? "bg-primary hover:bg-primary/90" : ""}`}
+                >
+                  <span>3</span>
+                </Button>
+                <Button
+                  variant={localCardSize === 4 ? "default" : "outline"}
+                  size="sm"
+                  onClick={() => setLocalCardSize(4)}
+                  className={`w-full ${localCardSize === 4 ? "bg-primary hover:bg-primary/90" : ""}`}
+                >
+                  <span>4</span>
+                </Button>
+              </div>
             </div>
           </TabsContent>
 
           {user && (
-            <TabsContent value="account" className="space-y-6 mt-4">
+            <TabsContent value="account" className="space-y-6 mt-4 px-2">
               <div className="space-y-4">
                 <h3 className="text-sm font-medium">Update Email</h3>
 

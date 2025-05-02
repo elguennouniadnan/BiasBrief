@@ -30,13 +30,8 @@ export function UserDropdown({ openSettings }: UserDropdownProps) {
     setAuthModalOpen(true)
   }
 
-  const getInitials = (name: string) => {
-    return name
-      .split(" ")
-      .map((n) => n[0])
-      .join("")
-      .toUpperCase()
-      .substring(0, 2)
+  const getInitials = (email: string) => {
+    return email.substring(0, 2).toUpperCase()
   }
 
   if (!user) {
@@ -74,8 +69,8 @@ export function UserDropdown({ openSettings }: UserDropdownProps) {
             className="relative h-9 w-9 rounded-full overflow-hidden hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors"
           >
             <Avatar className="h-9 w-9 ring-2 ring-offset-2 ring-offset-white dark:ring-offset-gray-900 ring-primary/20">
-              <AvatarFallback className="bg-gradient-to-br from-primary to-primary/70 text-white">
-                {getInitials(user.name)}
+              <AvatarFallback className="bg-gradient-to-br from-primary to-primary/70 text-white text-base font-bold">
+                {getInitials(user.email)}
               </AvatarFallback>
             </Avatar>
           </Button>

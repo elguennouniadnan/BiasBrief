@@ -14,8 +14,8 @@ interface CategoryFilterProps {
 export function CategoryFilter({ categories, selectedCategory, setSelectedCategory }: CategoryFilterProps) {
   return (
     <div className="bg-gray-50/80 dark:bg-gray-900/80 backdrop-blur-sm border-b border-gray-200 dark:border-gray-800 py-2 sticky top-16 z-10 transition-colors duration-300">
-      <div className="container mx-auto px-4">
-        <ScrollArea className="w-full whitespace-nowrap">
+      <div className="container mx-auto px-4 md:px-2">
+        <ScrollArea className="w-full whitespace-nowrap ml-3 md:ml-8">
           <div className="flex space-x-2 py-1">
             {categories.map((category) => {
               const isSelected = selectedCategory === category
@@ -46,7 +46,7 @@ export function CategoryFilter({ categories, selectedCategory, setSelectedCatego
               )
             })}
           </div>
-          <ScrollBar orientation="horizontal" />
+          <ScrollBar orientation="horizontal" className="invisible" />
         </ScrollArea>
       </div>
     </div>
