@@ -19,7 +19,7 @@ export function NewsApp() {
   const [defaultBiasMode, setDefaultBiasMode] = useState(false)
   const [themePreference, setThemePreference] = useState(false)
   const [fontSize, setFontSize] = useState("medium")
-  const [articlesPerPage, setArticlesPerPage] = useState(9)
+  const [articlesPerPage, setArticlesPerPage] = useState(15)
   const [currentPage, setCurrentPage] = useState(1)
   const [cardSize, setCardSize] = useState(3)
   const [allArticles, setAllArticles] = useState<Article[]>([])
