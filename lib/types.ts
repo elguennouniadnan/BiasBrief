@@ -1,14 +1,13 @@
 export interface Article {
   id: number
-  category: string // This will store pillarName
-  section: string // This will store sectionName
+  category: string
+  section: string
   titleUnbiased: string
   titleBiased: string
-  content: string
   snippet: string
+  body: string
   date: string
   imageUrl?: string
   source: string
-  body?: string
   webUrl: string
 }

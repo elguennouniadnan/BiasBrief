@@ -13,12 +13,13 @@ function extractImageUrl(htmlString: string): string | null {
 
 export async function GET(request: Request) {
   const { searchParams } = new URL(request.url);
-  
-  // Extract query parameters
   const query = searchParams.get('q') || '';
   
+  // Check if the request is coming from Safari
+  const userAgent = request.headers.get('user-agent') || '';
+  const isSafari = userAgent.includes('Safari') && !userAgent.includes('Chrome');
+  
   try {
-    // Fetch data from The Guardian API
     const apiKey = process.env.GUARDIAN_API_KEY;
     
     if (!apiKey) {
@@ -34,10 +35,10 @@ export async function GET(request: Request) {
     // Build the query parameters
     const params = new URLSearchParams();
     params.append('api-key', apiKey);
-    params.append('page-size', '200');
-    params.append('show-fields', 'headline,trailText,body,thumbnail,main,bodyImage,publication,lastModified');
+    // Limit articles for Safari to prevent storage quota issues
+    params.append('page-size', isSafari ? '180' : '200');
+    params.append('show-fields', 'headline,trailText,body,thumbnail,main,bodyImage,publication');
     params.append('order-by', 'newest');
-    params.append('show-references', 'all');
     
     // Add search query if provided
     if (query) {
@@ -70,19 +71,15 @@ export async function GET(request: Request) {
           section: item.sectionName,
           titleUnbiased: item.fields?.headline || item.webTitle,
           titleBiased: `BREAKING: ${item.fields?.headline || item.webTitle}!`,
-          content: item.webTitle,
           snippet: item.fields?.trailText || 'No snippet available',
+          body: item.fields?.body || item.webTitle,
           date: item.webPublicationDate,
           imageUrl,
           source: item.fields?.publication || 'The Guardian',
-          body: item.fields?.body,
-          references: item.references || [],
-          tags: item.tags || [],
-          webUrl: item.webUrl,
-          isBookmarked: false
+          webUrl: item.webUrl
         };
       })
-      .filter((article: Article | null): article is Article => article !== null); // Type-safe filter of null articles
+      .filter((article: Article | null): article is Article => article !== null);
 
     // Extract unique sections (for tabs) from the response
     const uniqueSections = ['All', ...Array.from(new Set(articles.map(article => article.section)))];
