@@ -11,6 +11,29 @@ import { trackEvents } from "@/lib/analytics"
 import type { Article } from "@/lib/types"
 
 export function NewsApp() {
+  const { theme, setTheme } = useTheme()
+  const [mounted, setMounted] = useState(false)
+  const [themePreference, setThemePreference] = useState(() => {
+    // Initialize with system preference if no theme is set
+    if (typeof window !== 'undefined') {
+      const savedTheme = localStorage.getItem("theme")
+      return savedTheme ? savedTheme === 'dark' : theme === 'dark'
+    }
+    return false
+  })
+
+  // Effect to handle mounting state and theme sync
+  useEffect(() => {
+    setMounted(true)
+  }, [])
+
+  // Update themePreference when theme changes
+  useEffect(() => {
+    if (mounted) {
+      setThemePreference(theme === 'dark')
+    }
+  }, [theme, mounted])
+
   const [searchQuery, setSearchQuery] = useState("")
   const [selectedCategory, setSelectedCategory] = useState("All")
   const [isBiasedMode, setIsBiasedMode] = useState(false)
@@ -18,7 +41,6 @@ export function NewsApp() {
   const [showBookmarksOnly, setShowBookmarksOnly] = useState(false)
   const [preferredCategories, setPreferredCategories] = useState<string[]>([])
   const [defaultBiasMode, setDefaultBiasMode] = useState(false)
-  const [themePreference, setThemePreference] = useState(false)
   const [fontSize, setFontSize] = useState("medium")
   const [articlesPerPage, setArticlesPerPage] = useState(15)
   const [currentPage, setCurrentPage] = useState(1)
@@ -27,9 +49,6 @@ export function NewsApp() {
   const [categories, setCategories] = useState<string[]>(["All"])
   const [isLoading, setIsLoading] = useState(true)
   const [sortOrder, setSortOrder] = useState<'new-to-old' | 'old-to-new'>('new-to-old');
-  
-  const { setTheme } = useTheme()
-  const [mounted, setMounted] = useState(false)
 
   // Toggle bookmark status for an article
   const toggleBookmark = (articleId: number) => {
@@ -49,11 +68,6 @@ export function NewsApp() {
   const handleBiasModeToggle = (biased: boolean) => {
     setIsBiasedMode(biased);
     trackEvents.toggleBiasMode(biased);
-  };
-
-  const handleThemeChange = (isDark: boolean) => {
-    setThemePreference(isDark);
-    trackEvents.themeChange(isDark ? 'dark' : 'light');
   };
 
   const handleSearch = (query: string) => {
@@ -106,9 +120,19 @@ export function NewsApp() {
     }
   }
 
-  // Load user preferences from localStorage
+  // Initial load of preferences from localStorage
   useEffect(() => {
-    if (typeof window !== 'undefined') {
+    if (typeof window !== "undefined") {
+      const biasMode = localStorage.getItem("biasMode") === "true"
+      if (biasMode !== null) {
+        setIsBiasedMode(biasMode)
+      }
+
+      const savedTheme = localStorage.getItem("theme")
+      if (savedTheme) {
+        setTheme(savedTheme)
+      }
+
       const savedBookmarks = localStorage.getItem("bookmarks")
       if (savedBookmarks) {
         setBookmarks(JSON.parse(savedBookmarks))
@@ -124,12 +148,6 @@ export function NewsApp() {
         const biasMode = savedDefaultBiasMode === "true"
         setDefaultBiasMode(biasMode)
         setIsBiasedMode(biasMode)
-      }
-
-      const savedThemePreference = localStorage.getItem("themePreference")
-      if (savedThemePreference) {
-        const isDark = savedThemePreference === "true"
-        setThemePreference(isDark)
       }
 
       const savedFontSize = localStorage.getItem("fontSize")
@@ -166,14 +184,6 @@ export function NewsApp() {
       setIsLoading(false)
     }
   }, [mounted, searchQuery])
-
-  // Handle theme changes
-  useEffect(() => {
-    if (mounted) {
-      setTheme(themePreference ? "dark" : "light")
-      localStorage.setItem("themePreference", themePreference.toString())
-    }
-  }, [themePreference, setTheme, mounted])
 
   // Save preferences to localStorage
   useEffect(() => {
@@ -273,7 +283,10 @@ export function NewsApp() {
           defaultBiasMode={defaultBiasMode}
           setDefaultBiasMode={setDefaultBiasMode}
           themePreference={themePreference}
-          setThemePreference={handleThemeChange}
+          setThemePreference={(isDark) => {
+            setTheme(isDark ? "dark" : "light");
+            trackEvents.themeChange(isDark ? 'dark' : 'light');
+          }}
           fontSize={fontSize}
           setFontSize={setFontSize}
           articlesPerPage={articlesPerPage}

@@ -68,7 +68,6 @@ export function Navbar({
   const isMobile = useMediaQuery("(max-width: 768px)")
   const searchInputRef = React.useRef<HTMLInputElement>(null)
 
-  // Once mounted on client, we can show the UI
   useEffect(() => {
     setMounted(true)
   }, [])
@@ -81,26 +80,18 @@ export function Navbar({
     return () => window.removeEventListener("scroll", handleScroll)
   }, [])
 
-  // Update theme when preference changes
-  useEffect(() => {
-    if (mounted) {
-      setTheme(themePreference ? "dark" : "light")
-    }
-  }, [themePreference, setTheme, mounted])
-
-  // Focus search input when opened
   useEffect(() => {
     if (searchBarOpen && searchInputRef.current) {
       searchInputRef.current.focus()
     }
   }, [searchBarOpen])
 
-  // Helper function for theme toggle
-  const toggleTheme = React.useCallback(() => {
-    setThemePreference(!themePreference)
-  }, [themePreference, setThemePreference])
+  const handleThemeChange = () => {
+    const newTheme = theme === 'light' ? 'dark' : 'light'
+    setTheme(newTheme)
+    setThemePreference(newTheme === 'dark')
+  }
 
-  // Close search bar when clicking outside
   useEffect(() => {
     const handleClickOutside = (event: MouseEvent) => {
       const target = event.target as Element
@@ -112,7 +103,6 @@ export function Navbar({
     return () => document.removeEventListener('mousedown', handleClickOutside)
   }, [searchBarOpen])
 
-  // Handle escape key to close search
   useEffect(() => {
     const handleEsc = (event: KeyboardEvent) => {
       if (event.key === 'Escape') {
@@ -124,7 +114,6 @@ export function Navbar({
     return () => document.removeEventListener('keydown', handleEsc)
   }, [setSearchQuery])
 
-  // Prevent hydration mismatch
   const ThemeIcon = mounted ? theme === "dark" ? Sun : Moon : null
 
   return (
@@ -133,7 +122,6 @@ export function Navbar({
     }`}>
       <div className="w-full px-2 md:container md:px-4 mx-auto">
         <div className="flex items-center justify-between h-16">
-          {/* Logo */}
           <div className="flex-shrink-0 relative h-12 w-32 md:w-48 ml-4 md:ml-0">
             {mounted && (
               <Image
@@ -146,7 +134,6 @@ export function Navbar({
             )}
           </div>
 
-          {/* Desktop Navigation */}
           {!isMobile && (
             <div className="flex items-center gap-3 flex-1 justify-end">
               <div className="search-container relative max-w-md mx-4">
@@ -231,7 +218,7 @@ export function Navbar({
                 <Button
                   variant="ghost"
                   size="icon"
-                  onClick={toggleTheme}
+                  onClick={handleThemeChange}
                   title="Toggle theme"
                   className="h-9 w-9 hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors duration-200"
                 >
@@ -243,7 +230,6 @@ export function Navbar({
             </div>
           )}
 
-          {/* Mobile Navigation */}
           {isMobile && (
             <div className="flex items-center gap-2">
               <div className="search-container relative">
@@ -298,7 +284,6 @@ export function Navbar({
           )}
         </div>
 
-        {/* Mobile Menu */}
         {isMobile && isMenuOpen && (
           <motion.div
             initial={{ opacity: 0, height: 0 }}
@@ -334,7 +319,7 @@ export function Navbar({
                 <Button
                   variant="ghost"
                   size="icon"
-                  onClick={toggleTheme}
+                  onClick={handleThemeChange}
                   title="Toggle theme"
                   className="h-9 w-9 hover:bg-gray-100 dark:hover:bg-gray-800"
                 >
@@ -354,7 +339,7 @@ export function Navbar({
         setPreferredCategories={setPreferredCategories}
         defaultBiasMode={defaultBiasMode}
         setDefaultBiasMode={setDefaultBiasMode}
-        themePreference={themePreference}
+        themePreference={theme === "dark"}
         setThemePreference={setThemePreference}
         fontSize={fontSize}
         setFontSize={setFontSize}

@@ -12,15 +12,24 @@ import { AuthProvider } from "@/lib/auth"
 import { motion } from "framer-motion"
 import { trackEvents } from "@/lib/analytics"
 import { useToast } from "@/components/ui/use-toast"
+import { Navbar } from "@/components/navbar"
 
 export default function ArticlePage() {
   const params = useParams()
   const router = useRouter()
-  const { theme } = useTheme()
+  const { theme, setTheme } = useTheme()
   const [article, setArticle] = useState<Article | null>(null)
   const [isBiasedMode, setIsBiasedMode] = useState(false)
   const [isBookmarked, setIsBookmarked] = useState(false)
   const [fontSize, setFontSize] = useState("medium")
+  const [searchQuery, setSearchQuery] = useState("")
+  const [showBookmarksOnly, setShowBookmarksOnly] = useState(false)
+  const [preferredCategories, setPreferredCategories] = useState<string[]>([])
+  const [defaultBiasMode, setDefaultBiasMode] = useState(false)
+  const [themePreference, setThemePreference] = useState(false)
+  const [articlesPerPage, setArticlesPerPage] = useState(10)
+  const [cardSize, setCardSize] = useState(1)
+  const [sortOrder, setSortOrder] = useState<'new-to-old' | 'old-to-new'>('new-to-old')
   const { toast } = useToast()
 
   useEffect(() => {
@@ -40,6 +49,12 @@ export default function ArticlePage() {
       router.push("/")
     }
 
+    // Load theme preference from localStorage
+    const savedTheme = localStorage.getItem("theme")
+    if (savedTheme) {
+      setTheme(savedTheme)
+    }
+
     // Load user preferences
     const savedBiasMode = localStorage.getItem("defaultBiasMode")
     if (savedBiasMode) {
@@ -56,7 +71,7 @@ export default function ArticlePage() {
     if (savedFontSize) {
       setFontSize(savedFontSize)
     }
-  }, [params.id, router])
+  }, [params.id, router, setTheme])
 
   const toggleBookmark = () => {
     if (!article) return
@@ -76,9 +91,10 @@ export default function ArticlePage() {
 
   const canShare = () => {
     try {
-      // Check if we're on HTTPS (Web Share API requirement)
-      const isSecure = window.location.protocol === 'https:';
-      return isSecure && typeof navigator.share !== 'undefined';
+      const isSecureOrLocalhost = window.location.protocol === 'https:' || 
+                                 window.location.hostname === 'localhost' ||
+                                 window.location.hostname === '127.0.0.1';
+      return isSecureOrLocalhost && typeof navigator.share !== 'undefined';
     } catch {
       return false;
     }
@@ -90,28 +106,16 @@ export default function ArticlePage() {
     const shareData = {
       title: isBiasedMode ? article.titleBiased : article.titleUnbiased,
       text: article.snippet,
-      url: article.webUrl
+      url: window.location.href
     };
 
     try {
-      // Since we're in development and using IP address, Web Share API won't work
-      // So we'll directly show the URL for copying
-      if (!window.location.protocol.includes('https')) {
-        toast({
-          title: "Copy this link to share",
-          description: article.webUrl,
-          duration: 6000,
-        });
-        trackEvents.share('manual', article.id);
-        return;
-      }
-
       const hasNativeShare = canShare();
       if (hasNativeShare) {
         await navigator.share(shareData);
         trackEvents.share('native', article.id);
       } else if (navigator.clipboard && typeof navigator.clipboard.writeText === 'function') {
-        await navigator.clipboard.writeText(article.webUrl);
+        await navigator.clipboard.writeText(window.location.href);
         toast({
           title: "Link copied to clipboard",
           description: "You can now share it with others",
@@ -121,7 +125,7 @@ export default function ArticlePage() {
       } else {
         toast({
           title: "Copy this link to share",
-          description: article.webUrl,
+          description: window.location.href,
           duration: 6000,
         });
         trackEvents.share('manual', article.id);
@@ -134,7 +138,7 @@ export default function ArticlePage() {
         // Show the URL for any other error
         toast({
           title: "Copy this link to share",
-          description: article.webUrl,
+          description: window.location.href,
           duration: 6000,
           variant: err.name === 'NotAllowedError' ? 'default' : 'destructive',
         });
@@ -152,11 +156,33 @@ export default function ArticlePage() {
 
   const title = isBiasedMode ? article.titleBiased : article.titleUnbiased
   const categoryColor = getCategoryColor(article.category)
-  const readingTime = getReadingTime(article.body?.replace(/<[^>]*>/g, '') || article.content)
+  const readingTime = getReadingTime(article?.body?.replace(/<[^>]*>/g, '') || '')
 
   return (
     <AuthProvider>
       <div className="min-h-screen bg-white dark:bg-gray-950">
+        <Navbar 
+          searchQuery={searchQuery}
+          setSearchQuery={setSearchQuery}
+          isBiasedMode={isBiasedMode}
+          setIsBiasedMode={setIsBiasedMode}
+          showBookmarksOnly={showBookmarksOnly}
+          setShowBookmarksOnly={setShowBookmarksOnly}
+          preferredCategories={preferredCategories}
+          setPreferredCategories={setPreferredCategories}
+          defaultBiasMode={defaultBiasMode}
+          setDefaultBiasMode={setDefaultBiasMode}
+          themePreference={themePreference}
+          setThemePreference={setThemePreference}
+          fontSize={fontSize}
+          setFontSize={setFontSize}
+          articlesPerPage={articlesPerPage}
+          setArticlesPerPage={setArticlesPerPage}
+          cardSize={cardSize}
+          setCardSize={setCardSize}
+          sortOrder={sortOrder}
+          setSortOrder={setSortOrder}
+        />
         <div className="container mx-auto px-4 py-8">
           <motion.div
             initial={{ opacity: 0, y: 20 }}
@@ -247,11 +273,9 @@ export default function ArticlePage() {
             {article.body ? (
               <div dangerouslySetInnerHTML={{ __html: article.body }} />
             ) : (
-              article.content.split("\n\n").map((paragraph, index) => (
-                <p key={index} className="mb-4 leading-relaxed">
-                  {paragraph}
-                </p>
-              ))
+              <p className="mb-4 leading-relaxed">
+                {article.snippet}
+              </p>
             )}
           </motion.div>
         </div>
