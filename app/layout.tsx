@@ -1,6 +1,7 @@
 import type React from "react"
 import "./globals.css"
 import { ThemeProvider } from "@/components/theme-provider"
+import { Analytics } from '@vercel/analytics/react';
 
 export const metadata = {
   title: 'BiasBrief - Understand Media Bias',
@@ -21,6 +22,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
           <div className="container mx-auto px-2 sm:px-2 lg:px-2 max-w-7xl">
             {children}
           </div>
+          <Analytics />
         </ThemeProvider>
       </body>
     </html>

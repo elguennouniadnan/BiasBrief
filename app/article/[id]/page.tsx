@@ -10,6 +10,7 @@ import type { Article } from "@/lib/types"
 import { useTheme } from "next-themes"
 import { AuthProvider } from "@/lib/auth"
 import { motion } from "framer-motion"
+import { trackEvents } from "@/lib/analytics"
 
 export default function ArticlePage() {
   const params = useParams()
@@ -29,6 +30,7 @@ export default function ArticlePage() {
       const foundArticle = articles.find((a) => a.id === articleId)
       if (foundArticle) {
         setArticle(foundArticle)
+        trackEvents.articleView(foundArticle.id, foundArticle.titleUnbiased)
       } else {
         router.push("/")
       }

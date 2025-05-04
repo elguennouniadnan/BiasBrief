@@ -7,6 +7,7 @@ import { ArticleList } from "@/components/article-list"
 import { Pagination } from "@/components/pagination"
 import { AuthProvider } from "@/lib/auth"
 import { useTheme } from "next-themes"
+import { trackEvents } from "@/lib/analytics"
 import type { Article } from "@/lib/types"
 
 export function NewsApp() {
@@ -39,6 +40,34 @@ export function NewsApp() {
     setBookmarks(newBookmarks)
     localStorage.setItem("bookmarks", JSON.stringify(newBookmarks))
   }
+
+  const handleCategoryChange = (category: string) => {
+    setSelectedCategory(category);
+    trackEvents.categorySelect(category);
+  };
+
+  const handleBiasModeToggle = (biased: boolean) => {
+    setIsBiasedMode(biased);
+    trackEvents.toggleBiasMode(biased);
+  };
+
+  const handleThemeChange = (isDark: boolean) => {
+    setThemePreference(isDark);
+    trackEvents.themeChange(isDark ? 'dark' : 'light');
+  };
+
+  const handleSearch = (query: string) => {
+    setSearchQuery(query);
+    if (query.trim()) {
+      trackEvents.search(query);
+    }
+  };
+
+  const handleBookmarkToggle = (articleId: number) => {
+    const newIsBookmarked = !bookmarks.includes(articleId);
+    toggleBookmark(articleId);
+    trackEvents.bookmarkToggle(articleId, newIsBookmarked);
+  };
 
   // Fetch all articles from our API
   const fetchArticles = async () => {
@@ -234,9 +263,9 @@ export function NewsApp() {
       <div className="flex flex-col min-h-screen bg-background text-foreground">
         <Navbar
           searchQuery={searchQuery}
-          setSearchQuery={setSearchQuery}
+          setSearchQuery={handleSearch}
           isBiasedMode={isBiasedMode}
-          setIsBiasedMode={setIsBiasedMode}
+          setIsBiasedMode={handleBiasModeToggle}
           showBookmarksOnly={showBookmarksOnly}
           setShowBookmarksOnly={setShowBookmarksOnly}
           preferredCategories={preferredCategories}
@@ -244,7 +273,7 @@ export function NewsApp() {
           defaultBiasMode={defaultBiasMode}
           setDefaultBiasMode={setDefaultBiasMode}
           themePreference={themePreference}
-          setThemePreference={setThemePreference}
+          setThemePreference={handleThemeChange}
           fontSize={fontSize}
           setFontSize={setFontSize}
           articlesPerPage={articlesPerPage}
@@ -252,12 +281,15 @@ export function NewsApp() {
           cardSize={cardSize}
           setCardSize={setCardSize}
           sortOrder={sortOrder}
-          setSortOrder={setSortOrder}
+          setSortOrder={(order) => {
+            setSortOrder(order);
+            trackEvents.sortOrderChange(order);
+          }}
         />
         <CategoryFilter
           categories={categories}
           selectedCategory={selectedCategory}
-          setSelectedCategory={setSelectedCategory}
+          setSelectedCategory={handleCategoryChange}
         />
         <main className="flex-1 container mx-auto px-4 py-6">
           {isLoading ? (
@@ -270,7 +302,7 @@ export function NewsApp() {
                 articles={filteredArticles}
                 isBiasedMode={isBiasedMode}
                 isBookmarked={(id: number) => bookmarks.includes(id)}
-                toggleBookmark={toggleBookmark}
+                toggleBookmark={handleBookmarkToggle}
                 cardSize={cardSize}
               />
               {totalPages > 1 && (
