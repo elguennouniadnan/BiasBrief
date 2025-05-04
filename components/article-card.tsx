@@ -19,14 +19,24 @@ interface ArticleCardProps {
 }
 
 export function ArticleCard({ article, isBiasedMode, isBookmarked, toggleBookmark, cardSize }: ArticleCardProps) {
-  const title = isBiasedMode ? article.titleBiased : article.titleUnbiased
-  const categoryColor = getCategoryColor(article.category) // Using pillarName for color
+  // Use fallback pattern for title - use the available title based on the mode or default to the main title
+  const displayTitle = isBiasedMode 
+    ? (article.titleBiased || article.title) 
+    : (article.titleUnbiased || article.title);
+    
+  const categoryColor = getCategoryColor(article.category || article.section) // Use category or fallback to section
   const contentRef = useRef<HTMLDivElement>(null)
   const [contentHeight, setContentHeight] = useState<number>(0)
 
   const imageSize = cardSize === 1 ? "15rem" : "8rem"
   const isSingleColumn = cardSize === 1
   const isCompactLayout = cardSize === 4
+  
+  // Use either imageUrl or image property, whichever is available
+  const imageSource = article.imageUrl || article.image || "/placeholder.svg"
+  
+  // Use snippet or description as fallback
+  const snippetText = article.snippet || article.description
 
   useEffect(() => {
     if (!isSingleColumn || !contentRef.current) return
@@ -59,17 +69,17 @@ export function ArticleCard({ article, isBiasedMode, isBookmarked, toggleBookmar
               borderColor: `${categoryColor}30`,
             }}
           >
-            {article.category}
+            {article.category || article.section}
           </Badge>
 
           <div className={`${isSingleColumn ? 'grid grid-cols-[2fr_1fr] gap-6 flex-1' : 'flex flex-col gap-2 sm:gap-4'} h-full`}>
             <div className="flex gap-2 sm:gap-4 items-start">
               <div className="flex-1">
                 <h3 className="text-lg font-bold leading-tight group-hover:text-primary transition-colors duration-300">
-                  {title}
+                  {displayTitle}
                 </h3>
               </div>
-              {article.imageUrl && !isSingleColumn && (
+              {imageSource && !isSingleColumn && (
                 <div 
                   className="flex-shrink-0 rounded-md overflow-hidden shadow-sm"
                   style={{ 
@@ -78,7 +88,7 @@ export function ArticleCard({ article, isBiasedMode, isBookmarked, toggleBookmar
                   }}
                 >
                   <img
-                    src={article.imageUrl || "/placeholder.svg"}
+                    src={imageSource}
                     alt=""
                     className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-110"
                   />
@@ -89,12 +99,12 @@ export function ArticleCard({ article, isBiasedMode, isBookmarked, toggleBookmar
             {!isCompactLayout && (
               <div ref={contentRef} className="flex-grow">
                 <p className="text-base text-gray-500 dark:text-gray-400">
-                  {article.snippet}
+                  {snippetText}
                 </p>
               </div>
             )}
 
-            {article.imageUrl && isSingleColumn && (
+            {imageSource && isSingleColumn && (
               <div 
                 className="w-full max-w-md justify-self-end self-start rounded-md overflow-hidden shadow-sm"
                 style={{ 
@@ -104,7 +114,7 @@ export function ArticleCard({ article, isBiasedMode, isBookmarked, toggleBookmar
                 }}
               >
                 <img
-                  src={article.imageUrl || "/placeholder.svg"}
+                  src={imageSource}
                   alt=""
                   className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-110"
                 />
@@ -116,7 +126,7 @@ export function ArticleCard({ article, isBiasedMode, isBookmarked, toggleBookmar
         {isCompactLayout && (
           <CardContent className="p-2 sm:p-4 pt-1 sm:pt-2 flex-grow">
             <p className="text-base text-gray-500 dark:text-gray-400">
-              {article.snippet}
+              {snippetText}
             </p>
           </CardContent>
         )}

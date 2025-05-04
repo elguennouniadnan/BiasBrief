@@ -232,7 +232,8 @@ export function NewsApp() {
     // Apply all filters
     let filtered = allArticles.filter((article) => {
       const matchesCategory = selectedCategory === "All" || article.section === selectedCategory
-      const matchesPreferences = preferredCategories.length === 0 || preferredCategories.includes(article.category)
+      const matchesPreferences = preferredCategories.length === 0 || 
+        (article.category && preferredCategories.includes(article.category))
       const matchesBookmarks = !showBookmarksOnly || bookmarks.includes(article.id)
       return matchesCategory && matchesPreferences && matchesBookmarks
     });
@@ -285,7 +286,8 @@ export function NewsApp() {
           themePreference={themePreference}
           setThemePreference={(isDark) => {
             setTheme(isDark ? "dark" : "light");
-            trackEvents.themeChange(isDark ? 'dark' : 'light');
+            // Using the toggleTheme method which exists in the trackEvents API
+            trackEvents.toggleTheme(isDark ? 'dark' : 'light');
           }}
           fontSize={fontSize}
           setFontSize={setFontSize}

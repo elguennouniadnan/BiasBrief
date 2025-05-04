@@ -41,7 +41,9 @@ export default function ArticlePage() {
       const foundArticle = articles.find((a) => a.id === articleId)
       if (foundArticle) {
         setArticle(foundArticle)
-        trackEvents.articleView(foundArticle.id, foundArticle.titleUnbiased)
+        // Use fallback pattern for title in articleView tracking
+        const displayTitle = foundArticle.titleUnbiased || foundArticle.title || 'Article'
+        trackEvents.articleView(foundArticle.id, displayTitle, foundArticle.source, foundArticle.category);
       } else {
         router.push("/")
       }
@@ -155,7 +157,7 @@ export default function ArticlePage() {
   }
 
   const title = isBiasedMode ? article.titleBiased : article.titleUnbiased
-  const categoryColor = getCategoryColor(article.category)
+  const categoryColor = getCategoryColor(article.category || article.section || "Uncategorized")
   const readingTime = getReadingTime(article?.body?.replace(/<[^>]*>/g, '') || '')
 
   return (
@@ -209,7 +211,7 @@ export default function ArticlePage() {
                   borderColor: `${categoryColor}30`,
                 }}
               >
-                {article.category}
+                {article.category || article.section || "Uncategorized"}
               </Badge>
               <div className="flex items-center gap-2">
                 <Button
