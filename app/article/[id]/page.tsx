@@ -5,7 +5,6 @@ import { useParams, useRouter } from "next/navigation"
 import { ArrowLeft, Bookmark, Share2, Clock } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
-import { mockArticles } from "@/lib/mock-data"
 import { formatDate, getCategoryColor, getReadingTime } from "@/lib/utils"
 import type { Article } from "@/lib/types"
 import { useTheme } from "next-themes"
@@ -22,11 +21,17 @@ export default function ArticlePage() {
   const [fontSize, setFontSize] = useState("medium")
 
   useEffect(() => {
-    // Get article by ID
+    // Get article by ID from localStorage
     const articleId = Number(params.id)
-    const foundArticle = mockArticles.find((a) => a.id === articleId)
-    if (foundArticle) {
-      setArticle(foundArticle)
+    const savedArticles = localStorage.getItem("articles")
+    if (savedArticles) {
+      const articles: Article[] = JSON.parse(savedArticles)
+      const foundArticle = articles.find((a) => a.id === articleId)
+      if (foundArticle) {
+        setArticle(foundArticle)
+      } else {
+        router.push("/")
+      }
     } else {
       router.push("/")
     }
@@ -65,9 +70,6 @@ export default function ArticlePage() {
     setIsBookmarked(!isBookmarked)
   }
 
-  // We don't need fontSizeClass here anymore since we're setting it at the document level
-  // in the NewsApp component
-
   if (!article) {
     return (
       <div className="flex items-center justify-center min-h-screen">
@@ -78,7 +80,7 @@ export default function ArticlePage() {
 
   const title = isBiasedMode ? article.titleBiased : article.titleUnbiased
   const categoryColor = getCategoryColor(article.category)
-  const readingTime = getReadingTime(article.content)
+  const readingTime = getReadingTime(article.body?.replace(/<[^>]*>/g, '') || article.content)
 
   return (
     <AuthProvider>
@@ -169,11 +171,15 @@ export default function ArticlePage() {
             transition={{ duration: 0.5, delay: 0.2 }}
             className="prose dark:prose-invert max-w-none"
           >
-            {article.content.split("\n\n").map((paragraph, index) => (
-              <p key={index} className="mb-4 leading-relaxed">
-                {paragraph}
-              </p>
-            ))}
+            {article.body ? (
+              <div dangerouslySetInnerHTML={{ __html: article.body }} />
+            ) : (
+              article.content.split("\n\n").map((paragraph, index) => (
+                <p key={index} className="mb-4 leading-relaxed">
+                  {paragraph}
+                </p>
+              ))
+            )}
           </motion.div>
         </div>
       </div>

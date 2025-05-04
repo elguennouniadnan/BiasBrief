@@ -52,6 +52,7 @@ export function NewsApp() {
         params.append('q', searchQuery)
       }
       
+      console.log('Fetching articles with params:', params.toString())
       const response = await fetch(`/api/news?${params.toString()}`)
       
       if (!response.ok) {
@@ -59,9 +60,11 @@ export function NewsApp() {
       }
       
       const data = await response.json()
+      console.log("API response:", data)
       
       if (data.articles) {
         setAllArticles(data.articles)
+        localStorage.setItem("articles", JSON.stringify(data.articles))
         if (data.categories) {
           setCategories(data.categories)
         }
@@ -121,8 +124,17 @@ export function NewsApp() {
 
   // Fetch articles when component mounts or when search query changes
   useEffect(() => {
-    if (mounted) {
+    if (mounted && (!localStorage.getItem("articles") || searchQuery)) {
       fetchArticles()
+    } else if (mounted && localStorage.getItem("articles")) {
+      const savedArticles = JSON.parse(localStorage.getItem("articles") || "[]") as Article[]
+      setAllArticles(savedArticles)
+      
+      // Set categories from saved articles
+      const sections = ['All', ...Array.from(new Set(savedArticles.map(a => a.section)))]
+      setCategories(sections)
+      
+      setIsLoading(false)
     }
   }, [mounted, searchQuery])
 

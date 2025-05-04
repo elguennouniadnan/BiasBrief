@@ -25,7 +25,7 @@ export async function GET(request: Request) {
     const params = new URLSearchParams();
     params.append('api-key', apiKey);
     params.append('page-size', '200');
-    params.append('show-fields', 'headline,trailText,thumbnail,publication');
+    params.append('show-fields', 'headline,trailText,body,thumbnail,publication,lastModified');
     params.append('order-by', 'newest');
     params.append('show-references', 'all');
     
@@ -55,20 +55,35 @@ export async function GET(request: Request) {
         snippet: item.fields?.trailText || 'No snippet available',
         date: item.webPublicationDate,
         imageUrl: item.fields?.thumbnail || '/placeholder.svg',
-        source: item.fields?.publication || 'The Guardian'
+        source: item.fields?.publication || 'The Guardian',
+        body: item.fields?.body,
+        references: item.references || [],
+        tags: item.tags || [],
+        webUrl: item.webUrl,
+        isBookmarked: false // Default to false, can be updated later
       };
     });
 
     // Extract unique sections (for tabs) from the response
     const uniqueSections = ['All', ...Array.from(new Set(articles.map(article => article.section)))];
     
-    return NextResponse.json({
+    const responseData = {
       articles,
-      categories: uniqueSections, // This will be used for the tabs
+      categories: uniqueSections,
+      total: data.response.total,
+      currentPage: data.response.currentPage,
+      pages: data.response.pages
+    };
+
+    console.log('Transformed API Response:', {
+      articlesCount: articles.length,
+      categories: uniqueSections,
       total: data.response.total,
       currentPage: data.response.currentPage,
       pages: data.response.pages
     });
+    
+    return NextResponse.json(responseData);
     
   } catch (error) {
     console.error('Error fetching data from The Guardian API:', error);

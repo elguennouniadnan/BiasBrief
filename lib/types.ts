@@ -9,4 +9,5 @@ export interface Article {
   date: string
   imageUrl?: string
   source: string
+  body?: string
 }
