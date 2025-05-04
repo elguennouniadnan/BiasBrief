@@ -50,34 +50,39 @@ export async function GET(request: Request) {
     const data = await response.json();
     
     // Transform the data to match our Article type
-    const articles: Article[] = data.response.results.map((item: any, index: number) => {
-      // Generate a unique ID by combining the current timestamp and index
-      const timestamp = Date.now();
-      const id = parseInt(`${Math.floor(timestamp / 1000)}${index.toString().padStart(3, '0')}`);
-      
-      // Extract image URL from HTML content if available, or fallback to thumbnail
-      const mainImageUrl = item.fields?.main ? extractImageUrl(item.fields.main) : null;
-      const bodyImageUrl = item.fields?.bodyImage ? extractImageUrl(item.fields.bodyImage) : null;
-      const imageUrl = mainImageUrl || bodyImageUrl || item.fields?.thumbnail || '/placeholder.svg';
-      
-      return {
-        id,
-        category: item.pillarName || 'Other', // Use pillarName for colors/badges
-        section: item.sectionName, // Use sectionName for tabs
-        titleUnbiased: item.fields?.headline || item.webTitle,
-        titleBiased: `BREAKING: ${item.fields?.headline || item.webTitle}!`,
-        content: item.webTitle,
-        snippet: item.fields?.trailText || 'No snippet available',
-        date: item.webPublicationDate,
-        imageUrl,
-        source: item.fields?.publication || 'The Guardian',
-        body: item.fields?.body,
-        references: item.references || [],
-        tags: item.tags || [],
-        webUrl: item.webUrl,
-        isBookmarked: false // Default to false, can be updated later
-      };
-    });
+    const articles: Article[] = data.response.results
+      .map((item: any, index: number) => {
+        // Generate a unique ID by combining the current timestamp and index
+        const timestamp = Date.now();
+        const id = parseInt(`${Math.floor(timestamp / 1000)}${index.toString().padStart(3, '0')}`);
+        
+        // Extract image URL from HTML content if available, or fallback to thumbnail
+        const mainImageUrl = item.fields?.main ? extractImageUrl(item.fields.main) : null;
+        const bodyImageUrl = item.fields?.bodyImage ? extractImageUrl(item.fields.bodyImage) : null;
+        const imageUrl = mainImageUrl || bodyImageUrl || item.fields?.thumbnail || null;
+        
+        // Skip articles without images by returning null
+        if (!imageUrl) return null;
+        
+        return {
+          id,
+          category: item.pillarName || 'Other',
+          section: item.sectionName,
+          titleUnbiased: item.fields?.headline || item.webTitle,
+          titleBiased: `BREAKING: ${item.fields?.headline || item.webTitle}!`,
+          content: item.webTitle,
+          snippet: item.fields?.trailText || 'No snippet available',
+          date: item.webPublicationDate,
+          imageUrl,
+          source: item.fields?.publication || 'The Guardian',
+          body: item.fields?.body,
+          references: item.references || [],
+          tags: item.tags || [],
+          webUrl: item.webUrl,
+          isBookmarked: false
+        };
+      })
+      .filter((article: Article | null): article is Article => article !== null); // Type-safe filter of null articles
 
     // Extract unique sections (for tabs) from the response
     const uniqueSections = ['All', ...Array.from(new Set(articles.map(article => article.section)))];
