@@ -36,7 +36,7 @@ export async function GET(request: Request) {
     const params = new URLSearchParams();
     params.append('api-key', apiKey);
     // Limit articles for Safari to prevent storage quota issues
-    params.append('page-size', isSafari ? '180' : '200');
+    params.append('page-size', isSafari ? '170' : '200');
     params.append('show-fields', 'headline,trailText,body,thumbnail,main,bodyImage,publication');
     params.append('order-by', 'newest');
     
