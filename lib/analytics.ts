@@ -21,5 +21,8 @@ export const trackEvents = {
   },
   sortOrderChange: (order: 'new-to-old' | 'old-to-new') => {
     track('sort_order_change', { order });
+  },
+  share: (method: 'native' | 'clipboard' | 'manual', articleId: number) => {
+    track('share', { method, articleId });
   }
 };

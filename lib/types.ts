@@ -10,4 +10,5 @@ export interface Article {
   imageUrl?: string
   source: string
   body?: string
+  webUrl: string
 }

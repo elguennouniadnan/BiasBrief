@@ -11,6 +11,7 @@ import { useTheme } from "next-themes"
 import { AuthProvider } from "@/lib/auth"
 import { motion } from "framer-motion"
 import { trackEvents } from "@/lib/analytics"
+import { useToast } from "@/components/ui/use-toast"
 
 export default function ArticlePage() {
   const params = useParams()
@@ -20,6 +21,7 @@ export default function ArticlePage() {
   const [isBiasedMode, setIsBiasedMode] = useState(false)
   const [isBookmarked, setIsBookmarked] = useState(false)
   const [fontSize, setFontSize] = useState("medium")
+  const { toast } = useToast()
 
   useEffect(() => {
     // Get article by ID from localStorage
@@ -71,6 +73,74 @@ export default function ArticlePage() {
     localStorage.setItem("bookmarks", JSON.stringify(bookmarks))
     setIsBookmarked(!isBookmarked)
   }
+
+  const canShare = () => {
+    try {
+      // Check if we're on HTTPS (Web Share API requirement)
+      const isSecure = window.location.protocol === 'https:';
+      return isSecure && typeof navigator.share !== 'undefined';
+    } catch {
+      return false;
+    }
+  };
+
+  const handleShare = async () => {
+    if (!article) return;
+
+    const shareData = {
+      title: isBiasedMode ? article.titleBiased : article.titleUnbiased,
+      text: article.snippet,
+      url: article.webUrl
+    };
+
+    try {
+      // Since we're in development and using IP address, Web Share API won't work
+      // So we'll directly show the URL for copying
+      if (!window.location.protocol.includes('https')) {
+        toast({
+          title: "Copy this link to share",
+          description: article.webUrl,
+          duration: 6000,
+        });
+        trackEvents.share('manual', article.id);
+        return;
+      }
+
+      const hasNativeShare = canShare();
+      if (hasNativeShare) {
+        await navigator.share(shareData);
+        trackEvents.share('native', article.id);
+      } else if (navigator.clipboard && typeof navigator.clipboard.writeText === 'function') {
+        await navigator.clipboard.writeText(article.webUrl);
+        toast({
+          title: "Link copied to clipboard",
+          description: "You can now share it with others",
+          duration: 3000,
+        });
+        trackEvents.share('clipboard', article.id);
+      } else {
+        toast({
+          title: "Copy this link to share",
+          description: article.webUrl,
+          duration: 6000,
+        });
+        trackEvents.share('manual', article.id);
+      }
+    } catch (err: unknown) {
+      if (err instanceof Error) {
+        if (err.name === 'AbortError') {
+          return;
+        }
+        // Show the URL for any other error
+        toast({
+          title: "Copy this link to share",
+          description: article.webUrl,
+          duration: 6000,
+          variant: err.name === 'NotAllowedError' ? 'default' : 'destructive',
+        });
+      }
+    }
+  };
 
   if (!article) {
     return (
@@ -135,6 +205,7 @@ export default function ArticlePage() {
                 <Button
                   variant="ghost"
                   size="icon"
+                  onClick={handleShare}
                   className="hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors"
                 >
                   <Share2 className="h-5 w-5" />
