@@ -28,7 +28,7 @@ export function AuthModal({ isOpen, onClose, defaultTab = "sign-in" }: AuthModal
         </DialogHeader>
 
         <Tabs
-          defaultValue={activeTab}
+          value={activeTab}
           onValueChange={(value) => setActiveTab(value as "sign-in" | "sign-up")}
           className="mt-4"
         >
@@ -38,7 +38,10 @@ export function AuthModal({ isOpen, onClose, defaultTab = "sign-in" }: AuthModal
           </TabsList>
 
           <TabsContent value="sign-in" className="mt-4">
-            <SignInForm onSuccess={onClose} />
+            <SignInForm 
+              onSuccess={onClose} 
+              onSignUpClick={() => setActiveTab("sign-up")} 
+            />
           </TabsContent>
 
           <TabsContent value="sign-up" className="mt-4">

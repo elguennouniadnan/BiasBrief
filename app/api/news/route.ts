@@ -10,11 +10,20 @@ export async function GET(request: Request) {
   try {
     // Fetch data from The Guardian API
     const apiKey = process.env.GUARDIAN_API_KEY;
+    
+    if (!apiKey) {
+      console.error('GUARDIAN_API_KEY environment variable is not set');
+      return NextResponse.json(
+        { error: 'API configuration error' },
+        { status: 500 }
+      );
+    }
+
     let guardianApiUrl = 'https://content.guardianapis.com/search?';
     
     // Build the query parameters
     const params = new URLSearchParams();
-    params.append('api-key', apiKey || '');
+    params.append('api-key', apiKey);
     params.append('page-size', '200');
     params.append('show-fields', 'headline,trailText,thumbnail,publication');
     params.append('order-by', 'newest');

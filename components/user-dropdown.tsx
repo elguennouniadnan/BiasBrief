@@ -49,7 +49,7 @@ export function UserDropdown({ openSettings }: UserDropdownProps) {
           <Button
             size="sm"
             onClick={() => handleOpenAuthModal("sign-up")}
-            className="bg-primary hover:bg-primary/90 transition-colors"
+            className="bg-primary hover:bg-primary/90 transition-colors md:block hidden"
           >
             Sign Up
           </Button>

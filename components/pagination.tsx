@@ -11,6 +11,11 @@ interface PaginationProps {
 }
 
 export function Pagination({ currentPage, totalPages, onPageChange }: PaginationProps) {
+  const handlePageChange = (page: number) => {
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+    onPageChange(page);
+  };
+
   // Generate page numbers to display
   const getPageNumbers = () => {
     const pages = []
@@ -68,7 +73,7 @@ export function Pagination({ currentPage, totalPages, onPageChange }: Pagination
       <Button
         variant="outline"
         size="icon"
-        onClick={() => onPageChange(currentPage - 1)}
+        onClick={() => handlePageChange(currentPage - 1)}
         disabled={currentPage === 1}
         className="hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors"
       >
@@ -91,7 +96,7 @@ export function Pagination({ currentPage, totalPages, onPageChange }: Pagination
             key={pageNumber}
             variant={pageNumber === currentPage ? "default" : "outline"}
             size="icon"
-            onClick={() => onPageChange(pageNumber)}
+            onClick={() => handlePageChange(pageNumber)}
             className={`w-9 h-9 relative ${
               pageNumber === currentPage ? "bg-primary hover:bg-primary/90" : "hover:bg-gray-100 dark:hover:bg-gray-800"
             }`}
@@ -112,7 +117,7 @@ export function Pagination({ currentPage, totalPages, onPageChange }: Pagination
       <Button
         variant="outline"
         size="icon"
-        onClick={() => onPageChange(currentPage + 1)}
+        onClick={() => handlePageChange(currentPage + 1)}
         disabled={currentPage === totalPages}
         className="hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors"
       >

@@ -19,9 +19,10 @@ type FormValues = z.infer<typeof formSchema>
 
 interface SignInFormProps {
   onSuccess: () => void
+  onSignUpClick?: () => void
 }
 
-export function SignInForm({ onSuccess }: SignInFormProps) {
+export function SignInForm({ onSuccess, onSignUpClick }: SignInFormProps) {
   const { signIn, isLoading } = useAuth()
   const [error, setError] = useState<string | null>(null)
 
@@ -87,6 +88,18 @@ export function SignInForm({ onSuccess }: SignInFormProps) {
             "Sign In"
           )}
         </Button>
+
+        <div className="mt-4 text-center md:hidden">
+          <div className="text-sm text-muted-foreground mb-2">Don't have an account?</div>
+          <Button
+            type="button"
+            variant="outline"
+            className="w-full"
+            onClick={onSignUpClick}
+          >
+            Sign Up
+          </Button>
+        </div>
       </form>
     </Form>
   )
