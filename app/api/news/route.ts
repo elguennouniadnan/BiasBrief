@@ -1,6 +1,16 @@
 import { NextResponse } from 'next/server';
 import type { Article } from '@/lib/types';
 
+// Helper function to extract image URL from HTML string
+function extractImageUrl(htmlString: string): string | null {
+  try {
+    const match = htmlString.match(/src="([^"]+)"/);
+    return match ? match[1] : null;
+  } catch {
+    return null;
+  }
+}
+
 export async function GET(request: Request) {
   const { searchParams } = new URL(request.url);
   
@@ -25,7 +35,7 @@ export async function GET(request: Request) {
     const params = new URLSearchParams();
     params.append('api-key', apiKey);
     params.append('page-size', '200');
-    params.append('show-fields', 'headline,trailText,body,thumbnail,publication,lastModified');
+    params.append('show-fields', 'headline,trailText,body,thumbnail,main,bodyImage,publication,lastModified');
     params.append('order-by', 'newest');
     params.append('show-references', 'all');
     
@@ -45,6 +55,11 @@ export async function GET(request: Request) {
       const timestamp = Date.now();
       const id = parseInt(`${Math.floor(timestamp / 1000)}${index.toString().padStart(3, '0')}`);
       
+      // Extract image URL from HTML content if available, or fallback to thumbnail
+      const mainImageUrl = item.fields?.main ? extractImageUrl(item.fields.main) : null;
+      const bodyImageUrl = item.fields?.bodyImage ? extractImageUrl(item.fields.bodyImage) : null;
+      const imageUrl = mainImageUrl || bodyImageUrl || item.fields?.thumbnail || '/placeholder.svg';
+      
       return {
         id,
         category: item.pillarName || 'Other', // Use pillarName for colors/badges
@@ -54,7 +69,7 @@ export async function GET(request: Request) {
         content: item.webTitle,
         snippet: item.fields?.trailText || 'No snippet available',
         date: item.webPublicationDate,
-        imageUrl: item.fields?.thumbnail || '/placeholder.svg',
+        imageUrl,
         source: item.fields?.publication || 'The Guardian',
         body: item.fields?.body,
         references: item.references || [],
