@@ -1,109 +1,49 @@
 import { NextResponse } from 'next/server';
+import { getFirestore, collection, getDocs } from 'firebase/firestore';
+import { initializeApp } from 'firebase/app';
 import type { Article } from '@/lib/types';
 
-// Helper function to extract image URL from HTML string
-function extractImageUrl(htmlString: string): string | null {
-  try {
-    const match = htmlString.match(/src="([^"]+)"/);
-    return match ? match[1] : null;
-  } catch {
-    return null;
-  }
-}
+// Firebase configuration
+const firebaseConfig = {
+  apiKey: process.env.FIREBASE_API_KEY,
+  authDomain: process.env.FIREBASE_AUTH_DOMAIN,
+  projectId: process.env.FIREBASE_PROJECT_ID,
+  storageBucket: process.env.FIREBASE_STORAGE_BUCKET,
+  messagingSenderId: process.env.FIREBASE_MESSAGING_SENDER_ID,
+  appId: process.env.FIREBASE_APP_ID,
+};
+
+// Initialize Firebase
+const app = initializeApp(firebaseConfig);
+const db = getFirestore(app);
 
 export async function GET(request: Request) {
-  const { searchParams } = new URL(request.url);
-  const query = searchParams.get('q') || '';
-  
-  // Check if the request is coming from Safari
-  const userAgent = request.headers.get('user-agent') || '';
-  const isSafari = userAgent.includes('Safari') && !userAgent.includes('Chrome');
-  
   try {
-    const apiKey = process.env.GUARDIAN_API_KEY;
-    
-    if (!apiKey) {
-      console.error('GUARDIAN_API_KEY environment variable is not set');
-      return NextResponse.json(
-        { error: 'API configuration error' },
-        { status: 500 }
-      );
+    const articlesCollection = collection(db, 'articles');
+    const articlesSnapshot = await getDocs(articlesCollection);
+    let articles = articlesSnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+
+    // Limit to 170 most recent articles for Safari
+    const userAgent = request.headers.get('user-agent') || '';
+    const isSafari = userAgent.includes('Safari') && !userAgent.includes('Chrome');
+    if (isSafari) {
+      articles = articles.slice(0, 170);
     }
 
-    let guardianApiUrl = 'https://content.guardianapis.com/search?';
-    
-    // Build the query parameters
-    const params = new URLSearchParams();
-    params.append('api-key', apiKey);
-    // Limit articles for Safari to prevent storage quota issues
-    params.append('page-size', isSafari ? '170' : '200');
-    params.append('show-fields', 'headline,trailText,body,thumbnail,main,bodyImage,publication');
-    params.append('order-by', 'newest');
-    
-    // Add search query if provided
-    if (query) {
-      params.append('q', query);
-    }
-    
-    guardianApiUrl += params.toString();
-    
-    const response = await fetch(guardianApiUrl);
-    const data = await response.json();
-    
-    // Transform the data to match our Article type
-    const articles: Article[] = data.response.results
-      .map((item: any, index: number) => {
-        // Generate a unique ID by combining the current timestamp and index
-        const timestamp = Date.now();
-        const id = parseInt(`${Math.floor(timestamp / 1000)}${index.toString().padStart(3, '0')}`);
-        
-        // Extract image URL from HTML content if available, or fallback to thumbnail
-        const mainImageUrl = item.fields?.main ? extractImageUrl(item.fields.main) : null;
-        const bodyImageUrl = item.fields?.bodyImage ? extractImageUrl(item.fields.bodyImage) : null;
-        const imageUrl = mainImageUrl || bodyImageUrl || item.fields?.thumbnail || null;
-        
-        // Skip articles without images by returning null
-        if (!imageUrl) return null;
-        
-        return {
-          id,
-          category: item.pillarName || 'Other',
-          section: item.sectionName,
-          titleUnbiased: item.fields?.headline || item.webTitle,
-          titleBiased: `BREAKING: ${item.fields?.headline || item.webTitle}!`,
-          snippet: item.fields?.trailText || 'No snippet available',
-          body: item.fields?.body || item.webTitle,
-          date: item.webPublicationDate,
-          imageUrl,
-          source: item.fields?.publication || 'The Guardian',
-          webUrl: item.webUrl
-        };
-      })
-      .filter((article: Article | null): article is Article => article !== null);
+    console.log('Categories from articles:', articles.map(article => article.section || 'Uncategorized'));
 
-    // Extract unique sections (for tabs) from the response
-    const uniqueSections = ['All', ...Array.from(new Set(articles.map(article => article.section)))];
-    
+    // Extract unique sections (categories) from the articles
+    const uniqueSections = ['All', ...Array.from(new Set(articles.map(article => article.section)))]
+
     const responseData = {
       articles,
       categories: uniqueSections,
-      total: data.response.total,
-      currentPage: data.response.currentPage,
-      pages: data.response.pages
+      total: articles.length,
     };
 
-    console.log('Transformed API Response:', {
-      articlesCount: articles.length,
-      categories: uniqueSections,
-      total: data.response.total,
-      currentPage: data.response.currentPage,
-      pages: data.response.pages
-    });
-    
     return NextResponse.json(responseData);
-    
   } catch (error) {
-    console.error('Error fetching data from The Guardian API:', error);
+    console.error('Error fetching data from Firestore:', error);
     return NextResponse.json(
       { error: 'Failed to fetch articles' },
       { status: 500 }

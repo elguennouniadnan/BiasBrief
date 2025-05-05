@@ -34,21 +34,20 @@ export default function ArticlePage() {
 
   useEffect(() => {
     // Get article by ID from localStorage
-    const articleId = Number(params.id)
-    const savedArticles = localStorage.getItem("articles")
+    const articleId = params.id; // Use the id as a string
+    const savedArticles = localStorage.getItem("articles");
     if (savedArticles) {
-      const articles: Article[] = JSON.parse(savedArticles)
-      const foundArticle = articles.find((a) => a.id === articleId)
+      const articles: Article[] = JSON.parse(savedArticles);
+      const foundArticle = articles.find((a) => a.id === articleId); // Compare as string
       if (foundArticle) {
-        setArticle(foundArticle)
-        // Use fallback pattern for title in articleView tracking
-        const displayTitle = foundArticle.titleUnbiased || foundArticle.title || 'Article'
+        setArticle(foundArticle);
+        const displayTitle = foundArticle.titleUnbiased || foundArticle.title || 'Article';
         trackEvents.articleView(foundArticle.id, displayTitle, foundArticle.source, foundArticle.category);
       } else {
-        router.push("/")
+        router.push("/");
       }
     } else {
-      router.push("/")
+      router.push("/");
     }
 
     // Load theme preference from localStorage
