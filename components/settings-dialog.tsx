@@ -229,7 +229,7 @@ export function SettingsDialog({
                 </Button>
               </div>
 
-              <ScrollArea className="h-[140px] rounded-md border p-4">
+              <ScrollArea className="h-[140px] border p-3 rounded-sm">
                 <div className="space-y-4">
                   {categories
                     .filter((category) => category !== "All")

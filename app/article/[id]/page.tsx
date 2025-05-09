@@ -254,16 +254,13 @@ export default function ArticlePage() {
               </div>
             </div>
 
-            {article.imageUrl && (
+            {article.imageHtml && (
               <div className="mb-6 overflow-hidden rounded-lg shadow-md">
-                <img
-                  src={article.imageUrl || "/placeholder.svg"}
-                  alt=""
-                  className="w-full h-64 md:h-96 object-cover hover:scale-105 transition-transform duration-700"
-                />
+                <div dangerouslySetInnerHTML={{ __html: article.imageHtml }} />
               </div>
             )}
           </motion.div>
+
 
           <motion.div
             initial={{ opacity: 0 }}
