@@ -1,5 +1,5 @@
 import { NextResponse } from 'next/server';
-import { getFirestore, collection, getDocs } from 'firebase/firestore';
+import { getFirestore, collection, getDocs, query, orderBy, limit, startAfter } from 'firebase/firestore';
 import { initializeApp } from 'firebase/app';
 import type { Article } from '@/lib/types';
 
@@ -29,19 +29,33 @@ const db = getFirestore(app);
 
 export async function GET(request: Request) {
   try {
+    const { searchParams } = new URL(request.url);
+    const page = parseInt(searchParams.get('page') || '1', 10);
+    const pageSize = parseInt(searchParams.get('pageSize') || '15', 10);
     const articlesCollection = collection(db, 'articles');
-    const articlesSnapshot = await getDocs(articlesCollection);
-    let articles = articlesSnapshot.docs.map(doc => ({ id: doc.id, ...(doc.data() as any) }));
 
-    // const userAgent = request.headers.get('user-agent');
-    // const isSafari = userAgent && userAgent.includes('Safari') && !userAgent.includes('Chrome');
-    // if (isSafari) {
-    //   articles = articles.slice(0, 170); // Limit to 10 articles for Safari users
-    // } else {
-    //   articles = articles.slice(0, 200); // Limit to 20 articles for other browsers
-    // }
+    // Get all docs to determine total count (for pagination UI)
+    const allSnapshot = await getDocs(articlesCollection);
+    const totalCount = allSnapshot.size;
 
-    return NextResponse.json({ articles });
+    // Sort by date descending (default)
+    let q = query(articlesCollection, orderBy('date', 'desc'), limit(pageSize));
+
+    // For pages after the first, use startAfter
+    if (page > 1) {
+      // Find the last doc of the previous page
+      const prevDocs = query(articlesCollection, orderBy('date', 'desc'), limit((page - 1) * pageSize));
+      const prevSnapshot = await getDocs(prevDocs);
+      const lastVisible = prevSnapshot.docs[prevSnapshot.docs.length - 1];
+      if (lastVisible) {
+        q = query(articlesCollection, orderBy('date', 'desc'), startAfter(lastVisible), limit(pageSize));
+      }
+    }
+
+    const articlesSnapshot = await getDocs(q);
+    const articles = articlesSnapshot.docs.map(doc => ({ id: doc.id, ...(doc.data() as any) }));
+
+    return NextResponse.json({ articles, totalCount });
   } catch (error) {
     console.error('Error fetching articles:', error);
     return NextResponse.error();

@@ -21,8 +21,6 @@ interface NavbarProps {
   setShowBookmarksOnly: (show: boolean) => void
   preferredCategories: string[]
   setPreferredCategories: (categories: string[]) => void
-  defaultBiasMode: boolean
-  setDefaultBiasMode: (biased: boolean) => void
   themePreference: boolean
   setThemePreference: (dark: boolean) => void
   fontSize: string
@@ -42,8 +40,6 @@ export function Navbar({
   setShowBookmarksOnly,
   preferredCategories,
   setPreferredCategories,
-  defaultBiasMode,
-  setDefaultBiasMode,
   themePreference,
   setThemePreference,
   fontSize,
@@ -309,8 +305,8 @@ export function Navbar({
         categories={["Politics", "Technology", "Health", "Sports", "Entertainment", "World News"]}
         preferredCategories={preferredCategories}
         setPreferredCategories={setPreferredCategories}
-        defaultBiasMode={defaultBiasMode}
-        setDefaultBiasMode={setDefaultBiasMode}
+        defaultBiasMode={false}
+        setDefaultBiasMode={() => {}}
         themePreference={theme === "dark"}
         setThemePreference={setThemePreference}
         fontSize={fontSize}

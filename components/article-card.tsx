@@ -58,14 +58,11 @@ export function ArticleCard({ article, isBookmarked, toggleBookmark, cardSize }:
       setShowUnbiased(false)
       return;
     }
-    // If titleUnbiased or local unbiasedTitle already exists, just show it after a delay
+    // If unbiasedTitle is already set (from previous visit or after unbiasing), just show it
     if ((unbiasedTitle && unbiasedTitle.trim() !== "") || (article.titleUnbiased && article.titleUnbiased.trim() !== "")) {
-      setLoadingUnbiased(true)
-      // setTimeout(() => {
-        setUnbiasedTitle(unbiasedTitle || article.titleUnbiased!)
-        setShowUnbiased(true)
-        setLoadingUnbiased(false)
-      // }, 3000)
+      setUnbiasedTitle(article.titleUnbiased || article.title)
+      setShowUnbiased(true)
+      setLoadingUnbiased(false)
       return;
     }
     setLoadingUnbiased(true)

@@ -14,7 +14,6 @@ export function NewsApp() {
   const { theme, setTheme } = useTheme()
   const [mounted, setMounted] = useState(false)
   const [themePreference, setThemePreference] = useState(() => {
-    // Initialize with system preference if no theme is set
     if (typeof window !== 'undefined') {
       const savedTheme = localStorage.getItem("theme")
       return savedTheme ? savedTheme === 'dark' : theme === 'dark'
@@ -22,12 +21,10 @@ export function NewsApp() {
     return false
   })
 
-  // Effect to handle mounting state and theme sync
   useEffect(() => {
     setMounted(true)
   }, [])
 
-  // Update themePreference when theme changes
   useEffect(() => {
     if (mounted) {
       setThemePreference(theme === 'dark')
@@ -48,9 +45,10 @@ export function NewsApp() {
   const [allArticles, setAllArticles] = useState<Article[]>([])
   const [categories, setCategories] = useState<string[]>(["All"])
   const [isLoading, setIsLoading] = useState(true)
-  const [sortOrder, setSortOrder] = useState<'new-to-old' | 'old-to-new'>('new-to-old');
+  const [sortOrder, setSortOrder] = useState<'new-to-old' | 'old-to-new'>('new-to-old')
+  const [totalPages, setTotalPages] = useState(1)
+  const [totalCount, setTotalCount] = useState(0)
 
-  // Toggle bookmark status for an article
   const toggleBookmark = (articleId: number) => {
     const newBookmarks = bookmarks.includes(articleId)
       ? bookmarks.filter((id) => id !== articleId)
@@ -83,38 +81,27 @@ export function NewsApp() {
     trackEvents.bookmarkToggle(articleId, newIsBookmarked);
   };
 
-  // Fetch all articles from our API
   const fetchArticles = async () => {
     try {
       setIsLoading(true)
-      
-      // Build query parameters
       const params = new URLSearchParams()
-      
-      if (searchQuery) {
-        params.append('q', searchQuery)
-      }
-      
-      console.log('Fetching articles with params:', params.toString())
+      if (searchQuery) params.append('q', searchQuery)
+      params.append('page', String(currentPage))
+      params.append('pageSize', String(articlesPerPage))
       const response = await fetch(`/api/news?${params.toString()}`)
-      
-      if (!response.ok) {
-        throw new Error('Failed to fetch articles')
-      }
-      
+      if (!response.ok) throw new Error('Failed to fetch articles')
       const data = await response.json()
-      console.log("API response:", data)
-      
-      if (data.articles) {
-        setAllArticles(data.articles)
-        if (data.categories && data.categories.length > 0) {
-          setCategories(data.categories)
-        } else {
-          const sections = ['All', ...Array.from(new Set(data.articles.map(a => a.section)))]
-          setCategories(sections)
-        }
+      setAllArticles(data.articles)
+      setTotalCount(data.totalCount)
+      setTotalPages(Math.max(1, Math.ceil(data.totalCount / articlesPerPage)))
+      // Log articles returned from Firestore
+      console.log('Articles returned from Firestore:', data.articles)
+      if (Array.isArray(data.categories) && data.categories.every((c: unknown): c is string => typeof c === 'string')) {
+        setCategories(data.categories as string[])
+      } else if (data.articles) {
+        const sections = ['All', ...Array.from(new Set(data.articles.map((a: any) => String(a.section || ''))))] as string[]
+        setCategories(sections)
       }
-      
     } catch (error) {
       console.error('Error fetching articles:', error)
     } finally {
@@ -122,7 +109,6 @@ export function NewsApp() {
     }
   }
 
-  // Initial load of preferences from localStorage
   useEffect(() => {
     if (typeof window !== "undefined") {
       const biasMode = localStorage.getItem("biasMode") === "true"
@@ -142,7 +128,15 @@ export function NewsApp() {
 
       const savedPreferredCategories = localStorage.getItem("preferredCategories")
       if (savedPreferredCategories) {
-        setPreferredCategories(JSON.parse(savedPreferredCategories))
+        let parsed: unknown
+        try {
+          parsed = JSON.parse(savedPreferredCategories)
+        } catch {
+          parsed = []
+        }
+        if (Array.isArray(parsed) && parsed.every((c: unknown): c is string => typeof c === 'string')) {
+          setPreferredCategories(parsed)
+        }
       }
 
       const savedDefaultBiasMode = localStorage.getItem("defaultBiasMode")
@@ -171,23 +165,12 @@ export function NewsApp() {
     }
   }, [])
 
-  // Fetch articles when component mounts or when search query changes
   useEffect(() => {
-    if (mounted && (!localStorage.getItem("articles") || searchQuery)) {
+    if (mounted) {
       fetchArticles()
-    } else if (mounted && localStorage.getItem("articles")) {
-      const savedArticles = JSON.parse(localStorage.getItem("articles") || "[]") as Article[]
-      setAllArticles(savedArticles)
-      
-      // Set categories from saved articles
-      const sections = ['All', ...Array.from(new Set(savedArticles.map(a => a.section)))]
-      setCategories(sections)
-      
-      setIsLoading(false)
     }
-  }, [mounted, searchQuery])
+  }, [mounted, searchQuery, currentPage, articlesPerPage])
 
-  // Save preferences to localStorage
   useEffect(() => {
     if (mounted) {
       localStorage.setItem("bookmarks", JSON.stringify(bookmarks))
@@ -224,14 +207,11 @@ export function NewsApp() {
     }
   }, [cardSize, mounted])
 
-  // Reset to first page when filters change
   useEffect(() => {
     setCurrentPage(1)
   }, [selectedCategory, showBookmarksOnly, preferredCategories])
 
-  // Filter and paginate articles
-  const { filteredArticles, totalPages } = useMemo(() => {
-    // Apply all filters
+  const filteredArticles = useMemo(() => {
     let filtered = allArticles.filter((article) => {
       const matchesCategory = selectedCategory === "All" || article.section === selectedCategory
       const matchesPreferences = preferredCategories.length === 0 || 
@@ -239,27 +219,9 @@ export function NewsApp() {
       const matchesBookmarks = !showBookmarksOnly || bookmarks.includes(article.id)
       return matchesCategory && matchesPreferences && matchesBookmarks
     });
+    return filtered
+  }, [allArticles, selectedCategory, preferredCategories, showBookmarksOnly, bookmarks])
 
-    // Apply sorting
-    filtered = [...filtered].sort((a, b) => {
-      const dateA = new Date(a.date).getTime();
-      const dateB = new Date(b.date).getTime();
-      return sortOrder === 'new-to-old' ? dateB - dateA : dateA - dateB;
-    });
-
-    // Calculate pagination
-    const total = Math.ceil(filtered.length / articlesPerPage)
-    const start = (currentPage - 1) * articlesPerPage
-    const end = start + articlesPerPage
-    const paginatedArticles = filtered.slice(start, end)
-
-    return {
-      filteredArticles: paginatedArticles,
-      totalPages: total
-    }
-  }, [allArticles, selectedCategory, preferredCategories, showBookmarksOnly, bookmarks, currentPage, articlesPerPage, sortOrder]);
-
-  // Apply font size to document root
   useEffect(() => {
     if (mounted) {
       const fontSizes = {
@@ -277,18 +239,13 @@ export function NewsApp() {
         <Navbar
           searchQuery={searchQuery}
           setSearchQuery={handleSearch}
-          isBiasedMode={isBiasedMode}
-          setIsBiasedMode={handleBiasModeToggle}
           showBookmarksOnly={showBookmarksOnly}
           setShowBookmarksOnly={setShowBookmarksOnly}
           preferredCategories={preferredCategories}
           setPreferredCategories={setPreferredCategories}
-          defaultBiasMode={defaultBiasMode}
-          setDefaultBiasMode={setDefaultBiasMode}
           themePreference={themePreference}
           setThemePreference={(isDark) => {
             setTheme(isDark ? "dark" : "light");
-            // Using the toggleTheme method which exists in the trackEvents API
             trackEvents.toggleTheme(isDark ? 'dark' : 'light');
           }}
           fontSize={fontSize}

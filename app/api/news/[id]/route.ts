@@ -27,7 +27,28 @@ export async function GET(
     if (!articleSnap.exists()) {
       return NextResponse.json({ error: 'Article not found' }, { status: 404 });
     }
-    const article = { id: articleSnap.id, ...articleSnap.data() } as Article;
+    // Merge doc data with id and ensure all Article fields are present
+    const data = articleSnap.data() as Partial<Article> | undefined;
+    const article: Article = {
+      id: Number(articleSnap.id),
+      title: data?.title ?? '',
+      url: data?.url ?? '',
+      description: data?.description ?? '',
+      date: data?.date ?? '',
+      image: data?.image ?? '',
+      imageUrl: data?.imageUrl ?? '',
+      source: data?.source ?? '',
+      section: data?.section ?? '',
+      category: data?.category ?? '',
+      author: data?.author ?? '',
+      bias: data?.bias ?? 'unknown',
+      reliability: data?.reliability ?? 3,
+      isRead: data?.isRead ?? false,
+      titleBiased: data?.titleBiased ?? '',
+      titleUnbiased: data?.titleUnbiased ?? '',
+      snippet: data?.snippet ?? '',
+      body: data?.body ?? '',
+    };
     return NextResponse.json({ article });
   } catch (error) {
     console.error('Error fetching article:', error);

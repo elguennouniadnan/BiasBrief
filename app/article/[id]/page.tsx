@@ -101,17 +101,19 @@ export default function ArticlePage() {
       <div className="min-h-screen bg-white dark:bg-gray-950">
         <Navbar 
           searchQuery={searchQuery}
-          setSearchQuery={setSearchQuery}
-          isBiasedMode={isBiasedMode}
-          setIsBiasedMode={setIsBiasedMode}
+          setSearchQuery={(query) => {
+            setSearchQuery(query);
+            trackEvents.search(query);
+          }}
           showBookmarksOnly={showBookmarksOnly}
           setShowBookmarksOnly={setShowBookmarksOnly}
           preferredCategories={preferredCategories}
           setPreferredCategories={setPreferredCategories}
-          defaultBiasMode={defaultBiasMode}
-          setDefaultBiasMode={setDefaultBiasMode}
           themePreference={themePreference}
-          setThemePreference={setThemePreference}
+          setThemePreference={(isDark) => {
+            setTheme(isDark ? "dark" : "light");
+            trackEvents.toggleTheme(isDark ? 'dark' : 'light');
+          }}
           fontSize={fontSize}
           setFontSize={setFontSize}
           articlesPerPage={articlesPerPage}
@@ -119,7 +121,10 @@ export default function ArticlePage() {
           cardSize={cardSize}
           setCardSize={setCardSize}
           sortOrder={sortOrder}
-          setSortOrder={setSortOrder}
+          setSortOrder={(order) => {
+            setSortOrder(order);
+            trackEvents.sortOrderChange(order);
+          }}
         />
         <div className="container mx-auto px-4 py-8">
           <motion.div

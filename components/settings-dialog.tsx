@@ -262,7 +262,6 @@ export function SettingsDialog({
             <div>
               <h3 className="text-sm font-medium mb-2">Sort Articles</h3>
               <div className="grid gap-2">
-                <Label htmlFor="sort-order">Sort Order</Label>
                 <Select
                   value={localSortOrder}
                   onValueChange={(value: 'new-to-old' | 'old-to-new') => setLocalSortOrder(value)}
