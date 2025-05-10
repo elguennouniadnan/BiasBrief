@@ -107,8 +107,11 @@ export function NewsApp() {
       
       if (data.articles) {
         setAllArticles(data.articles)
-        if (data.categories) {
+        if (data.categories && data.categories.length > 0) {
           setCategories(data.categories)
+        } else {
+          const sections = ['All', ...Array.from(new Set(data.articles.map(a => a.section)))]
+          setCategories(sections)
         }
       }
       
