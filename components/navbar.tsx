@@ -17,8 +17,6 @@ import Image from "next/image"
 interface NavbarProps {
   searchQuery: string
   setSearchQuery: (query: string) => void
-  isBiasedMode: boolean
-  setIsBiasedMode: (biased: boolean) => void
   showBookmarksOnly: boolean
   setShowBookmarksOnly: (show: boolean) => void
   preferredCategories: string[]
@@ -40,8 +38,6 @@ interface NavbarProps {
 export function Navbar({
   searchQuery,
   setSearchQuery,
-  isBiasedMode,
-  setIsBiasedMode,
   showBookmarksOnly,
   setShowBookmarksOnly,
   preferredCategories,
@@ -183,18 +179,6 @@ export function Navbar({
               </div>
 
               <div className="flex items-center gap-3">
-                <div className="flex items-center gap-2">
-                  <Label htmlFor="bias-toggle" className="text-sm font-medium">
-                    {isBiasedMode ? "Biased" : "Unbiased"}
-                  </Label>
-                  <Switch
-                    id="bias-toggle"
-                    checked={isBiasedMode}
-                    onCheckedChange={setIsBiasedMode}
-                    className="data-[state=checked]:bg-primary"
-                  />
-                </div>
-
                 <Button
                   variant={showBookmarksOnly ? "default" : "outline"}
                   size="icon"
@@ -293,18 +277,6 @@ export function Navbar({
             className="py-4 space-y-4 border-t border-gray-200 dark:border-gray-800"
           >
             <div className="flex items-center justify-between">
-              <div className="flex items-center gap-2 pl-1">
-                <Label htmlFor="mobile-bias-toggle" className="text-sm font-medium">
-                  {isBiasedMode ? "Biased" : "Unbiased"} Titles
-                </Label>
-                <Switch
-                  id="mobile-bias-toggle"
-                  checked={isBiasedMode}
-                  onCheckedChange={setIsBiasedMode}
-                  className="data-[state=checked]:bg-primary"
-                />
-              </div>
-
               <div className="flex items-center gap-3 pr-4">
                 <Button
                   variant="ghost"
