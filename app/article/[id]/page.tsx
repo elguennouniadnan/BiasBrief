@@ -33,22 +33,32 @@ export default function ArticlePage() {
   const { toast } = useToast()
 
   useEffect(() => {
-    // Get article by ID from localStorage
-    const articleId = params.id; // Use the id as a string
-    const savedArticles = localStorage.getItem("articles");
-    if (savedArticles) {
-      const articles: Article[] = JSON.parse(savedArticles);
-      const foundArticle = articles.find((a) => a.id === articleId); // Compare as string
-      if (foundArticle) {
-        setArticle(foundArticle);
-        const displayTitle = foundArticle.titleUnbiased || foundArticle.title || 'Article';
-        trackEvents.articleView(foundArticle.id, displayTitle, foundArticle.source, foundArticle.category);
-      } else {
+    // Get article by ID from Firestore API, not localStorage
+    const fetchArticle = async () => {
+      const articleId = params.id?.toString();
+      if (!articleId) {
+        router.push("/");
+        return;
+      }
+      try {
+        const response = await fetch(`/api/news/${articleId}`);
+        if (!response.ok) {
+          router.push("/");
+          return;
+        }
+        const data = await response.json();
+        if (data && data.article) {
+          setArticle(data.article);
+          const displayTitle = data.article.titleUnbiased || data.article.title || 'Article';
+          trackEvents.articleView(data.article.id, displayTitle, data.article.source, data.article.category);
+        } else {
+          router.push("/");
+        }
+      } catch {
         router.push("/");
       }
-    } else {
-      router.push("/");
-    }
+    };
+    fetchArticle();
 
     // Load theme preference from localStorage
     const savedTheme = localStorage.getItem("theme")
@@ -65,7 +75,7 @@ export default function ArticlePage() {
     const savedBookmarks = localStorage.getItem("bookmarks")
     if (savedBookmarks) {
       const bookmarks = JSON.parse(savedBookmarks)
-      setIsBookmarked(bookmarks.includes(articleId))
+      setIsBookmarked(bookmarks.includes(params.id?.toString()))
     }
 
     const savedFontSize = localStorage.getItem("fontSize")
@@ -73,79 +83,6 @@ export default function ArticlePage() {
       setFontSize(savedFontSize)
     }
   }, [params.id, router, setTheme])
-
-  const toggleBookmark = () => {
-    if (!article) return
-
-    const savedBookmarks = localStorage.getItem("bookmarks")
-    let bookmarks: number[] = savedBookmarks ? JSON.parse(savedBookmarks) : []
-
-    if (isBookmarked) {
-      bookmarks = bookmarks.filter((id) => id !== article.id)
-    } else {
-      bookmarks.push(article.id)
-    }
-
-    localStorage.setItem("bookmarks", JSON.stringify(bookmarks))
-    setIsBookmarked(!isBookmarked)
-  }
-
-  const canShare = () => {
-    try {
-      const isSecureOrLocalhost = window.location.protocol === 'https:' || 
-                                 window.location.hostname === 'localhost' ||
-                                 window.location.hostname === '127.0.0.1';
-      return isSecureOrLocalhost && typeof navigator.share !== 'undefined';
-    } catch {
-      return false;
-    }
-  };
-
-  const handleShare = async () => {
-    if (!article) return;
-
-    const shareData = {
-      title: isBiasedMode ? article.titleBiased : article.titleUnbiased,
-      text: article.snippet,
-      url: window.location.href
-    };
-
-    try {
-      const hasNativeShare = canShare();
-      if (hasNativeShare) {
-        await navigator.share(shareData);
-        trackEvents.share('native', article.id);
-      } else if (navigator.clipboard && typeof navigator.clipboard.writeText === 'function') {
-        await navigator.clipboard.writeText(window.location.href);
-        toast({
-          title: "Link copied to clipboard",
-          description: "You can now share it with others",
-          duration: 3000,
-        });
-        trackEvents.share('clipboard', article.id);
-      } else {
-        toast({
-          title: "Copy this link to share",
-          description: window.location.href,
-          duration: 6000,
-        });
-        trackEvents.share('manual', article.id);
-      }
-    } catch (err: unknown) {
-      if (err instanceof Error) {
-        if (err.name === 'AbortError') {
-          return;
-        }
-        // Show the URL for any other error
-        toast({
-          title: "Copy this link to share",
-          description: window.location.href,
-          duration: 6000,
-          variant: err.name === 'NotAllowedError' ? 'default' : 'destructive',
-        });
-      }
-    }
-  };
 
   if (!article) {
     return (
@@ -216,27 +153,11 @@ export default function ArticlePage() {
                 <Button
                   variant="ghost"
                   size="icon"
-                  onClick={toggleBookmark}
-                  className={
-                    isBookmarked
-                      ? "text-primary hover:text-primary/80 hover:bg-primary/10"
-                      : "hover:bg-gray-100 dark:hover:bg-gray-800"
-                  }
-                >
-                  <Bookmark
-                    className={`h-5 w-5 transition-all duration-300 ${isBookmarked ? "scale-110" : "scale-100"}`}
-                    fill={isBookmarked ? "currentColor" : "none"}
-                  />
-                  <span className="sr-only">{isBookmarked ? "Remove bookmark" : "Add bookmark"}</span>
-                </Button>
-                <Button
-                  variant="ghost"
-                  size="icon"
-                  onClick={handleShare}
+                  onClick={() => {}}
                   className="hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors"
                 >
-                  <Share2 className="h-5 w-5" />
-                  <span className="sr-only">Share article</span>
+                  <Bookmark className="h-5 w-5" />
+                  <span className="sr-only">Bookmark</span>
                 </Button>
               </div>
             </div>
@@ -261,7 +182,6 @@ export default function ArticlePage() {
             )}
           </motion.div>
 
-
           <motion.div
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
@@ -271,9 +191,7 @@ export default function ArticlePage() {
             {article.body ? (
               <div dangerouslySetInnerHTML={{ __html: article.body }} />
             ) : (
-              <p className="mb-4 leading-relaxed">
-                {article.snippet}
-              </p>
+              <p className="mb-4 leading-relaxed">{article.snippet}</p>
             )}
           </motion.div>
         </div>

@@ -107,7 +107,6 @@ export function NewsApp() {
       
       if (data.articles) {
         setAllArticles(data.articles)
-        localStorage.setItem("articles", JSON.stringify(data.articles))
         if (data.categories) {
           setCategories(data.categories)
         }
@@ -315,7 +314,6 @@ export function NewsApp() {
             <>
               <ArticleList
                 articles={filteredArticles}
-                isBiasedMode={isBiasedMode}
                 isBookmarked={(id: number) => bookmarks.includes(id)}
                 toggleBookmark={handleBookmarkToggle}
                 cardSize={cardSize}

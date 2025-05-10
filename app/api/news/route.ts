@@ -31,34 +31,19 @@ export async function GET(request: Request) {
   try {
     const articlesCollection = collection(db, 'articles');
     const articlesSnapshot = await getDocs(articlesCollection);
-    let articles = articlesSnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+    let articles = articlesSnapshot.docs.map(doc => ({ id: doc.id, ...(doc.data() as any) }));
 
-    // Limit to 170 most recent articles for Safari
-    const userAgent = request.headers.get('user-agent') || '';
-    const isSafari = userAgent.includes('Safari') && !userAgent.includes('Chrome');
-    if (isSafari) {
-      articles = articles.slice(0, 170);
-    } else {
-      articles = articles.slice(0, 200);
-    }
+    // const userAgent = request.headers.get('user-agent');
+    // const isSafari = userAgent && userAgent.includes('Safari') && !userAgent.includes('Chrome');
+    // if (isSafari) {
+    //   articles = articles.slice(0, 170); // Limit to 10 articles for Safari users
+    // } else {
+    //   articles = articles.slice(0, 200); // Limit to 20 articles for other browsers
+    // }
 
-    console.log('Categories from articles:', articles.map(article => article.section || 'Uncategorized'));
-
-    // Extract unique sections (categories) from the articles
-    const uniqueSections = ['All', ...Array.from(new Set(articles.map(article => article.section)))]
-
-    const responseData = {
-      articles,
-      categories: uniqueSections,
-      total: articles.length,
-    };
-
-    return NextResponse.json(responseData);
+    return NextResponse.json({ articles });
   } catch (error) {
-    console.error('Error fetching data from Firestore:', error);
-    return NextResponse.json(
-      { error: 'Failed to fetch articles' },
-      { status: 500 }
-    );
+    console.error('Error fetching articles:', error);
+    return NextResponse.error();
   }
 }

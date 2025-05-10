@@ -1,6 +1,6 @@
 "use client"
 
-import { Bookmark } from "lucide-react"
+import { Bookmark, Sparkles } from "lucide-react"
 import { Card, CardContent, CardFooter, CardHeader } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
@@ -12,17 +12,18 @@ import { useEffect, useRef, useState } from "react"
 
 interface ArticleCardProps {
   article: Article
-  isBiasedMode: boolean
   isBookmarked: boolean
   toggleBookmark: (id: number) => void
   cardSize: number
 }
 
-export function ArticleCard({ article, isBiasedMode, isBookmarked, toggleBookmark, cardSize }: ArticleCardProps) {
-  // Use fallback pattern for title - use the available title based on the mode or default to the main title
-  const displayTitle = isBiasedMode 
-    ? (article.titleBiased || article.title) 
-    : (article.titleUnbiased || article.title);
+export function ArticleCard({ article, isBookmarked, toggleBookmark, cardSize }: ArticleCardProps) {
+  const [showUnbiased, setShowUnbiased] = useState(false)
+  const [loadingUnbiased, setLoadingUnbiased] = useState(false)
+  const [unbiasedTitle, setUnbiasedTitle] = useState<string | null>(null)
+  const displayTitle = showUnbiased
+    ? (unbiasedTitle ?? article.titleUnbiased ?? article.title)
+    : (article.titleBiased || article.title)
     
   const categoryColor = getCategoryColor(article.category || article.section) // Use category or fallback to section
   const contentRef = useRef<HTMLDivElement>(null)
@@ -51,6 +52,47 @@ export function ArticleCard({ article, isBiasedMode, isBookmarked, toggleBookmar
     return () => resizeObserver.disconnect()
   }, [isSingleColumn])
 
+  const handleUnbiasClick = async (e: React.MouseEvent) => {
+    e.preventDefault();
+    if (showUnbiased) {
+      setShowUnbiased(false)
+      return;
+    }
+    // If titleUnbiased or local unbiasedTitle already exists, just show it after a delay
+    if ((unbiasedTitle && unbiasedTitle.trim() !== "") || (article.titleUnbiased && article.titleUnbiased.trim() !== "")) {
+      setLoadingUnbiased(true)
+      // setTimeout(() => {
+        setUnbiasedTitle(unbiasedTitle || article.titleUnbiased!)
+        setShowUnbiased(true)
+        setLoadingUnbiased(false)
+      // }, 3000)
+      return;
+    }
+    setLoadingUnbiased(true)
+    try {
+      const res = await fetch("https://rizgap5i.rpcl.app/webhook/e9fda321-e86e-4f7e-ad1c-a38046152079", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ id: article.id, titleBiased: article.titleBiased || article.title })
+      })
+      // Always fetch the updated article from Firestore after webhook
+      const articleRes = await fetch(`/api/news/${article.id}`)
+      if (articleRes.ok) {
+        const data = await articleRes.json()
+        setUnbiasedTitle(data.article?.titleUnbiased || article.titleUnbiased || article.title)
+        setShowUnbiased(true)
+      } else {
+        setUnbiasedTitle(article.titleUnbiased || article.title)
+        setShowUnbiased(true)
+      }
+    } catch {
+      setUnbiasedTitle(article.titleUnbiased || article.title)
+      setShowUnbiased(true)
+    } finally {
+      setLoadingUnbiased(false)
+    }
+  }
+
   return (
     <Card
       className="overflow-hidden h-full flex flex-col group hover:shadow-md transition-all duration-300 border-t-2 hover:-translate-y-1"
@@ -60,23 +102,47 @@ export function ArticleCard({ article, isBiasedMode, isBookmarked, toggleBookmar
         <div className="absolute inset-0 bg-gradient-to-br from-white/5 to-transparent dark:from-black/5 opacity-0 group-hover:opacity-100 transition-opacity duration-300 pointer-events-none" />
 
         <CardHeader className={`p-2 sm:p-4 pb-1 sm:pb-2 flex flex-col gap-2 sm:gap-4 ${isSingleColumn ? 'flex-1' : ''}`}>
-          <Badge
-            variant="outline"
-            className="self-start mb-0.5 sm:mb-1 font-medium transition-colors duration-300"
-            style={{
-              backgroundColor: `${categoryColor}15`,
-              color: categoryColor,
-              borderColor: `${categoryColor}30`,
-            }}
-          >
-            {article.category || article.section}
-          </Badge>
+          <div className="flex items-center justify-between">
+            <Badge
+              variant="outline"
+              className="self-start mb-0.5 sm:mb-1 font-medium transition-colors duration-300"
+              style={{
+                backgroundColor: `${categoryColor}15`,
+                color: categoryColor,
+                borderColor: `${categoryColor}30`,
+              }}
+            >
+              {article.category || article.section}
+            </Badge>
+            <Button
+              variant={showUnbiased ? "default" : "outline"}
+              size="icon"
+              onClick={handleUnbiasClick}
+              className="ml-2"
+              title={showUnbiased ? "Show Biased Title" : "Unbias Title with AI"}
+              disabled={loadingUnbiased}
+            >
+              <Sparkles className="h-4 w-4" />
+            </Button>
+          </div>
 
           <div className={`${isSingleColumn ? 'grid grid-cols-[2fr_1fr] gap-6 flex-1' : 'flex flex-col gap-2 sm:gap-4'} h-full`}>
             <div className="flex gap-2 sm:gap-4 items-start">
               <div className="flex-1">
-                <h3 className="text-lg font-bold leading-tight group-hover:text-primary transition-colors duration-300">
-                  {displayTitle}
+                <h3 className="text-lg font-bold leading-tight group-hover:text-primary transition-colors duration-300 min-h-[2.5rem]">
+                  {loadingUnbiased ? (
+                    <span className="flex flex-col items-start">
+                      <span className="inline-flex items-center gap-2 mt-2">
+                        <span className="relative flex h-8 w-8">
+                          <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-blue-400 opacity-75"></span>
+                          <span className="relative inline-flex rounded-full h-8 w-8 bg-blue-500">
+                            <Sparkles className="h-7 w-7 text-white m-auto animate-spin" />
+                          </span>
+                        </span>
+                        <span className="text-blue-500 font-medium text-base">Unbiasing title…</span>
+                      </span>
+                    </span>
+                  ) : displayTitle}
                 </h3>
               </div>
               {imageSource && !isSingleColumn && (

@@ -7,7 +7,6 @@ import { Article } from "@/lib/types"
 interface ArticleListProps {
   articles: Article[]
   cardSize?: number
-  isBiasedMode: boolean
   isBookmarked: (id: number) => boolean
   toggleBookmark: (id: number) => void
 }
@@ -29,7 +28,6 @@ export function ArticleList({ articles, cardSize = 3, ...props }: ArticleListPro
           article={article}
           cardSize={cardSize}
           isBookmarked={props.isBookmarked(article.id)}
-          isBiasedMode={props.isBiasedMode}
           toggleBookmark={props.toggleBookmark}
         />
       ))}
