@@ -7,18 +7,11 @@
  * Article domain types
  */
 export interface Article {
+  [x: string]: any;
   /** Unique identifier for the article */
   id: number;
-  /** Article headline */
-  title: string;
-  /** URL to the full article content */
-  url: string;
-  /** Brief summary of the article content */
-  description: string;
   /** Publication date in ISO format */
   date: string;
-  /** Image URL for the article */
-  image?: string;
   /** Alternative image URL for the article */
   imageUrl?: string;
   /** Source publication name */
@@ -27,14 +20,6 @@ export interface Article {
   section: string;
   /** More specific category classification */
   category?: string;
-  /** Article author information */
-  author?: string;
-  /** Political leaning of the source (if available) */
-  bias?: 'left' | 'center' | 'right' | 'unknown';
-  /** Reliability rating of the source (if available) */
-  reliability?: 1 | 2 | 3 | 4 | 5;
-  /** Read status */
-  isRead?: boolean;
   /** Biased version of the article title */
   titleBiased?: string;
   /** Unbiased version of the article title */

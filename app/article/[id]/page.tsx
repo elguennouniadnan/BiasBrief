@@ -5,7 +5,7 @@ import { useParams, useRouter } from "next/navigation"
 import { ArrowLeft, Bookmark, Share2, Clock } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
-import { formatDate, getCategoryColor, getReadingTime } from "@/lib/utils"
+import { getCategoryColor, getReadingTime } from "@/lib/utils"
 import type { Article } from "@/lib/types"
 import { useTheme } from "next-themes"
 import { AuthProvider } from "@/lib/auth"
@@ -13,6 +13,18 @@ import { motion } from "framer-motion"
 import { trackEvents } from "@/lib/analytics"
 import { useToast } from "@/components/ui/use-toast"
 import { Navbar } from "@/components/navbar"
+import React from "react"
+
+// Utility to extract <img> and <figcaption> from imageHtml
+function extractImageAndCaption(imageHtml: string): { imgHtml: string | null, captionHtml: string | null } {
+  if (!imageHtml) return { imgHtml: null, captionHtml: null }
+  const imgMatch = imageHtml.match(/<img[\s\S]*?>/i)
+  const captionMatch = imageHtml.match(/<figcaption[\s\S]*?<\/figcaption>/i)
+  return {
+    imgHtml: imgMatch ? imgMatch[0] : null,
+    captionHtml: captionMatch ? captionMatch[0] : null
+  }
+}
 
 export default function ArticlePage() {
   const params = useParams()
@@ -37,25 +49,26 @@ export default function ArticlePage() {
     const fetchArticle = async () => {
       const articleId = params.id?.toString();
       if (!articleId) {
-        router.push("/");
+        router.replace("/");
         return;
       }
       try {
         const response = await fetch(`/api/news/${articleId}`);
         if (!response.ok) {
-          router.push("/");
+          router.replace("/");
           return;
         }
         const data = await response.json();
+        console.log("Fetched article data:", data);
         if (data && data.article) {
           setArticle(data.article);
           const displayTitle = data.article.titleUnbiased || data.article.title || 'Article';
           trackEvents.articleView(data.article.id, displayTitle, data.article.source, data.article.category);
         } else {
-          router.push("/");
+          router.replace("/");
         }
       } catch {
-        router.push("/");
+        router.replace("/");
       }
     };
     fetchArticle();
@@ -173,16 +186,42 @@ export default function ArticlePage() {
 
             <div className="flex flex-wrap items-center text-sm text-gray-500 dark:text-gray-400 mb-6 gap-x-4 gap-y-2">
               <div className="font-medium text-gray-700 dark:text-gray-300">{article.source}</div>
-              <div>{formatDate(article.date)}</div>
+              <div>{article.date}</div>
               <div className="flex items-center">
                 <Clock className="h-4 w-4 mr-1" />
                 {readingTime}
               </div>
             </div>
 
-            {article.imageHtml && (
+            {/* Show imageHtml if present, else imageUrl or image, else placeholder */}
+            {article.imageHtml ? (() => {
+              const { imgHtml, captionHtml } = extractImageAndCaption(article.imageHtml)
+              return (
+                <div className="mb-6 overflow-hidden rounded-lg shadow-md" style={{ maxWidth: 600, margin: '0 auto' }}>
+                  {imgHtml && (
+                    <div style={{ width: '100%' }}>
+                      <div dangerouslySetInnerHTML={{ __html: imgHtml }} style={{ width: '100%' }} />
+                    </div>
+                  )}
+                  {captionHtml && (
+                    <div className="bg-gray-50 dark:bg-gray-900 text-sm text-gray-600 dark:text-gray-300 px-4 py-2 border-t border-gray-200 dark:border-gray-800" style={{ width: '100%' }}>
+                      <div dangerouslySetInnerHTML={{ __html: captionHtml }} style={{ width: '100%' }} />
+                    </div>
+                  )}
+                </div>
+              )
+            })() : article.imageUrl || article.image ? (
               <div className="mb-6 overflow-hidden rounded-lg shadow-md">
-                <div dangerouslySetInnerHTML={{ __html: article.imageHtml }} />
+                <img
+                  src={article.imageUrl || article.image}
+                  alt={title || 'Article image'}
+                  className="w-full h-auto object-cover"
+                  style={{ maxHeight: 400 }}
+                />
+              </div>
+            ) : (
+              <div className="mb-6 overflow-hidden rounded-lg shadow-md bg-gray-100 dark:bg-gray-800 flex items-center justify-center" style={{height: 200}}>
+                <img src="/placeholder.svg" alt="No image available" className="h-24 opacity-40" />
               </div>
             )}
           </motion.div>

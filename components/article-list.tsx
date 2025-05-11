@@ -12,6 +12,19 @@ interface ArticleListProps {
 }
 
 export function ArticleList({ articles, cardSize = 3, ...props }: ArticleListProps) {
+  // Only display articles with a proper image
+  const hasImage = (article: Article) => {
+    if (article.imageHtml) {
+      // Check if imageHtml contains an <img src=...> with a non-placeholder src
+      const match = article.imageHtml.match(/<img[^>]+src=["']([^"']+)["']/i)
+      if (match && match[1] && !match[1].includes('placeholder')) return true
+    }
+    if (article.imageUrl && !article.imageUrl.includes('placeholder')) return true
+    if (article.image && !article.image.includes('placeholder')) return true
+    return false
+  }
+  const filteredArticles = articles.filter(hasImage)
+
   const gridColumns = {
     1: 'grid-cols-1',
     2: 'grid-cols-1 md:grid-cols-2',
@@ -22,7 +35,7 @@ export function ArticleList({ articles, cardSize = 3, ...props }: ArticleListPro
 
   return (
     <div className={`grid ${gridColumns} gap-4 py-4`}>
-      {articles.map((article) => (
+      {filteredArticles.map((article) => (
         <ArticleCard
           key={article.id}
           article={article}

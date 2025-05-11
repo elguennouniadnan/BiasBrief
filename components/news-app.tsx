@@ -60,12 +60,8 @@ export function NewsApp() {
 
   const handleCategoryChange = (category: string) => {
     setSelectedCategory(category);
+    setCurrentPage(1); // Always reset to page 1 when changing category
     trackEvents.categorySelect(category);
-  };
-
-  const handleBiasModeToggle = (biased: boolean) => {
-    setIsBiasedMode(biased);
-    trackEvents.toggleBiasMode(biased);
   };
 
   const handleSearch = (query: string) => {
@@ -88,19 +84,25 @@ export function NewsApp() {
       if (searchQuery) params.append('q', searchQuery)
       params.append('page', String(currentPage))
       params.append('pageSize', String(articlesPerPage))
+      params.append('sortOrder', sortOrder)
+      if (selectedCategory && selectedCategory !== 'All') {
+        params.append('category', selectedCategory)
+      }
       const response = await fetch(`/api/news?${params.toString()}`)
       if (!response.ok) throw new Error('Failed to fetch articles')
       const data = await response.json()
       setAllArticles(data.articles)
       setTotalCount(data.totalCount)
       setTotalPages(Math.max(1, Math.ceil(data.totalCount / articlesPerPage)))
-      // Log articles returned from Firestore
-      console.log('Articles returned from Firestore:', data.articles)
+      // Only set categories if present in API response and not filtering by category
       if (Array.isArray(data.categories) && data.categories.every((c: unknown): c is string => typeof c === 'string')) {
         setCategories(data.categories as string[])
-      } else if (data.articles) {
-        const sections = ['All', ...Array.from(new Set(data.articles.map((a: any) => String(a.section || ''))))] as string[]
-        setCategories(sections)
+      } else if (!selectedCategory || selectedCategory === 'All') {
+        // Only extract categories from articles if not filtering by category
+        if (data.articles) {
+          const sections = ['All', ...Array.from(new Set(data.articles.map((a: any) => String(a.section || ''))))] as string[]
+          setCategories(sections)
+        }
       }
     } catch (error) {
       console.error('Error fetching articles:', error)
@@ -169,7 +171,7 @@ export function NewsApp() {
     if (mounted) {
       fetchArticles()
     }
-  }, [mounted, searchQuery, currentPage, articlesPerPage])
+  }, [mounted, searchQuery, currentPage, articlesPerPage, sortOrder, selectedCategory])
 
   useEffect(() => {
     if (mounted) {
@@ -219,7 +221,8 @@ export function NewsApp() {
       const matchesBookmarks = !showBookmarksOnly || bookmarks.includes(article.id)
       return matchesCategory && matchesPreferences && matchesBookmarks
     });
-    return filtered
+    // Reverse so most recent is at the top
+    return [...filtered];
   }, [allArticles, selectedCategory, preferredCategories, showBookmarksOnly, bookmarks])
 
   useEffect(() => {
