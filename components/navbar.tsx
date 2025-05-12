@@ -296,7 +296,7 @@ export function Navbar({
                     onClick={() => setSearchBarOpen(true)}
                     className="h-9 w-9 rounded-full hover:bg-gray-100 dark:hover:bg-gray-800"
                   >
-                    <Search className="h-4 w-4" />
+                      <Search className="h-4 w-4" />
                   </Button>
                 )}
               </div>
@@ -391,7 +391,7 @@ export function Navbar({
       <SettingsDialog
         open={isSettingsOpen}
         onOpenChange={setIsSettingsOpen}
-        categories={categories}
+        categories={Array.isArray(categories) ? categories : []}
         preferredCategories={preferredCategories}
         setPreferredCategories={setPreferredCategories}
         defaultBiasMode={defaultBiasMode}
