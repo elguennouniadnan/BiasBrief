@@ -2,7 +2,7 @@
 
 import * as React from "react"
 import { useState, useEffect } from "react"
-import { Search, Bookmark, Menu, X, Sun, Moon, Settings } from "lucide-react"
+import { Search, Bookmark, Menu, X, Sun, Moon, Settings, FolderHeart } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Switch } from "@/components/ui/switch"
@@ -31,6 +31,11 @@ interface NavbarProps {
   setCardSize: (size: number) => void
   sortOrder: 'new-to-old' | 'old-to-new'
   setSortOrder: (order: 'new-to-old' | 'old-to-new') => void
+  categories: string[]
+  defaultBiasMode: boolean
+  setDefaultBiasMode: (biased: boolean) => void
+  customNewsEnabled: boolean
+  setCustomNewsEnabled: (enabled: boolean) => void
 }
 
 export function Navbar({
@@ -49,7 +54,12 @@ export function Navbar({
   cardSize,
   setCardSize,
   sortOrder,
-  setSortOrder
+  setSortOrder,
+  categories,
+  defaultBiasMode,
+  setDefaultBiasMode,
+  customNewsEnabled,
+  setCustomNewsEnabled,
 }: NavbarProps) {
   const { theme, setTheme } = useTheme()
   const [mounted, setMounted] = useState(false)
@@ -106,6 +116,18 @@ export function Navbar({
     return () => document.removeEventListener('keydown', handleEsc)
   }, [setSearchQuery])
 
+  useEffect(() => {
+    function handleOpenAuthModal(e: CustomEvent) {
+      setIsSettingsOpen(false)
+      setIsMenuOpen(false)
+      // Open the auth modal via UserDropdown
+      const userDropdownBtn = document.querySelector('[data-auth-modal-trigger]') as HTMLElement
+      if (userDropdownBtn) userDropdownBtn.click()
+    }
+    window.addEventListener('open-auth-modal', handleOpenAuthModal as EventListener)
+    return () => window.removeEventListener('open-auth-modal', handleOpenAuthModal as EventListener)
+  }, [])
+
   const ThemeIcon = mounted ? theme === "dark" ? Sun : Moon : null
 
   return (
@@ -128,7 +150,7 @@ export function Navbar({
 
           {!isMobile && (
             <div className="flex items-center gap-3 flex-1 justify-end">
-              <div className="search-container relative max-w-md mx-4">
+              <div className="search-container relative max-w-md">
                 <motion.div
                   animate={{
                     width: searchBarOpen ? "100%" : "40px",
@@ -176,13 +198,17 @@ export function Navbar({
 
               <div className="flex items-center gap-3">
                 <Button
-                  variant={showBookmarksOnly ? "default" : "outline"}
+                  variant={showBookmarksOnly ? "default" : "ghost"}
                   size="icon"
                   onClick={() => setShowBookmarksOnly(!showBookmarksOnly)}
                   title="Show bookmarks"
-                  className={showBookmarksOnly ? "bg-primary hover:bg-primary/90" : ""}
+                  className={showBookmarksOnly && customNewsEnabled ? "bg-red-100 hover:bg-red-200" : showBookmarksOnly ? "bg-primary hover:bg-primary/90" : ""}
                 >
-                  <Bookmark className="h-4 w-4" />
+                  {customNewsEnabled ? (
+                    <FolderHeart className={`h-4 w-4 ${showBookmarksOnly ? "text-red-500" : ""}`} />
+                  ) : (
+                    <Bookmark className="h-4 w-4" />
+                  )}
                 </Button>
 
                 <Button
@@ -205,13 +231,38 @@ export function Navbar({
                   {ThemeIcon && <ThemeIcon className="h-4 w-4 text-amber-500" />}
                 </Button>
 
+                <div className="flex items-center gap-4">
+                  <Switch
+                    id="custom-news-toggle"
+                    checked={customNewsEnabled}
+                    onCheckedChange={setCustomNewsEnabled}
+                  />
+                  <Label htmlFor="custom-news-toggle" className="text-xs px-2">Custom News</Label>
+                </div>
+
                 <UserDropdown openSettings={() => setIsSettingsOpen(true)} />
+
+                {!mounted || (typeof window !== 'undefined' && !window.localStorage.getItem('user')) ? (
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={() => {
+                      if (typeof window !== 'undefined') {
+                        const event = new CustomEvent('open-auth-modal', { detail: { tab: 'sign-in' } })
+                        window.dispatchEvent(event)
+                      }
+                    }}
+                    className="ml-2 hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors"
+                  >
+                    Sign In
+                  </Button>
+                ) : null}
               </div>
             </div>
           )}
 
           {isMobile && (
-            <div className="flex items-center gap-2">
+            <div className="flex items-center gap-2 w-full justify-end">
               <div className="search-container relative">
                 {searchBarOpen ? (
                   <div className="fixed inset-0 z-50 bg-background/95 backdrop-blur-sm p-4">
@@ -250,6 +301,31 @@ export function Navbar({
                 )}
               </div>
 
+              <Button
+                variant={showBookmarksOnly ? "default" : "ghost"}
+                size="icon"
+                onClick={() => setShowBookmarksOnly(!showBookmarksOnly)}
+                title="Show bookmarks"
+                className={showBookmarksOnly && customNewsEnabled ? "bg-red-100 hover:bg-red-200" : showBookmarksOnly ? "bg-primary hover:bg-primary/90" : ""}
+              >
+                {customNewsEnabled ? (
+                  <FolderHeart className={`h-4 w-4 ${showBookmarksOnly ? "text-red-500" : ""}`} />
+                ) : (
+                  <Bookmark className="h-4 w-4" />
+                )}
+              </Button>
+
+              {/* Custom news toggle for mobile */}
+              <div className="flex items-center gap-1 scale-90">
+                <Switch
+                  id="custom-news-toggle-mobile"
+                  checked={customNewsEnabled}
+                  onCheckedChange={setCustomNewsEnabled}
+                  className="h-6 w-11"
+                />
+                <Label htmlFor="custom-news-toggle-mobile" className="text-[10px] px-1">Custom News</Label>
+              </div>
+
               <UserDropdown openSettings={() => setIsSettingsOpen(true)} />
 
               <Button
@@ -272,8 +348,8 @@ export function Navbar({
             transition={{ duration: 0.2 }}
             className="py-4 space-y-4 border-t border-gray-200 dark:border-gray-800"
           >
-            <div className="flex items-center justify-between">
-              <div className="flex items-center gap-3 pr-4">
+            <div className="flex items-center justify-between mx-14">
+              <div className="flex items-center gap-3">
                 <Button
                   variant="ghost"
                   size="icon"
@@ -283,7 +359,6 @@ export function Navbar({
                 >
                   <Settings className="h-4 w-4" />
                 </Button>
-
                 <Button
                   variant="ghost"
                   size="icon"
@@ -294,6 +369,20 @@ export function Navbar({
                   {ThemeIcon && <ThemeIcon className="h-4 w-4 text-amber-500" />}
                 </Button>
               </div>
+              {/* Sign In button for mobile menu */}
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => {
+                  if (typeof window !== 'undefined') {
+                    const event = new CustomEvent('open-auth-modal', { detail: { tab: 'sign-in' } })
+                    window.dispatchEvent(event)
+                  }
+                }}
+                className="hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors"
+              >
+                Sign In
+              </Button>
             </div>
           </motion.div>
         )}
@@ -302,12 +391,12 @@ export function Navbar({
       <SettingsDialog
         open={isSettingsOpen}
         onOpenChange={setIsSettingsOpen}
-        categories={["Politics", "Technology", "Health", "Sports", "Entertainment", "World News"]}
+        categories={categories}
         preferredCategories={preferredCategories}
         setPreferredCategories={setPreferredCategories}
-        defaultBiasMode={false}
-        setDefaultBiasMode={() => {}}
-        themePreference={theme === "dark"}
+        defaultBiasMode={defaultBiasMode}
+        setDefaultBiasMode={setDefaultBiasMode}
+        themePreference={themePreference}
         setThemePreference={setThemePreference}
         fontSize={fontSize}
         setFontSize={setFontSize}

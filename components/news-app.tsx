@@ -38,16 +38,18 @@ export function NewsApp() {
   const [showBookmarksOnly, setShowBookmarksOnly] = useState(false)
   const [preferredCategories, setPreferredCategories] = useState<string[]>([])
   const [defaultBiasMode, setDefaultBiasMode] = useState(false)
-  const [fontSize, setFontSize] = useState("medium")
+  const [fontSize, setFontSize] = useState("small") // default to small
   const [articlesPerPage, setArticlesPerPage] = useState(15)
   const [currentPage, setCurrentPage] = useState(1)
   const [cardSize, setCardSize] = useState(3)
   const [allArticles, setAllArticles] = useState<Article[]>([])
   const [categories, setCategories] = useState<string[]>(["All"])
+  const [allCategories, setAllCategories] = useState<string[]>(["All"])
   const [isLoading, setIsLoading] = useState(true)
   const [sortOrder, setSortOrder] = useState<'new-to-old' | 'old-to-new'>('new-to-old')
   const [totalPages, setTotalPages] = useState(1)
   const [totalCount, setTotalCount] = useState(0)
+  const [customNewsEnabled, setCustomNewsEnabled] = useState(false)
 
   const toggleBookmark = (articleId: number) => {
     const newBookmarks = bookmarks.includes(articleId)
@@ -85,12 +87,15 @@ export function NewsApp() {
       params.append('page', String(currentPage))
       params.append('pageSize', String(articlesPerPage))
       params.append('sortOrder', sortOrder)
-      if (selectedCategory && selectedCategory !== 'All') {
+      if (customNewsEnabled && preferredCategories.length > 0 && (!selectedCategory || selectedCategory === 'All')) {
+        params.append('preferredCategories', preferredCategories.join(','))
+      } else if (selectedCategory && selectedCategory !== 'All') {
         params.append('category', selectedCategory)
       }
       const response = await fetch(`/api/news?${params.toString()}`)
       if (!response.ok) throw new Error('Failed to fetch articles')
       const data = await response.json()
+      console.log('Fetched articles data:', data)
       setAllArticles(data.articles)
       setTotalCount(data.totalCount)
       setTotalPages(Math.max(1, Math.ceil(data.totalCount / articlesPerPage)))
@@ -101,6 +106,7 @@ export function NewsApp() {
         // Only extract categories from articles if not filtering by category
         if (data.articles) {
           const sections = ['All', ...Array.from(new Set(data.articles.map((a: any) => String(a.section || ''))))] as string[]
+          console.log('Extracted sections:', sections)
           setCategories(sections)
         }
       }
@@ -141,26 +147,9 @@ export function NewsApp() {
         }
       }
 
-      const savedDefaultBiasMode = localStorage.getItem("defaultBiasMode")
-      if (savedDefaultBiasMode) {
-        const biasMode = savedDefaultBiasMode === "true"
-        setDefaultBiasMode(biasMode)
-        setIsBiasedMode(biasMode)
-      }
-
-      const savedFontSize = localStorage.getItem("fontSize")
-      if (savedFontSize) {
-        setFontSize(savedFontSize)
-      }
-
-      const savedArticlesPerPage = localStorage.getItem("articlesPerPage")
-      if (savedArticlesPerPage) {
-        setArticlesPerPage(Number(savedArticlesPerPage))
-      }
-
-      const savedCardSize = localStorage.getItem("cardSize")
-      if (savedCardSize) {
-        setCardSize(parseInt(savedCardSize))
+      const savedCustomNews = localStorage.getItem("customNewsEnabled")
+      if (savedCustomNews !== null) {
+        setCustomNewsEnabled(JSON.parse(savedCustomNews))
       }
 
       setMounted(true)
@@ -171,7 +160,7 @@ export function NewsApp() {
     if (mounted) {
       fetchArticles()
     }
-  }, [mounted, searchQuery, currentPage, articlesPerPage, sortOrder, selectedCategory])
+  }, [mounted, searchQuery, currentPage, articlesPerPage, sortOrder, selectedCategory, customNewsEnabled, preferredCategories])
 
   useEffect(() => {
     if (mounted) {
@@ -187,9 +176,9 @@ export function NewsApp() {
 
   useEffect(() => {
     if (mounted) {
-      localStorage.setItem("defaultBiasMode", defaultBiasMode.toString())
+      localStorage.setItem("customNewsEnabled", JSON.stringify(customNewsEnabled))
     }
-  }, [defaultBiasMode, mounted])
+  }, [customNewsEnabled, mounted])
 
   useEffect(() => {
     if (mounted) {
@@ -204,26 +193,46 @@ export function NewsApp() {
   }, [articlesPerPage, mounted])
 
   useEffect(() => {
-    if (mounted) {
-      localStorage.setItem("cardSize", cardSize.toString())
-    }
-  }, [cardSize, mounted])
-
-  useEffect(() => {
     setCurrentPage(1)
-  }, [selectedCategory, showBookmarksOnly, preferredCategories])
+  }, [selectedCategory, showBookmarksOnly, preferredCategories, searchQuery])
 
-  const filteredArticles = useMemo(() => {
-    let filtered = allArticles.filter((article) => {
+  // Remove only obsolete localStorage keys
+  useEffect(() => {
+    if (mounted) {
+      const keysToRemove = ["cardSize", "defaultBiasMode", "biasMode"]
+      keysToRemove.forEach((key) => {
+        localStorage.removeItem(key)
+      })
+    }
+  }, [mounted])
+
+  // When showBookmarksOnly is enabled, use allArticles directly (already fetched from API by IDs)
+  const allTabArticles = useMemo(() => {
+    if (showBookmarksOnly) {
+      return allArticles
+    }
+    return allArticles.filter((article) => {
       const matchesCategory = selectedCategory === "All" || article.section === selectedCategory
-      const matchesPreferences = preferredCategories.length === 0 || 
-        (article.category && preferredCategories.includes(article.category))
+      return matchesCategory
+    })
+  }, [allArticles, selectedCategory, showBookmarksOnly])
+
+  // Always extract all categories from allArticles, not just preferred
+  useEffect(() => {
+    if (allArticles.length > 0) {
+      const sections = ['All', ...Array.from(new Set(allArticles.map((a) => String(a.section || ''))))]
+      setCategories(sections)
+    }
+  }, [allArticles])
+
+  const customTabArticles = useMemo(() => {
+    if (!preferredCategories.length) return []
+    return allArticles.filter((article) => {
+      const matchesPreferences = article.category && preferredCategories.includes(article.category)
       const matchesBookmarks = !showBookmarksOnly || bookmarks.includes(article.id)
-      return matchesCategory && matchesPreferences && matchesBookmarks
-    });
-    // Reverse so most recent is at the top
-    return [...filtered];
-  }, [allArticles, selectedCategory, preferredCategories, showBookmarksOnly, bookmarks])
+      return matchesPreferences && matchesBookmarks
+    })
+  }, [allArticles, preferredCategories, showBookmarksOnly, bookmarks])
 
   useEffect(() => {
     if (mounted) {
@@ -236,9 +245,71 @@ export function NewsApp() {
     }
   }, [fontSize, mounted])
 
+  // New: fetch all categories on mount
+  useEffect(() => {
+    async function fetchAllCategories() {
+      try {
+        const response = await fetch('/api/news?allCategories=1')
+        if (!response.ok) return
+        const data = await response.json()
+        if (Array.isArray(data.categories) && data.categories.length > 0) {
+          setAllCategories(['All', ...data.categories.filter((c: string) => c && c !== 'All')])
+        }
+      } catch (e) {
+        // ignore
+      }
+    }
+    fetchAllCategories()
+  }, [])
+
+  // Calculate totalPages based on filtered articles when showing bookmarks only
+  useEffect(() => {
+    if (showBookmarksOnly) {
+      const count = allTabArticles.length
+      setTotalPages(Math.max(1, Math.ceil(count / articlesPerPage)))
+    }
+  }, [showBookmarksOnly, allTabArticles, articlesPerPage])
+
+  // Fetch articles by IDs from API when showBookmarksOnly is enabled
+  useEffect(() => {
+    const fetchBookmarkedArticles = async () => {
+      if (showBookmarksOnly && bookmarks.length > 0) {
+        try {
+          const response = await fetch(`/api/news?ids=${bookmarks.join(',')}`)
+          if (!response.ok) throw new Error('Failed to fetch bookmarked articles')
+          const data = await response.json()
+          setAllArticles(data.articles)
+          setTotalCount(data.totalCount)
+          setTotalPages(Math.max(1, Math.ceil(data.totalCount / articlesPerPage)))
+        } catch (error) {
+          setAllArticles([])
+          setTotalCount(0)
+          setTotalPages(1)
+        }
+      } else if (!showBookmarksOnly) {
+        // Refetch the normal article list when bookmark filter is disabled
+        fetchArticles()
+      }
+    }
+    fetchBookmarkedArticles()
+  }, [showBookmarksOnly, bookmarks, articlesPerPage])
+
+  // When showBookmarksOnly is enabled, use allArticles directly (already fetched from API by IDs)
+  // When customNewsEnabled and not showing bookmarks, use customTabArticles
+  // Otherwise, use allTabArticles
+  const displayedArticles = useMemo(() => {
+    if (showBookmarksOnly) {
+      return allArticles
+    } else if (customNewsEnabled && (!selectedCategory || selectedCategory === 'All')) {
+      return customTabArticles
+    } else {
+      return allTabArticles
+    }
+  }, [showBookmarksOnly, allArticles, customNewsEnabled, customTabArticles, allTabArticles, selectedCategory])
+
   return (
     <AuthProvider>
-      <div className="flex flex-col min-h-screen bg-background text-foreground">
+      <div className="flex flex-col min-h-screen bg-background text-foreground mx-2">
         <Navbar
           searchQuery={searchQuery}
           setSearchQuery={handleSearch}
@@ -262,21 +333,26 @@ export function NewsApp() {
             setSortOrder(order);
             trackEvents.sortOrderChange(order);
           }}
+          categories={categories}
+          defaultBiasMode={defaultBiasMode}
+          setDefaultBiasMode={setDefaultBiasMode}
+          customNewsEnabled={customNewsEnabled}
+          setCustomNewsEnabled={setCustomNewsEnabled}
         />
         <CategoryFilter
-          categories={categories}
+          categories={allCategories}
           selectedCategory={selectedCategory}
           setSelectedCategory={handleCategoryChange}
         />
-        <main className="flex-1 container mx-auto px-4 py-6">
+        <main className="flex-1 container px-1 py-6">
           {isLoading ? (
             <div className="flex items-center justify-center h-64">
               <div className="text-lg">Loading articles...</div>
             </div>
-          ) : filteredArticles.length > 0 ? (
+          ) : displayedArticles.length > 0 ? (
             <>
               <ArticleList
-                articles={filteredArticles}
+                articles={displayedArticles}
                 isBookmarked={(id: number) => bookmarks.includes(id)}
                 toggleBookmark={handleBookmarkToggle}
                 cardSize={cardSize}

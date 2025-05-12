@@ -12,7 +12,7 @@ import {
 } from "@/components/ui/dropdown-menu"
 import { Settings, LogOut } from "lucide-react"
 import { Avatar, AvatarFallback } from "@/components/ui/avatar"
-import { useState } from "react"
+import { useState, useEffect } from "react"
 import { AuthModal } from "@/components/auth/auth-modal"
 import { motion } from "framer-motion"
 
@@ -24,6 +24,15 @@ export function UserDropdown({ openSettings }: UserDropdownProps) {
   const { user, signOut } = useAuth()
   const [authModalOpen, setAuthModalOpen] = useState(false)
   const [authModalTab, setAuthModalTab] = useState<"sign-in" | "sign-up">("sign-in")
+
+  useEffect(() => {
+    function handleOpenAuthModal(e: CustomEvent) {
+      setAuthModalTab("sign-in")
+      setAuthModalOpen(true)
+    }
+    window.addEventListener("open-auth-modal", handleOpenAuthModal as EventListener)
+    return () => window.removeEventListener("open-auth-modal", handleOpenAuthModal as EventListener)
+  }, [])
 
   const handleOpenAuthModal = (tab: "sign-in" | "sign-up") => {
     setAuthModalTab(tab)
@@ -37,24 +46,6 @@ export function UserDropdown({ openSettings }: UserDropdownProps) {
   if (!user) {
     return (
       <>
-        <div className="flex items-center gap-2">
-          <Button
-            variant="outline"
-            size="sm"
-            onClick={() => handleOpenAuthModal("sign-in")}
-            className="hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors"
-          >
-            Sign In
-          </Button>
-          <Button
-            size="sm"
-            onClick={() => handleOpenAuthModal("sign-up")}
-            className="bg-primary hover:bg-primary/90 transition-colors md:block hidden"
-          >
-            Sign Up
-          </Button>
-        </div>
-
         <AuthModal isOpen={authModalOpen} onClose={() => setAuthModalOpen(false)} defaultTab={authModalTab} />
       </>
     )

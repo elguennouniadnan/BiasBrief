@@ -11,7 +11,7 @@ interface ArticleListProps {
   toggleBookmark: (id: number) => void
 }
 
-export function ArticleList({ articles, cardSize = 3, ...props }: ArticleListProps) {
+export function ArticleList({ articles, ...props }: ArticleListProps) {
   // Only display articles with a proper image
   const hasImage = (article: Article) => {
     if (article.imageHtml) {
@@ -25,21 +25,13 @@ export function ArticleList({ articles, cardSize = 3, ...props }: ArticleListPro
   }
   const filteredArticles = articles.filter(hasImage)
 
-  const gridColumns = {
-    1: 'grid-cols-1',
-    2: 'grid-cols-1 md:grid-cols-2',
-    3: 'grid-cols-1 md:grid-cols-2 lg:grid-cols-3',
-    4: 'grid-cols-1 md:grid-cols-2 lg:grid-cols-4',
-    5: 'grid-cols-1 md:grid-cols-2 lg:grid-cols-5'
-  }[cardSize]
-
   return (
-    <div className={`grid ${gridColumns} gap-4 py-4`}>
+    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8 py-4">
       {filteredArticles.map((article) => (
         <ArticleCard
           key={article.id}
           article={article}
-          cardSize={cardSize}
+          cardSize={3} // Default to 3 for consistent card layout
           isBookmarked={props.isBookmarked(article.id)}
           toggleBookmark={props.toggleBookmark}
         />

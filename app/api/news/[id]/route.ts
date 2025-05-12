@@ -29,7 +29,6 @@ export async function GET(
     }
     // Merge doc data with id and ensure all Article fields are present
     const data = articleSnap.data() as Partial<Article> | undefined;
-    console.log('Fetched article data:', data);
     const article: Article = {
       id: Number(params.id),
       date: data?.date ?? '',

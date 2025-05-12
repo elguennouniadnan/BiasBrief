@@ -79,6 +79,7 @@ export function SettingsDialog({
 
   // Reset local state when dialog opens
   useEffect(() => {
+    console.log('SettingsDialog categories prop:', categories)
     if (open) {
       setLocalPreferredCategories(preferredCategories)
       setLocalDefaultBiasMode(defaultBiasMode)
@@ -90,7 +91,7 @@ export function SettingsDialog({
       setEmailUpdateSuccess(false)
       setPasswordUpdateSuccess(false)
     }
-  }, [open, preferredCategories, defaultBiasMode, themePreference, fontSize, articlesPerPage, cardSize, sortOrder])
+  }, [open, preferredCategories, defaultBiasMode, themePreference, fontSize, articlesPerPage, cardSize, sortOrder, categories])
 
   const handleSave = () => {
     setPreferredCategories(localPreferredCategories)
@@ -337,44 +338,6 @@ export function SettingsDialog({
                   <option value="21">21 articles</option>
                 </select>
                 <ChevronDown className="absolute right-3 top-1/2 h-4 w-4 -translate-y-1/2 opacity-50" />
-              </div>
-            </div>
-
-            <div>
-              <h3 className="text-sm font-medium mb-2">Cards per Row</h3>
-              <div className="grid grid-cols-4 gap-2">
-                <Button
-                  variant={localCardSize === 1 ? "default" : "outline"}
-                  size="sm"
-                  onClick={() => setLocalCardSize(1)}
-                  className={`w-full ${localCardSize === 1 ? "bg-primary hover:bg-primary/90" : ""}`}
-                >
-                  <span>1</span>
-                </Button>
-                <Button
-                  variant={localCardSize === 2 ? "default" : "outline"}
-                  size="sm"
-                  onClick={() => setLocalCardSize(2)}
-                  className={`w-full ${localCardSize === 2 ? "bg-primary hover:bg-primary/90" : ""}`}
-                >
-                  <span>2</span>
-                </Button>
-                <Button
-                  variant={localCardSize === 3 ? "default" : "outline"}
-                  size="sm"
-                  onClick={() => setLocalCardSize(3)}
-                  className={`w-full ${localCardSize === 3 ? "bg-primary hover:bg-primary/90" : ""}`}
-                >
-                  <span>3</span>
-                </Button>
-                <Button
-                  variant={localCardSize === 4 ? "default" : "outline"}
-                  size="sm"
-                  onClick={() => setLocalCardSize(4)}
-                  className={`w-full ${localCardSize === 4 ? "bg-primary hover:bg-primary/90" : ""}`}
-                >
-                  <span>4</span>
-                </Button>
               </div>
             </div>
           </TabsContent>
