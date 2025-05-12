@@ -105,7 +105,8 @@ export default function ArticlePage() {
     )
   }
 
-  const title = isBiasedMode ? article.titleBiased : article.titleUnbiased
+  // Always prefer titleUnbiased, then titleBiased, then fallback
+  const title = article.titleUnbiased || article.titleBiased || article.title || "Untitled";
   const categoryColor = getCategoryColor(article.category || article.section || "Uncategorized")
   const readingTime = getReadingTime(article?.body?.replace(/<[^>]*>/g, '') || '')
 
@@ -138,6 +139,11 @@ export default function ArticlePage() {
             setSortOrder(order);
             trackEvents.sortOrderChange(order);
           }}
+          categories={article.category ? [article.category] : []}
+          defaultBiasMode={defaultBiasMode}
+          setDefaultBiasMode={setDefaultBiasMode}
+          customNewsEnabled={false}
+          setCustomNewsEnabled={() => {}}
         />
         <div className="container mx-auto px-4 py-8">
           <motion.div
