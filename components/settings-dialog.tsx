@@ -30,8 +30,6 @@ interface SettingsDialogProps {
   categories: string[]
   preferredCategories: string[]
   setPreferredCategories: (categories: string[]) => void
-  defaultBiasMode: boolean
-  setDefaultBiasMode: (biased: boolean) => void
   themePreference: boolean
   setThemePreference: (dark: boolean) => void
   fontSize: string
@@ -50,8 +48,6 @@ export function SettingsDialog({
   categories,
   preferredCategories,
   setPreferredCategories,
-  defaultBiasMode,
-  setDefaultBiasMode,
   themePreference,
   setThemePreference,
   fontSize,
@@ -65,7 +61,6 @@ export function SettingsDialog({
 }: SettingsDialogProps) {
   const { user, updateEmail, updatePassword, updateUser } = useAuth()
   const [localPreferredCategories, setLocalPreferredCategories] = useState<string[]>(preferredCategories)
-  const [localDefaultBiasMode, setLocalDefaultBiasMode] = useState(defaultBiasMode)
   const [localThemePreference, setLocalThemePreference] = useState(themePreference)
   const [localFontSize, setLocalFontSize] = useState(fontSize)
   const [localArticlesPerPage, setLocalArticlesPerPage] = useState(articlesPerPage)
@@ -79,10 +74,17 @@ export function SettingsDialog({
 
   // Reset local state when dialog opens
   useEffect(() => {
-    console.log('SettingsDialog categories prop:', categories)
     if (open) {
-      setLocalPreferredCategories(preferredCategories)
-      setLocalDefaultBiasMode(defaultBiasMode)
+      // Always sync with localStorage when dialog opens
+      let stored: unknown = []
+      if (typeof window !== 'undefined') {
+        try {
+          stored = JSON.parse(localStorage.getItem("preferredCategories") || "[]")
+        } catch {
+          stored = []
+        }
+      }
+      setLocalPreferredCategories(Array.isArray(stored) ? stored : [])
       setLocalThemePreference(themePreference)
       setLocalFontSize(fontSize)
       setLocalArticlesPerPage(articlesPerPage)
@@ -91,11 +93,14 @@ export function SettingsDialog({
       setEmailUpdateSuccess(false)
       setPasswordUpdateSuccess(false)
     }
-  }, [open, preferredCategories, defaultBiasMode, themePreference, fontSize, articlesPerPage, cardSize, sortOrder, categories])
+  }, [open, themePreference, fontSize, articlesPerPage, cardSize, sortOrder, categories])
 
   const handleSave = () => {
     setPreferredCategories(localPreferredCategories)
-    setDefaultBiasMode(localDefaultBiasMode)
+    // Always update localStorage to reflect the new preferred categories, even if empty
+    if (typeof window !== 'undefined') {
+      localStorage.setItem("preferredCategories", JSON.stringify(localPreferredCategories))
+    }
     setThemePreference(localThemePreference)
     setFontSize(localFontSize)
     setArticlesPerPage(localArticlesPerPage)
@@ -107,7 +112,6 @@ export function SettingsDialog({
       updateUser({
         preferences: {
           ...user.preferences,
-          defaultBiasMode: localDefaultBiasMode,
           preferredCategories: localPreferredCategories,
         },
       })
@@ -246,18 +250,6 @@ export function SettingsDialog({
                     ))}
                 </div>
               </ScrollArea>
-            </div>
-
-            <div>
-              <h2 className="text-sm font-medium mb-2">Default Content View</h2>
-              <div className="flex items-center justify-between">
-                <Label htmlFor="default-bias-mode">Default to biased titles</Label>
-                <Switch
-                  id="default-bias-mode"
-                  checked={localDefaultBiasMode}
-                  onCheckedChange={setLocalDefaultBiasMode}
-                />
-              </div>
             </div>
 
             <div>

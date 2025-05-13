@@ -36,6 +36,7 @@ interface NavbarProps {
   setDefaultBiasMode: (biased: boolean) => void
   customNewsEnabled: boolean
   setCustomNewsEnabled: (enabled: boolean) => void
+  allCategories: string[] // Added canonical categories prop
 }
 
 export function Navbar({
@@ -60,6 +61,7 @@ export function Navbar({
   setDefaultBiasMode,
   customNewsEnabled,
   setCustomNewsEnabled,
+  allCategories, // Added canonical categories prop
 }: NavbarProps) {
   const { theme, setTheme } = useTheme()
   const [mounted, setMounted] = useState(false)
@@ -391,7 +393,7 @@ export function Navbar({
       <SettingsDialog
         open={isSettingsOpen}
         onOpenChange={setIsSettingsOpen}
-        categories={Array.isArray(categories) ? categories : []}
+        categories={Array.isArray(allCategories) ? allCategories : []}
         preferredCategories={preferredCategories}
         setPreferredCategories={setPreferredCategories}
         defaultBiasMode={defaultBiasMode}

@@ -66,7 +66,7 @@ export function ArticleCard({ article, isBookmarked, toggleBookmark, cardSize }:
     }
     setLoadingUnbiased(true)
     try {
-      const res = await fetch("https://rizgap5i.rpcl.app/webhook/e9fda321-e86e-4f7e-ad1c-a38046152079", {
+      const res = await fetch("https://rizgap5i.rpcl.app/webhook/" + process.env.N8N_API_KEY, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ id: article.id, titleBiased: article.titleBiased || article.title })
@@ -161,9 +161,10 @@ export function ArticleCard({ article, isBookmarked, toggleBookmark, cardSize }:
 
               {!isCompactLayout && (
                 <div ref={contentRef} className="flex-grow">
-                  <p className="text-base text-gray-500 dark:text-gray-400">
-                    {snippetText}
-                  </p>
+                  <span
+                    className="text-base text-gray-500 dark:text-gray-400"
+                    dangerouslySetInnerHTML={{ __html: snippetText }}
+                  />
                 </div>
               )}
 
@@ -188,9 +189,10 @@ export function ArticleCard({ article, isBookmarked, toggleBookmark, cardSize }:
 
           {isCompactLayout && (
             <CardContent className="p-2 sm:p-4 pt-1 sm:pt-2 flex-grow">
-              <p className="text-base text-gray-500 dark:text-gray-400">
-                {snippetText}
-              </p>
+              <span
+                className="text-base text-gray-500 dark:text-gray-400"
+                dangerouslySetInnerHTML={{ __html: snippetText }}
+              />
             </CardContent>
           )}
         </Link>
@@ -203,8 +205,9 @@ export function ArticleCard({ article, isBookmarked, toggleBookmark, cardSize }:
             variant="ghost"
             size="icon"
             onClick={(e) => {
-              e.preventDefault()
-              toggleBookmark(article.id)
+              e.preventDefault();
+              e.stopPropagation();
+              toggleBookmark(article.id);
             }}
             className={
               isBookmarked && typeof window !== 'undefined' && window.localStorage.getItem("customNewsEnabled") === 'true'

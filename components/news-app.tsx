@@ -8,6 +8,7 @@ import { Pagination } from "@/components/pagination"
 import { AuthProvider } from "@/lib/auth"
 import { useTheme } from "next-themes"
 import { trackEvents } from "@/lib/analytics"
+import { SettingsDialog } from "@/components/settings-dialog"
 import type { Article } from "@/lib/types"
 
 export function NewsApp() {
@@ -50,6 +51,7 @@ export function NewsApp() {
   const [totalPages, setTotalPages] = useState(1)
   const [totalCount, setTotalCount] = useState(0)
   const [customNewsEnabled, setCustomNewsEnabled] = useState(false)
+  const [settingsOpen, setSettingsOpen] = useState(false)
 
   const toggleBookmark = (articleId: number) => {
     const newBookmarks = bookmarks.includes(articleId)
@@ -99,17 +101,7 @@ export function NewsApp() {
       setAllArticles(data.articles)
       setTotalCount(data.totalCount)
       setTotalPages(Math.max(1, Math.ceil(data.totalCount / articlesPerPage)))
-      // Only set categories if present in API response and not filtering by category
-      if (Array.isArray(data.categories) && data.categories.every((c: unknown): c is string => typeof c === 'string')) {
-        setCategories(data.categories as string[])
-      } else if (!selectedCategory || selectedCategory === 'All') {
-        // Only extract categories from articles if not filtering by category
-        if (data.articles) {
-          const sections = ['All', ...Array.from(new Set(data.articles.map((a: any) => String(a.section || ''))))] as string[]
-          console.log('Extracted sections:', sections)
-          setCategories(sections)
-        }
-      }
+
     } catch (error) {
       console.error('Error fetching articles:', error)
     } finally {
@@ -206,6 +198,63 @@ export function NewsApp() {
     }
   }, [mounted])
 
+  // Sync preferredCategories from localStorage when customNewsEnabled is toggled on
+  useEffect(() => {
+    if (customNewsEnabled) {
+      let stored: unknown = []
+      if (typeof window !== 'undefined') {
+        try {
+          stored = JSON.parse(localStorage.getItem("preferredCategories") || "[]")
+        } catch {
+          stored = []
+        }
+      }
+      if (Array.isArray(stored) && JSON.stringify(stored) !== JSON.stringify(preferredCategories)) {
+        setPreferredCategories(stored)
+      }
+    }
+  }, [customNewsEnabled])
+
+  // Listen for changes to preferredCategories in localStorage when customNewsEnabled is on
+  useEffect(() => {
+    if (!customNewsEnabled) return;
+    const handleStorage = (event: StorageEvent) => {
+      if (event.key === "preferredCategories") {
+        let stored: unknown = [];
+        try {
+          stored = JSON.parse(event.newValue || "[]");
+        } catch {
+          stored = [];
+        }
+        if (Array.isArray(stored) && JSON.stringify(stored) !== JSON.stringify(preferredCategories)) {
+          setPreferredCategories(stored);
+        }
+      }
+    };
+    window.addEventListener("storage", handleStorage);
+    return () => window.removeEventListener("storage", handleStorage);
+  }, [customNewsEnabled, preferredCategories]);
+
+  // Also, when customNewsEnabled is on, poll localStorage for changes (for same-tab updates)
+  useEffect(() => {
+    if (!customNewsEnabled) return;
+    let last = JSON.stringify(preferredCategories);
+    const interval = setInterval(() => {
+      let stored: unknown = [];
+      try {
+        stored = JSON.parse(localStorage.getItem("preferredCategories") || "[]");
+      } catch {
+        stored = [];
+      }
+      const current = JSON.stringify(stored);
+      if (current !== last) {
+        setPreferredCategories(stored);
+        last = current;
+      }
+    }, 1000);
+    return () => clearInterval(interval);
+  }, [customNewsEnabled, preferredCategories]);
+
   // When showBookmarksOnly is enabled, use allArticles directly (already fetched from API by IDs)
   const allTabArticles = useMemo(() => {
     if (showBookmarksOnly) {
@@ -245,13 +294,14 @@ export function NewsApp() {
     }
   }, [fontSize, mounted])
 
-  // New: fetch all categories on mount
+  // New: fetch all categories/sections from /api/sections (1 doc read)
   useEffect(() => {
     async function fetchAllCategories() {
       try {
-        const response = await fetch('/api/news?allCategories=1')
+        const response = await fetch('/api/sections')
         if (!response.ok) return
         const data = await response.json()
+        console.log('Fetched all categories:', data)
         if (Array.isArray(data.categories) && data.categories.length > 0) {
           setAllCategories(['All', ...data.categories.filter((c: string) => c && c !== 'All')])
         }
@@ -272,8 +322,9 @@ export function NewsApp() {
 
   // Fetch articles by IDs from API when showBookmarksOnly is enabled
   useEffect(() => {
+    if (!showBookmarksOnly) return; // Only run when showBookmarksOnly is true
     const fetchBookmarkedArticles = async () => {
-      if (showBookmarksOnly && bookmarks.length > 0) {
+      if (bookmarks.length > 0) {
         try {
           const response = await fetch(`/api/news?ids=${bookmarks.join(',')}`)
           if (!response.ok) throw new Error('Failed to fetch bookmarked articles')
@@ -286,9 +337,6 @@ export function NewsApp() {
           setTotalCount(0)
           setTotalPages(1)
         }
-      } else if (!showBookmarksOnly) {
-        // Refetch the normal article list when bookmark filter is disabled
-        fetchArticles()
       }
     }
     fetchBookmarkedArticles()
@@ -307,6 +355,14 @@ export function NewsApp() {
     }
   }, [showBookmarksOnly, allArticles, customNewsEnabled, customTabArticles, allTabArticles, selectedCategory])
 
+  // Custom: Only update preferredCategories in localStorage, do not reload or update state here
+  const updatePreferredCategories = (newCategories: string[]) => {
+    if (typeof window !== 'undefined') {
+      localStorage.setItem("preferredCategories", JSON.stringify(newCategories))
+    }
+    // Do not update state or reload articles here
+  }
+
   return (
     <AuthProvider>
       <div className="flex flex-col min-h-screen bg-background text-foreground mx-2">
@@ -316,7 +372,7 @@ export function NewsApp() {
           showBookmarksOnly={showBookmarksOnly}
           setShowBookmarksOnly={setShowBookmarksOnly}
           preferredCategories={preferredCategories}
-          setPreferredCategories={setPreferredCategories}
+          setPreferredCategories={updatePreferredCategories}
           themePreference={themePreference}
           setThemePreference={(isDark) => {
             setTheme(isDark ? "dark" : "light");
@@ -338,6 +394,7 @@ export function NewsApp() {
           setDefaultBiasMode={setDefaultBiasMode}
           customNewsEnabled={customNewsEnabled}
           setCustomNewsEnabled={setCustomNewsEnabled}
+          allCategories={allCategories}
         />
         <CategoryFilter
           categories={allCategories}
@@ -367,12 +424,37 @@ export function NewsApp() {
                 </div>
               )}
             </>
+          ) : customNewsEnabled && preferredCategories.length === 0 ? (
+            <div className="flex items-center justify-center h-64">
+              <div className="text-lg text-center max-w-xl">
+                To view custom news, please set your preferred categories in the settings. Once you have selected your preferences, relevant articles will appear here.
+              </div>
+            </div>
           ) : (
             <div className="flex items-center justify-center h-64">
               <div className="text-lg">No articles found</div>
             </div>
           )}
         </main>
+        <SettingsDialog
+          open={settingsOpen}
+          onOpenChange={setSettingsOpen}
+          categories={allCategories} // Use the canonical categories list
+          preferredCategories={preferredCategories}
+          setPreferredCategories={updatePreferredCategories}
+          defaultBiasMode={defaultBiasMode}
+          setDefaultBiasMode={setDefaultBiasMode}
+          themePreference={themePreference}
+          setThemePreference={setThemePreference}
+          fontSize={fontSize}
+          setFontSize={setFontSize}
+          articlesPerPage={articlesPerPage}
+          setArticlesPerPage={setArticlesPerPage}
+          cardSize={cardSize}
+          setCardSize={setCardSize}
+          sortOrder={sortOrder}
+          setSortOrder={setSortOrder}
+        />
       </div>
     </AuthProvider>
   )
