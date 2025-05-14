@@ -2,7 +2,7 @@
 
 import * as React from "react"
 import { useState, useEffect } from "react"
-import { Search, Bookmark, Menu, X, Sun, Moon, Settings, FolderHeart } from "lucide-react"
+import { Search, Bookmark, Sun, Moon, Settings, FolderHeart, X } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Switch } from "@/components/ui/switch"
@@ -69,7 +69,6 @@ export function Navbar({
   const { theme, setTheme } = useTheme()
   const { user } = useAuth()
   const [mounted, setMounted] = useState(false)
-  const [isMenuOpen, setIsMenuOpen] = useState(false)
   const [isSettingsOpen, setIsSettingsOpen] = useState(false)
   const [scrolled, setScrolled] = useState(false)
   const [searchBarOpen, setSearchBarOpen] = useState(false)
@@ -128,7 +127,6 @@ export function Navbar({
   useEffect(() => {
     function handleOpenAuthModal(e: CustomEvent) {
       setIsSettingsOpen(false)
-      setIsMenuOpen(false)
       // Open the auth modal via UserDropdown
       const userDropdownBtn = document.querySelector('[data-auth-modal-trigger]') as HTMLElement
       if (userDropdownBtn) userDropdownBtn.click()
@@ -145,17 +143,6 @@ export function Navbar({
     }`}>
       <div className="w-full px-2 md:container md:px-4 mx-auto">
         <div className="flex items-center justify-between h-16">
-          {/* <div className="flex-shrink-0 relative h-12 w-32 md:w-48 ml-4 md:ml-0">
-            {mounted && (
-              <Image
-                src={theme === "dark" ? "/logo3.png" : "/logo2.png"}
-                alt="BiasBrief"
-                fill
-                className="object-contain"
-                priority
-              />
-            )}
-          </div> */}
           <div className="flex-shrink-0 mr-10 md:mr-4 sm:ml-0">
             <Logo />
           </div>
@@ -278,24 +265,21 @@ export function Navbar({
                 {user ? (
                   <UserDropdown openSettings={() => setIsSettingsOpen(true)} />
                 ) : (
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    onClick={() => {
-                      setAuthModalTab("sign-in")
-                      setAuthModalOpen(true)
+                  <UserDropdown
+                    openSettings={() => setIsSettingsOpen(true)}
+                    showSignedOutMenu={true}
+                    onSignIn={() => {
+                      setAuthModalTab("sign-in");
+                      setAuthModalOpen(true);
                     }}
-                    className="ml-2 hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors"
-                  >
-                    Sign In
-                  </Button>
+                  />
                 )}
               </div>
             </div>
           )}
 
           {isMobile && (
-            <div className="flex items-center gap-2 w-full justify-end">
+            <div className="flex items-center gap-1 w-full justify-end">
               <div className="search-container relative">
                 {searchBarOpen ? (
                   <div className="fixed inset-0 z-50 bg-background/95 backdrop-blur-sm p-4">
@@ -381,66 +365,22 @@ export function Navbar({
                 <Label htmlFor="custom-news-toggle-mobile" className="text-[10px] px-1">Custom News</Label>
               </div>
 
+              {/* User avatar or sign in/settings for mobile */}
               {user ? (
                 <UserDropdown openSettings={() => setIsSettingsOpen(true)} />
-              ) : null}
-
-              <Button
-                variant="ghost"
-                size="icon"
-                onClick={() => setIsMenuOpen(!isMenuOpen)}
-                className="h-9 w-9 hover:bg-gray-100 dark:hover:bg-gray-800"
-              >
-                {isMenuOpen ? <X className="h-4 w-4" /> : <Menu className="h-4 w-4" />}
-              </Button>
+              ) : (
+                <UserDropdown
+                  openSettings={() => setIsSettingsOpen(true)}
+                  showSignedOutMenu={true}
+                  onSignIn={() => {
+                    setAuthModalTab("sign-in");
+                    setAuthModalOpen(true);
+                  }}
+                />
+              )}
             </div>
           )}
         </div>
-
-        {isMobile && isMenuOpen && (
-          <motion.div
-            initial={{ opacity: 0, height: 0 }}
-            animate={{ opacity: 1, height: "auto" }}
-            exit={{ opacity: 0, height: 0 }}
-            transition={{ duration: 0.2 }}
-            className="py-4 space-y-4 border-t border-gray-200 dark:border-gray-800"
-          >
-            <div className="flex items-center justify-between mx-14">
-              <div className="flex items-center gap-3">
-                <Button
-                  variant="ghost"
-                  size="icon"
-                  onClick={() => setIsSettingsOpen(true)}
-                  className="h-9 w-9 hover:bg-gray-100 dark:hover:bg-gray-800"
-                  aria-label="Settings"
-                >
-                  <Settings className="h-4 w-4" />
-                </Button>
-                <Button
-                  variant="ghost"
-                  size="icon"
-                  onClick={handleThemeChange}
-                  title="Toggle theme"
-                  className="h-9 w-9 hover:bg-gray-100 dark:hover:bg-gray-800"
-                >
-                  {ThemeIcon && <ThemeIcon className="h-4 w-4 text-amber-500" />}
-                </Button>
-              </div>
-              {/* Sign In button for mobile menu */}
-              <Button
-                variant="outline"
-                size="sm"
-                onClick={() => {
-                  setAuthModalTab("sign-in")
-                  setAuthModalOpen(true)
-                }}
-                className="hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors"
-              >
-                Sign In
-              </Button>
-            </div>
-          </motion.div>
-        )}
       </div>
 
       <SettingsDialog
