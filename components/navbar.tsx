@@ -12,6 +12,7 @@ import { useMediaQuery } from "@/hooks/use-media-query"
 import { SettingsDialog } from "@/components/settings-dialog"
 import { UserDropdown } from "@/components/user-dropdown"
 import { motion } from "framer-motion"
+import { Logo } from "@/components/logo"
 import Image from "next/image"
 
 interface NavbarProps {
@@ -69,6 +70,7 @@ export function Navbar({
   const [isSettingsOpen, setIsSettingsOpen] = useState(false)
   const [scrolled, setScrolled] = useState(false)
   const [searchBarOpen, setSearchBarOpen] = useState(false)
+  const [pendingSearch, setPendingSearch] = useState(searchQuery)
   const isMobile = useMediaQuery("(max-width: 768px)")
   const searchInputRef = React.useRef<HTMLInputElement>(null)
 
@@ -111,12 +113,12 @@ export function Navbar({
     const handleEsc = (event: KeyboardEvent) => {
       if (event.key === 'Escape') {
         setSearchBarOpen(false)
-        setSearchQuery('')
+        setPendingSearch(searchQuery)
       }
     }
     document.addEventListener('keydown', handleEsc)
     return () => document.removeEventListener('keydown', handleEsc)
-  }, [setSearchQuery])
+  }, [searchQuery])
 
   useEffect(() => {
     function handleOpenAuthModal(e: CustomEvent) {
@@ -138,7 +140,7 @@ export function Navbar({
     }`}>
       <div className="w-full px-2 md:container md:px-4 mx-auto">
         <div className="flex items-center justify-between h-16">
-          <div className="flex-shrink-0 relative h-12 w-32 md:w-48 ml-4 md:ml-0">
+          {/* <div className="flex-shrink-0 relative h-12 w-32 md:w-48 ml-4 md:ml-0">
             {mounted && (
               <Image
                 src={theme === "dark" ? "/logo3.png" : "/logo2.png"}
@@ -148,11 +150,14 @@ export function Navbar({
                 priority
               />
             )}
+          </div> */}
+          <div className="flex-shrink-0 mr-10 md:mr-4 sm:ml-0">
+            <Logo />
           </div>
 
           {!isMobile && (
             <div className="flex items-center gap-3 flex-1 justify-end">
-              <div className="search-container relative max-w-md">
+              <div className="search-container flex justify-end relative w-full max-w-xl">
                 <motion.div
                   animate={{
                     width: searchBarOpen ? "100%" : "40px",
@@ -160,18 +165,38 @@ export function Navbar({
                   }}
                   initial={{ width: "40px", opacity: 1 }}
                   transition={{ duration: 0.2 }}
-                  className="relative flex items-center"
+                  className="relative flex items-center justify-end"
                 >
                   {searchBarOpen ? (
-                    <div className="relative w-full">
+                    <form
+                      onSubmit={e => {
+                        e.preventDefault();
+                        setSearchQuery(pendingSearch);
+                        setPendingSearch("");
+                        setSearchBarOpen(false);
+                      }}
+                      className="relative w-full"
+                    >
                       <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 h-4 w-4" />
                       <Input
                         ref={searchInputRef}
-                        type="text"
+                        type="search"
                         placeholder="Search articles..."
-                        value={searchQuery}
-                        onChange={(e) => setSearchQuery(e.target.value)}
-                        className="pl-10 w-full border-0 bg-gray-50/50 dark:bg-gray-800/50 focus:bg-white dark:focus:bg-gray-800 transition-all duration-200"
+                        value={pendingSearch}
+                        onChange={e => setPendingSearch(e.target.value)}
+                        onKeyDown={e => {
+                          if (e.key === 'Escape') {
+                            setSearchBarOpen(false)
+                            setPendingSearch(searchQuery)
+                          }
+                          if (e.key === 'Enter' && !e.shiftKey) {
+                            e.preventDefault();
+                            setSearchQuery(pendingSearch);
+                            setPendingSearch("");
+                            setSearchBarOpen(false);
+                          }
+                        }}
+                        className="pl-10 pr-2 w-full border-0 bg-gray-50/50 dark:bg-gray-800/50 focus:bg-white dark:focus:bg-gray-800 transition-all duration-200"
                       />
                       <Button
                         variant="ghost"
@@ -179,12 +204,12 @@ export function Navbar({
                         className="absolute right-2 top-1/2 transform -translate-y-1/2 h-8 w-8 hover:bg-transparent"
                         onClick={() => {
                           setSearchBarOpen(false)
-                          setSearchQuery('')
+                          setPendingSearch(searchQuery)
                         }}
                       >
-                        <X className="h-4 w-4 text-gray-400" />
+                        <X className="h-4 w-4 ml-2 text-gray-400" />
                       </Button>
-                    </div>
+                    </form>
                   ) : (
                     <Button
                       variant="ghost"
@@ -233,14 +258,18 @@ export function Navbar({
                   {ThemeIcon && <ThemeIcon className="h-4 w-4 text-amber-500" />}
                 </Button>
 
-                <div className="flex items-center gap-4">
+                <div className="flex items-center gap-1">
                   <Switch
                     id="custom-news-toggle"
                     checked={customNewsEnabled}
                     onCheckedChange={setCustomNewsEnabled}
                   />
-                  <Label htmlFor="custom-news-toggle" className="text-xs px-2">Custom News</Label>
+                  <Label htmlFor="custom-news-toggle" className="text-xs px-2 leading-tight">
+                    <span className="block">Custom</span>
+                    <span className="block">News</span>
+                  </Label>
                 </div>
+
 
                 <UserDropdown openSettings={() => setIsSettingsOpen(true)} />
 
@@ -269,26 +298,48 @@ export function Navbar({
                 {searchBarOpen ? (
                   <div className="fixed inset-0 z-50 bg-background/95 backdrop-blur-sm p-4">
                     <div className="relative max-w-md mx-auto mt-2">
-                      <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 h-4 w-4" />
-                      <Input
-                        ref={searchInputRef}
-                        type="text"
-                        placeholder="Search articles..."
-                        value={searchQuery}
-                        onChange={(e) => setSearchQuery(e.target.value)}
-                        className="pl-10 w-full border-0 bg-gray-50/50 dark:bg-gray-800/50 focus:bg-white dark:focus:bg-gray-800"
-                      />
-                      <Button
-                        variant="ghost"
-                        size="icon"
-                        className="absolute right-2 top-1/2 transform -translate-y-1/2 h-8 w-8 hover:bg-transparent"
-                        onClick={() => {
-                          setSearchBarOpen(false)
-                          setSearchQuery('')
+                      <form
+                        onSubmit={e => {
+                          e.preventDefault();
+                          setSearchQuery(pendingSearch);
+                          setPendingSearch("");
+                          setSearchBarOpen(false);
                         }}
+                        className="relative w-full"
                       >
-                        <X className="h-4 w-4 text-gray-400" />
-                      </Button>
+                        <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 h-4 w-4 pointer-events-none z-10" />
+                        <Input
+                          ref={searchInputRef}
+                          type="search"
+                          placeholder="Search articles..."
+                          value={pendingSearch}
+                          onChange={e => setPendingSearch(e.target.value)}
+                          onKeyDown={e => {
+                            if (e.key === 'Escape') {
+                              setSearchBarOpen(false)
+                              setPendingSearch(searchQuery)
+                            }
+                            if (e.key === 'Enter' && !e.shiftKey) {
+                              e.preventDefault();
+                              setSearchQuery(pendingSearch);
+                              setPendingSearch("");
+                              setSearchBarOpen(false);
+                            }
+                          }}
+                          className="pl-12 w-full border-0 bg-gray-50/50 dark:bg-gray-800/50 focus:bg-white dark:focus:bg-gray-800 no-clear-button"
+                        />
+                        <Button
+                          variant="ghost"
+                          size="icon"
+                          className="absolute right-2 top-1/2 -translate-y-1/2 h-8 w-8 hover:bg-transparent"
+                          onClick={() => {
+                            setSearchBarOpen(false)
+                            setPendingSearch(searchQuery)
+                          }}
+                        >
+                          <X className="h-4 w-4 text-gray-400" />
+                        </Button>
+                      </form>
                     </div>
                   </div>
                 ) : (
@@ -396,8 +447,6 @@ export function Navbar({
         categories={Array.isArray(allCategories) ? allCategories : []}
         preferredCategories={preferredCategories}
         setPreferredCategories={setPreferredCategories}
-        defaultBiasMode={defaultBiasMode}
-        setDefaultBiasMode={setDefaultBiasMode}
         themePreference={themePreference}
         setThemePreference={setThemePreference}
         fontSize={fontSize}

@@ -10,6 +10,7 @@ import { useTheme } from "next-themes"
 import { trackEvents } from "@/lib/analytics"
 import { SettingsDialog } from "@/components/settings-dialog"
 import type { Article } from "@/lib/types"
+import { Button } from "@/components/ui/button"
 
 export function NewsApp() {
   const { theme, setTheme } = useTheme()
@@ -89,7 +90,10 @@ export function NewsApp() {
       params.append('page', String(currentPage))
       params.append('pageSize', String(articlesPerPage))
       params.append('sortOrder', sortOrder)
-      if (customNewsEnabled && preferredCategories.length > 0 && (!selectedCategory || selectedCategory === 'All')) {
+      // If searching, do NOT filter by preferredCategories, search all articles
+      if (searchQuery) {
+        // No preferredCategories/category param
+      } else if (customNewsEnabled && preferredCategories.length > 0 && (!selectedCategory || selectedCategory === 'All')) {
         params.append('preferredCategories', preferredCategories.join(','))
       } else if (selectedCategory && selectedCategory !== 'All') {
         params.append('category', selectedCategory)
@@ -97,7 +101,6 @@ export function NewsApp() {
       const response = await fetch(`/api/news?${params.toString()}`)
       if (!response.ok) throw new Error('Failed to fetch articles')
       const data = await response.json()
-      console.log('Fetched articles data:', data)
       setAllArticles(data.articles)
       setTotalCount(data.totalCount)
       setTotalPages(Math.max(1, Math.ceil(data.totalCount / articlesPerPage)))
@@ -227,7 +230,11 @@ export function NewsApp() {
           stored = [];
         }
         if (Array.isArray(stored) && JSON.stringify(stored) !== JSON.stringify(preferredCategories)) {
-          setPreferredCategories(stored);
+          if (Array.isArray(stored) && stored.every((item) => typeof item === 'string')) {
+            if (Array.isArray(stored) && stored.every((item) => typeof item === 'string')) {
+              setPreferredCategories(stored);
+            }
+          }
         }
       }
     };
@@ -248,7 +255,9 @@ export function NewsApp() {
       }
       const current = JSON.stringify(stored);
       if (current !== last) {
-        setPreferredCategories(stored);
+        if (Array.isArray(stored) && stored.every((item) => typeof item === 'string')) {
+          setPreferredCategories(stored);
+        }
         last = current;
       }
     }, 1000);
@@ -301,7 +310,6 @@ export function NewsApp() {
         const response = await fetch('/api/sections')
         if (!response.ok) return
         const data = await response.json()
-        console.log('Fetched all categories:', data)
         if (Array.isArray(data.categories) && data.categories.length > 0) {
           setAllCategories(['All', ...data.categories.filter((c: string) => c && c !== 'All')])
         }
@@ -396,12 +404,30 @@ export function NewsApp() {
           setCustomNewsEnabled={setCustomNewsEnabled}
           allCategories={allCategories}
         />
-        <CategoryFilter
-          categories={allCategories}
-          selectedCategory={selectedCategory}
-          setSelectedCategory={handleCategoryChange}
-        />
+
         <main className="flex-1 container px-1 py-6">
+          {/* Show back button if search is active, otherwise show category filter */}
+          {searchQuery.trim() ? (
+            <div className="flex items-center justify-between px-4 py-2">
+              <Button
+                variant="ghost"
+                onClick={() => setSearchQuery("")}
+                className=" hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors"
+              >
+                <svg className="mr-2 h-4 w-4" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" d="M15 19l-7-7 7-7" /></svg>
+                Back to list
+              </Button>
+              <span className=" text-gray-600 dark:text-gray-300 font-medium truncate max-w-[60vw] text-right">
+                  Search results for: "{searchQuery}"
+              </span>
+            </div>
+          ) : (
+            <CategoryFilter
+              categories={allCategories}
+              selectedCategory={selectedCategory}
+              setSelectedCategory={handleCategoryChange}
+            />
+          )}
           {isLoading ? (
             <div className="flex items-center justify-center h-64">
               <div className="text-lg">Loading articles...</div>
@@ -442,8 +468,6 @@ export function NewsApp() {
           categories={allCategories} // Use the canonical categories list
           preferredCategories={preferredCategories}
           setPreferredCategories={updatePreferredCategories}
-          defaultBiasMode={defaultBiasMode}
-          setDefaultBiasMode={setDefaultBiasMode}
           themePreference={themePreference}
           setThemePreference={setThemePreference}
           fontSize={fontSize}
