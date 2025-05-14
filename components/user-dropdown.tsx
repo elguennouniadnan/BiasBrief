@@ -10,7 +10,7 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu"
-import { Settings, LogOut } from "lucide-react"
+import { Settings, LogOut, LogIn } from "lucide-react"
 import { Avatar, AvatarFallback } from "@/components/ui/avatar"
 import { useState, useEffect } from "react"
 import { AuthModal } from "@/components/auth/auth-modal"
@@ -18,9 +18,11 @@ import { motion } from "framer-motion"
 
 interface UserDropdownProps {
   openSettings: () => void
+  showSignedOutMenu?: boolean
+  onSignIn?: () => void
 }
 
-export function UserDropdown({ openSettings }: UserDropdownProps) {
+export function UserDropdown({ openSettings, showSignedOutMenu = false, onSignIn }: UserDropdownProps) {
   const { user, signOut, isEmailVerified, providerId, resendVerificationEmail } = useAuth()
   const [authModalOpen, setAuthModalOpen] = useState(false)
   const [authModalTab, setAuthModalTab] = useState<"sign-in" | "sign-up">("sign-in")
@@ -46,6 +48,47 @@ export function UserDropdown({ openSettings }: UserDropdownProps) {
     return email.substring(0, 2).toUpperCase()
   }
 
+  if (!user && showSignedOutMenu) {
+    return (
+      <>
+        <DropdownMenu>
+          <DropdownMenuTrigger asChild>
+            <Button
+              variant="ghost"
+              className="relative h-9 w-9 mr-2 rounded-full overflow-hidden hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors"
+              aria-label="User"
+            >
+              <Avatar className="h-9 w-9 ring-2 ring-offset-2 ring-offset-white dark:ring-offset-gray-900 ring-primary/20">
+                <AvatarFallback className="bg-gradient-to-br from-primary to-primary/70 text-white text-base font-bold">
+                  <svg viewBox="0 0 24 24" fill="none" className="h-6 w-6 text-white"><circle cx="12" cy="8" r="4" stroke="currentColor" strokeWidth="2"/><path d="M4 20c0-2.21 3.582-4 8-4s8 1.79 8 4" stroke="currentColor" strokeWidth="2"/></svg>
+                </AvatarFallback>
+              </Avatar>
+            </Button>
+          </DropdownMenuTrigger>
+          <DropdownMenuContent align="end" className="max-w-56 overflow-hidden">
+            <motion.div initial={{ opacity: 0, y: -10 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.2 }}>
+              <DropdownMenuItem
+                onClick={openSettings}
+                className="cursor-pointer hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors"
+              >
+                <Settings className="h-4 w-4 text-primary" />
+                <span>Settings</span>
+              </DropdownMenuItem>
+              <DropdownMenuSeparator />
+              <DropdownMenuItem
+                onClick={() => onSignIn && onSignIn()}
+                className="cursor-pointer hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors"
+              >
+                <LogIn className="h-4 w-4 text-primary" />
+                <span>Sign In</span>
+              </DropdownMenuItem>
+            </motion.div>
+          </DropdownMenuContent>
+        </DropdownMenu>
+      </>
+    )
+  }
+
   if (!user) {
     return (
       <>
@@ -60,7 +103,7 @@ export function UserDropdown({ openSettings }: UserDropdownProps) {
         <DropdownMenuTrigger asChild>
           <Button
             variant="ghost"
-            className="relative h-9 w-9 rounded-full overflow-hidden hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors"
+            className="relative h-9 w-9 mr-2 rounded-full overflow-hidden hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors"
           >
             <Avatar className="h-9 w-9 ring-2 ring-offset-2 ring-offset-white dark:ring-offset-gray-900 ring-primary/20">
               {user.photoURL ? (
@@ -78,7 +121,7 @@ export function UserDropdown({ openSettings }: UserDropdownProps) {
             </Avatar>
           </Button>
         </DropdownMenuTrigger>
-        <DropdownMenuContent align="end" className="w-56 overflow-hidden">
+        <DropdownMenuContent align="end" className="max-w-56 mr-2 overflow-hidden">
           <motion.div initial={{ opacity: 0, y: -10 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.2 }}>
             {/* Email verification warning */}
             {providerId === "password" && !isEmailVerified && (
