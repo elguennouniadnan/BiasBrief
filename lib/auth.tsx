@@ -1,11 +1,29 @@
 "use client"
 
 import { createContext, useContext, useState, useEffect, type ReactNode } from "react"
+import { auth, db, googleProvider } from "@/lib/firebase"
+import {
+  onAuthStateChanged,
+  signInWithEmailAndPassword,
+  createUserWithEmailAndPassword,
+  signOut as firebaseSignOut,
+  updateEmail as firebaseUpdateEmail,
+  updatePassword as firebaseUpdatePassword,
+  signInWithPopup,
+  sendEmailVerification,
+} from "firebase/auth"
+import {
+  doc,
+  setDoc,
+  getDoc,
+  updateDoc,
+} from "firebase/firestore"
 
 export interface User {
   id: string
   email: string
   name: string
+  photoURL?: string
   preferences: {
     defaultBiasMode: boolean
     preferredCategories: string[]
@@ -17,10 +35,14 @@ interface AuthContextType {
   isLoading: boolean
   signIn: (email: string, password: string) => Promise<boolean>
   signUp: (name: string, email: string, password: string) => Promise<boolean>
+  signInWithGoogle: () => Promise<boolean>
   signOut: () => void
-  updateUser: (updates: Partial<User>) => void
+  updateUser: (updates: Partial<User>) => Promise<void>
   updateEmail: (email: string, password: string) => Promise<boolean>
   updatePassword: (currentPassword: string, newPassword: string) => Promise<boolean>
+  providerId: string | null
+  isEmailVerified: boolean
+  resendVerificationEmail: () => Promise<void>
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined)
@@ -28,47 +50,55 @@ const AuthContext = createContext<AuthContextType | undefined>(undefined)
 export function AuthProvider({ children }: { children: ReactNode }) {
   const [user, setUser] = useState<User | null>(null)
   const [isLoading, setIsLoading] = useState(true)
+  const [providerId, setProviderId] = useState<string | null>(null)
+  const [isEmailVerified, setIsEmailVerified] = useState<boolean>(true)
 
-  // Load user from localStorage on initial render
+  // Listen to Firebase auth state
   useEffect(() => {
-    const savedUser = localStorage.getItem("user")
-    if (savedUser) {
-      setUser(JSON.parse(savedUser))
-    }
-    setIsLoading(false)
+    const unsubscribe = onAuthStateChanged(auth, async (firebaseUser) => {
+      if (firebaseUser) {
+        // Get or create user profile in Firestore
+        const userRef = doc(db, "users", firebaseUser.uid)
+        let userSnap = await getDoc(userRef)
+        let userData = userSnap.exists() ? userSnap.data() : null
+        if (!userData) {
+          // Create new user profile
+          userData = {
+            id: firebaseUser.uid,
+            email: firebaseUser.email || "",
+            name: firebaseUser.displayName || firebaseUser.email?.split("@")[0] || "",
+            photoURL: firebaseUser.photoURL || "",
+            preferences: {
+              defaultBiasMode: false,
+              preferredCategories: [],
+            },
+          }
+          await setDoc(userRef, userData)
+        }
+        setUser({
+          id: firebaseUser.uid,
+          email: userData.email,
+          name: userData.name,
+          photoURL: userData.photoURL,
+          preferences: userData.preferences,
+        })
+        // Get the main providerId (first in providerData)
+        setProviderId(firebaseUser.providerData[0]?.providerId || null)
+        setIsEmailVerified(firebaseUser.emailVerified)
+      } else {
+        setUser(null)
+        setProviderId(null)
+        setIsEmailVerified(true)
+      }
+      setIsLoading(false)
+    })
+    return () => unsubscribe()
   }, [])
 
-  // Save user to localStorage when it changes
-  useEffect(() => {
-    if (user) {
-      localStorage.setItem("user", JSON.stringify(user))
-    } else {
-      localStorage.removeItem("user")
-    }
-  }, [user])
-
-  // Mock authentication functions
   const signIn = async (email: string, password: string): Promise<boolean> => {
-    // In a real app, this would call an API
     setIsLoading(true)
-
     try {
-      // Simulate API call
-      await new Promise((resolve) => setTimeout(resolve, 1000))
-
-      // For demo purposes, any email/password combination works
-      // In a real app, this would validate credentials against a backend
-      const mockUser: User = {
-        id: Math.random().toString(36).substring(2, 9),
-        email,
-        name: email.split("@")[0],
-        preferences: {
-          defaultBiasMode: false,
-          preferredCategories: [],
-        },
-      }
-
-      setUser(mockUser)
+      await signInWithEmailAndPassword(auth, email, password)
       return true
     } catch (error) {
       console.error("Sign in error:", error)
@@ -79,25 +109,25 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   }
 
   const signUp = async (name: string, email: string, password: string): Promise<boolean> => {
-    // In a real app, this would call an API
     setIsLoading(true)
-
     try {
-      // Simulate API call
-      await new Promise((resolve) => setTimeout(resolve, 1000))
-
-      // For demo purposes, create a user with the provided details
-      const mockUser: User = {
-        id: Math.random().toString(36).substring(2, 9),
+      const cred = await createUserWithEmailAndPassword(auth, email, password)
+      // Create user profile in Firestore
+      const userRef = doc(db, "users", cred.user.uid)
+      await setDoc(userRef, {
+        id: cred.user.uid,
         email,
         name,
+        photoURL: cred.user.photoURL || "",
         preferences: {
           defaultBiasMode: false,
           preferredCategories: [],
         },
+      })
+      // Send email verification
+      if (cred.user && !cred.user.emailVerified) {
+        await sendEmailVerification(cred.user)
       }
-
-      setUser(mockUser)
       return true
     } catch (error) {
       console.error("Sign up error:", error)
@@ -107,26 +137,39 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     }
   }
 
-  const signOut = () => {
-    setUser(null)
+  const signInWithGoogle = async (): Promise<boolean> => {
+    setIsLoading(true)
+    try {
+      const result = await signInWithPopup(auth, googleProvider)
+      // User profile will be created/updated by onAuthStateChanged
+      return true
+    } catch (error) {
+      console.error("Google sign-in error:", error)
+      return false
+    } finally {
+      setIsLoading(false)
+    }
   }
 
-  const updateUser = (updates: Partial<User>) => {
+  const signOut = () => {
+    firebaseSignOut(auth)
+  }
+
+  const updateUser = async (updates: Partial<User>) => {
     if (user) {
+      const userRef = doc(db, "users", user.id)
+      await updateDoc(userRef, updates)
       setUser({ ...user, ...updates })
     }
   }
 
   const updateEmail = async (email: string, password: string): Promise<boolean> => {
-    // In a real app, this would verify the password and update the email
     setIsLoading(true)
-
     try {
-      // Simulate API call
-      await new Promise((resolve) => setTimeout(resolve, 1000))
-
-      if (user) {
-        setUser({ ...user, email })
+      if (auth.currentUser) {
+        await signInWithEmailAndPassword(auth, auth.currentUser.email || "", password)
+        await firebaseUpdateEmail(auth.currentUser, email)
+        await updateUser({ email })
         return true
       }
       return false
@@ -139,15 +182,14 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   }
 
   const updatePassword = async (currentPassword: string, newPassword: string): Promise<boolean> => {
-    // In a real app, this would verify the current password and update to the new one
     setIsLoading(true)
-
     try {
-      // Simulate API call
-      await new Promise((resolve) => setTimeout(resolve, 1000))
-
-      // Password update would happen on the backend
-      return true
+      if (auth.currentUser) {
+        await signInWithEmailAndPassword(auth, auth.currentUser.email || "", currentPassword)
+        await firebaseUpdatePassword(auth.currentUser, newPassword)
+        return true
+      }
+      return false
     } catch (error) {
       console.error("Update password error:", error)
       return false
@@ -156,15 +198,25 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     }
   }
 
+  const resendVerificationEmail = async () => {
+    if (auth.currentUser && !auth.currentUser.emailVerified) {
+      await sendEmailVerification(auth.currentUser)
+    }
+  }
+
   const value = {
     user,
     isLoading,
     signIn,
     signUp,
+    signInWithGoogle,
     signOut,
     updateUser,
     updateEmail,
     updatePassword,
+    providerId,
+    isEmailVerified,
+    resendVerificationEmail,
   }
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>

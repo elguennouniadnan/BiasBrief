@@ -21,9 +21,12 @@ interface UserDropdownProps {
 }
 
 export function UserDropdown({ openSettings }: UserDropdownProps) {
-  const { user, signOut } = useAuth()
+  const { user, signOut, isEmailVerified, providerId, resendVerificationEmail } = useAuth()
   const [authModalOpen, setAuthModalOpen] = useState(false)
   const [authModalTab, setAuthModalTab] = useState<"sign-in" | "sign-up">("sign-in")
+  const [verificationSent, setVerificationSent] = useState(false)
+  const [verificationLoading, setVerificationLoading] = useState(false)
+  const [verificationError, setVerificationError] = useState<string | null>(null)
 
   useEffect(() => {
     function handleOpenAuthModal(e: CustomEvent) {
@@ -68,6 +71,39 @@ export function UserDropdown({ openSettings }: UserDropdownProps) {
         </DropdownMenuTrigger>
         <DropdownMenuContent align="end" className="w-56 overflow-hidden">
           <motion.div initial={{ opacity: 0, y: -10 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.2 }}>
+            {/* Email verification warning */}
+            {providerId === "password" && !isEmailVerified && (
+              <div className="p-3 bg-yellow-50 text-yellow-800 text-xs rounded mb-2 flex flex-col gap-2">
+                <span>
+                  Please verify your email address to unlock all features. Check your inbox for a verification link.
+                </span>
+                <Button
+                  size="sm"
+                  variant="outline"
+                  disabled={verificationLoading}
+                  onClick={async () => {
+                    setVerificationLoading(true)
+                    setVerificationError(null)
+                    try {
+                      await resendVerificationEmail()
+                      setVerificationSent(true)
+                    } catch (err: any) {
+                      setVerificationError(err?.message || "Failed to send verification email.")
+                    } finally {
+                      setVerificationLoading(false)
+                    }
+                  }}
+                >
+                  {verificationLoading ? "Sending..." : "Resend Verification Email"}
+                </Button>
+                {verificationSent && (
+                  <span className="text-green-600 text-xs mt-1">Verification email sent!</span>
+                )}
+                {verificationError && (
+                  <span className="text-red-600 text-xs mt-1">{verificationError}</span>
+                )}
+              </div>
+            )}
             <DropdownMenuLabel>
               <div className="flex flex-col space-y-1">
                 <p className="text-sm font-medium leading-none">{user.name}</p>

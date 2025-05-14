@@ -59,7 +59,7 @@ export function SettingsDialog({
   sortOrder,
   setSortOrder,
 }: SettingsDialogProps) {
-  const { user, updateEmail, updatePassword, updateUser } = useAuth()
+  const { user, updatePassword, updateUser, providerId } = useAuth()
   const [localPreferredCategories, setLocalPreferredCategories] = useState<string[]>(preferredCategories)
   const [localThemePreference, setLocalThemePreference] = useState(themePreference)
   const [localFontSize, setLocalFontSize] = useState(fontSize)
@@ -67,9 +67,7 @@ export function SettingsDialog({
   const [localCardSize, setLocalCardSize] = useState<number>(cardSize)
   const [localSortOrder, setLocalSortOrder] = useState<'new-to-old' | 'old-to-new'>(sortOrder)
   const [activeTab, setActiveTab] = useState("content")
-  const [emailUpdateSuccess, setEmailUpdateSuccess] = useState(false)
   const [passwordUpdateSuccess, setPasswordUpdateSuccess] = useState(false)
-  const [emailUpdateLoading, setEmailUpdateLoading] = useState(false)
   const [passwordUpdateLoading, setPasswordUpdateLoading] = useState(false)
 
   // Reset local state when dialog opens
@@ -90,7 +88,6 @@ export function SettingsDialog({
       setLocalArticlesPerPage(articlesPerPage)
       setLocalCardSize(cardSize)
       setLocalSortOrder(sortOrder)
-      setEmailUpdateSuccess(false)
       setPasswordUpdateSuccess(false)
     }
   }, [open, themePreference, fontSize, articlesPerPage, cardSize, sortOrder, categories])
@@ -136,35 +133,6 @@ export function SettingsDialog({
 
   const clearAllCategories = () => {
     setLocalPreferredCategories([])
-  }
-
-  // Email update form
-  const emailFormSchema = z.object({
-    email: z.string().email({ message: "Please enter a valid email address" }),
-    password: z.string().min(1, { message: "Password is required" }),
-  })
-
-  const emailForm = useForm<z.infer<typeof emailFormSchema>>({
-    resolver: zodResolver(emailFormSchema),
-    defaultValues: {
-      email: user?.email || "",
-      password: "",
-    },
-  })
-
-  const onEmailSubmit = async (values: z.infer<typeof emailFormSchema>) => {
-    setEmailUpdateSuccess(false)
-    setEmailUpdateLoading(true)
-
-    try {
-      const success = await updateEmail(values.email, values.password)
-      if (success) {
-        setEmailUpdateSuccess(true)
-        emailForm.reset({ email: values.email, password: "" })
-      }
-    } finally {
-      setEmailUpdateLoading(false)
-    }
   }
 
   // Password update form
@@ -214,10 +182,10 @@ export function SettingsDialog({
         </DialogHeader>
 
         <Tabs defaultValue="content" value={activeTab} onValueChange={setActiveTab} className="mt-4">
-          <TabsList className={`grid w-full ${user ? "grid-cols-3" : "grid-cols-2"}`}>
+          <TabsList className={`grid w-full ${user && providerId === "password" ? "grid-cols-3" : "grid-cols-2"}`}>
             <TabsTrigger value="content">Content</TabsTrigger>
             <TabsTrigger value="appearance">Display</TabsTrigger>
-            {user && <TabsTrigger value="account">Account</TabsTrigger>}
+            {user && providerId === "password" && <TabsTrigger value="account">Account</TabsTrigger>}
           </TabsList>
 
           <TabsContent value="content" className="space-y-6 mt-4 px-2">
@@ -334,61 +302,8 @@ export function SettingsDialog({
             </div>
           </TabsContent>
 
-          {user && (
+          {user && providerId === "password" && (
             <TabsContent value="account" className="space-y-6 mt-4 px-2">
-              <div className="space-y-4">
-                <h3 className="text-sm font-medium">Update Email</h3>
-
-                <Form {...emailForm}>
-                  <form onSubmit={emailForm.handleSubmit(onEmailSubmit)} className="space-y-4">
-                    {emailUpdateSuccess && (
-                      <div className="p-3 text-sm bg-green-50 text-green-600 rounded-md">
-                        Email updated successfully!
-                      </div>
-                    )}
-
-                    <FormField
-                      control={emailForm.control}
-                      name="email"
-                      render={({ field }) => (
-                        <FormItem>
-                          <FormLabel>Email</FormLabel>
-                          <FormControl>
-                            <Input placeholder="your.email@example.com" {...field} />
-                          </FormControl>
-                          <FormMessage />
-                        </FormItem>
-                      )}
-                    />
-
-                    <FormField
-                      control={emailForm.control}
-                      name="password"
-                      render={({ field }) => (
-                        <FormItem>
-                          <FormLabel>Current Password</FormLabel>
-                          <FormControl>
-                            <Input type="password" placeholder="••••••••" {...field} />
-                          </FormControl>
-                          <FormMessage />
-                        </FormItem>
-                      )}
-                    />
-
-                    <Button type="submit" disabled={emailUpdateLoading}>
-                      {emailUpdateLoading ? (
-                        <>
-                          <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                          Updating...
-                        </>
-                      ) : (
-                        "Update Email"
-                      )}
-                    </Button>
-                  </form>
-                </Form>
-              </div>
-
               <div className="space-y-4">
                 <h3 className="text-sm font-medium">Update Password</h3>
 

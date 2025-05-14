@@ -14,6 +14,8 @@ import { UserDropdown } from "@/components/user-dropdown"
 import { motion } from "framer-motion"
 import { Logo } from "@/components/logo"
 import Image from "next/image"
+import { useAuth } from "@/lib/auth"
+import { AuthModal } from "@/components/auth/auth-modal"
 
 interface NavbarProps {
   searchQuery: string
@@ -65,12 +67,15 @@ export function Navbar({
   allCategories, // Added canonical categories prop
 }: NavbarProps) {
   const { theme, setTheme } = useTheme()
+  const { user } = useAuth()
   const [mounted, setMounted] = useState(false)
   const [isMenuOpen, setIsMenuOpen] = useState(false)
   const [isSettingsOpen, setIsSettingsOpen] = useState(false)
   const [scrolled, setScrolled] = useState(false)
   const [searchBarOpen, setSearchBarOpen] = useState(false)
   const [pendingSearch, setPendingSearch] = useState(searchQuery)
+  const [authModalOpen, setAuthModalOpen] = useState(false)
+  const [authModalTab, setAuthModalTab] = useState<"sign-in" | "sign-up">("sign-in")
   const isMobile = useMediaQuery("(max-width: 768px)")
   const searchInputRef = React.useRef<HTMLInputElement>(null)
 
@@ -270,24 +275,21 @@ export function Navbar({
                   </Label>
                 </div>
 
-
-                <UserDropdown openSettings={() => setIsSettingsOpen(true)} />
-
-                {!mounted || (typeof window !== 'undefined' && !window.localStorage.getItem('user')) ? (
+                {user ? (
+                  <UserDropdown openSettings={() => setIsSettingsOpen(true)} />
+                ) : (
                   <Button
                     variant="outline"
                     size="sm"
                     onClick={() => {
-                      if (typeof window !== 'undefined') {
-                        const event = new CustomEvent('open-auth-modal', { detail: { tab: 'sign-in' } })
-                        window.dispatchEvent(event)
-                      }
+                      setAuthModalTab("sign-in")
+                      setAuthModalOpen(true)
                     }}
                     className="ml-2 hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors"
                   >
                     Sign In
                   </Button>
-                ) : null}
+                )}
               </div>
             </div>
           )}
@@ -379,7 +381,9 @@ export function Navbar({
                 <Label htmlFor="custom-news-toggle-mobile" className="text-[10px] px-1">Custom News</Label>
               </div>
 
-              <UserDropdown openSettings={() => setIsSettingsOpen(true)} />
+              {user ? (
+                <UserDropdown openSettings={() => setIsSettingsOpen(true)} />
+              ) : null}
 
               <Button
                 variant="ghost"
@@ -427,10 +431,8 @@ export function Navbar({
                 variant="outline"
                 size="sm"
                 onClick={() => {
-                  if (typeof window !== 'undefined') {
-                    const event = new CustomEvent('open-auth-modal', { detail: { tab: 'sign-in' } })
-                    window.dispatchEvent(event)
-                  }
+                  setAuthModalTab("sign-in")
+                  setAuthModalOpen(true)
                 }}
                 className="hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors"
               >
@@ -458,6 +460,8 @@ export function Navbar({
         sortOrder={sortOrder}
         setSortOrder={setSortOrder}
       />
+
+      <AuthModal isOpen={authModalOpen} onClose={() => setAuthModalOpen(false)} defaultTab={authModalTab} />
     </header>
   )
 }

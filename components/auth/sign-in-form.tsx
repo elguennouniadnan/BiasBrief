@@ -23,7 +23,7 @@ interface SignInFormProps {
 }
 
 export function SignInForm({ onSuccess, onSignUpClick }: SignInFormProps) {
-  const { signIn, isLoading } = useAuth()
+  const { signIn, signInWithGoogle, isLoading } = useAuth()
   const [error, setError] = useState<string | null>(null)
 
   const form = useForm<FormValues>({
@@ -86,6 +86,31 @@ export function SignInForm({ onSuccess, onSignUpClick }: SignInFormProps) {
             </>
           ) : (
             "Sign In"
+          )}
+        </Button>
+
+        <Button
+          type="button"
+          className="w-full mt-2"
+          variant="outline"
+          disabled={isLoading}
+          onClick={async () => {
+            setError(null)
+            const success = await signInWithGoogle()
+            if (success) {
+              onSuccess()
+            } else {
+              setError("Google sign-in failed. Please try again.")
+            }
+          }}
+        >
+          {isLoading ? (
+            <>
+              <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+              Signing in with Google...
+            </>
+          ) : (
+            "Sign in with Google"
           )}
         </Button>
 

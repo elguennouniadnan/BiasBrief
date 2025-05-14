@@ -29,7 +29,7 @@ interface SignUpFormProps {
 }
 
 export function SignUpForm({ onSuccess }: SignUpFormProps) {
-  const { signUp, isLoading } = useAuth()
+  const { signUp, signInWithGoogle, isLoading } = useAuth()
   const [error, setError] = useState<string | null>(null)
 
   const form = useForm<FormValues>({
@@ -122,6 +122,30 @@ export function SignUpForm({ onSuccess }: SignUpFormProps) {
             </>
           ) : (
             "Create Account"
+          )}
+        </Button>
+        <Button
+          type="button"
+          className="w-full mt-2"
+          variant="outline"
+          disabled={isLoading}
+          onClick={async () => {
+            setError(null)
+            const success = await signInWithGoogle()
+            if (success) {
+              onSuccess()
+            } else {
+              setError("Google sign-up failed. Please try again.")
+            }
+          }}
+        >
+          {isLoading ? (
+            <>
+              <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+              Signing up with Google...
+            </>
+          ) : (
+            "Sign up with Google"
           )}
         </Button>
       </form>
