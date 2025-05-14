@@ -66,8 +66,8 @@ export function ArticleCard({ article, isBookmarked, toggleBookmark, cardSize }:
     }
     setLoadingUnbiased(true)
     try {
-      const res = await fetch("https://rizgap5i.rpcl.app/webhook/" + process.env.N8N_API_KEY, {
-        method: "POST",
+      const res = await fetch("https://rizgap5i.rpcl.app/webhook/unbias-title", {
+      method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ id: article.id, titleBiased: article.titleBiased || article.title })
       })
