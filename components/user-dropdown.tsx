@@ -63,9 +63,18 @@ export function UserDropdown({ openSettings }: UserDropdownProps) {
             className="relative h-9 w-9 rounded-full overflow-hidden hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors"
           >
             <Avatar className="h-9 w-9 ring-2 ring-offset-2 ring-offset-white dark:ring-offset-gray-900 ring-primary/20">
-              <AvatarFallback className="bg-gradient-to-br from-primary to-primary/70 text-white text-base font-bold">
-                {getInitials(user.email)}
-              </AvatarFallback>
+              {user.photoURL ? (
+                <img
+                  src={user.photoURL}
+                  alt={user.name || user.email}
+                  className="h-9 w-9 rounded-full object-cover"
+                  referrerPolicy="no-referrer"
+                />
+              ) : (
+                <AvatarFallback className="bg-gradient-to-br from-primary to-primary/70 text-white text-base font-bold">
+                  {getInitials(user.email)}
+                </AvatarFallback>
+              )}
             </Avatar>
           </Button>
         </DropdownMenuTrigger>
