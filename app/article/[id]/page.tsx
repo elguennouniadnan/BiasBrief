@@ -13,6 +13,7 @@ import { motion } from "framer-motion"
 import { trackEvents } from "@/lib/analytics"
 import { useToast } from "@/components/ui/use-toast"
 import { Navbar } from "@/components/navbar"
+import { SettingsDialog } from "@/components/settings-dialog"
 import React from "react"
 
 // Utility to extract <img> and <figcaption> from imageHtml
@@ -37,11 +38,12 @@ export default function ArticlePage() {
   const [searchQuery, setSearchQuery] = useState("")
   const [showBookmarksOnly, setShowBookmarksOnly] = useState(false)
   const [preferredCategories, setPreferredCategories] = useState<string[]>([])
-  const [defaultBiasMode, setDefaultBiasMode] = useState(false)
   const [themePreference, setThemePreference] = useState(false)
   const [articlesPerPage, setArticlesPerPage] = useState(10)
   const [cardSize, setCardSize] = useState(1)
   const [sortOrder, setSortOrder] = useState<'new-to-old' | 'old-to-new'>('new-to-old')
+  const [settingsOpen, setSettingsOpen] = useState(false)
+  const [allCategories, setAllCategories] = useState<string[]>([])
   const { toast } = useToast()
 
   useEffect(() => {
@@ -79,11 +81,6 @@ export default function ArticlePage() {
       setTheme(savedTheme)
     }
 
-    // Load user preferences
-    const savedBiasMode = localStorage.getItem("defaultBiasMode")
-    if (savedBiasMode) {
-      setIsBiasedMode(savedBiasMode === "true")
-    }
 
     const savedBookmarks = localStorage.getItem("bookmarks")
     if (savedBookmarks) {
@@ -96,6 +93,23 @@ export default function ArticlePage() {
       setFontSize(savedFontSize)
     }
   }, [params.id, router, setTheme])
+
+  useEffect(() => {
+    // Fetch all categories for settings dialog
+    async function fetchAllCategories() {
+      try {
+        const response = await fetch('/api/sections')
+        if (!response.ok) return
+        const data = await response.json()
+        if (Array.isArray(data.categories) && data.categories.length > 0) {
+          setAllCategories(['All', ...data.categories.filter((c: string) => c && c !== 'All')])
+        }
+      } catch (e) {
+        // ignore
+      }
+    }
+    fetchAllCategories()
+  }, [])
 
   if (!article) {
     return (
@@ -140,10 +154,22 @@ export default function ArticlePage() {
             trackEvents.sortOrderChange(order);
           }}
           categories={article.category ? [article.category] : []}
-          defaultBiasMode={defaultBiasMode}
-          setDefaultBiasMode={setDefaultBiasMode}
           customNewsEnabled={false}
           setCustomNewsEnabled={() => {}}
+          allCategories={allCategories}
+        />
+        <SettingsDialog
+          open={settingsOpen}
+          onOpenChange={setSettingsOpen}
+          categories={allCategories}
+          preferredCategories={preferredCategories}
+          setPreferredCategories={setPreferredCategories}
+          themePreference={themePreference}
+          setThemePreference={setThemePreference}
+          articlesPerPage={articlesPerPage}
+          setArticlesPerPage={setArticlesPerPage}
+          sortOrder={sortOrder}
+          setSortOrder={setSortOrder}
         />
         <div className="container mx-auto px-4 py-8">
           <motion.div

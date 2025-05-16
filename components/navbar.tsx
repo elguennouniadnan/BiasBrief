@@ -35,8 +35,6 @@ interface NavbarProps {
   sortOrder: 'new-to-old' | 'old-to-new'
   setSortOrder: (order: 'new-to-old' | 'old-to-new') => void
   categories: string[]
-  defaultBiasMode: boolean
-  setDefaultBiasMode: (biased: boolean) => void
   customNewsEnabled: boolean
   setCustomNewsEnabled: (enabled: boolean) => void
   allCategories: string[] // Added canonical categories prop
@@ -59,9 +57,6 @@ export function Navbar({
   setCardSize,
   sortOrder,
   setSortOrder,
-  categories,
-  defaultBiasMode,
-  setDefaultBiasMode,
   customNewsEnabled,
   setCustomNewsEnabled,
   allCategories, // Added canonical categories prop
@@ -383,12 +378,8 @@ export function Navbar({
         setPreferredCategories={setPreferredCategories}
         themePreference={themePreference}
         setThemePreference={setThemePreference}
-        fontSize={fontSize}
-        setFontSize={setFontSize}
         articlesPerPage={articlesPerPage}
         setArticlesPerPage={setArticlesPerPage}
-        cardSize={cardSize}
-        setCardSize={setCardSize}
         sortOrder={sortOrder}
         setSortOrder={setSortOrder}
       />

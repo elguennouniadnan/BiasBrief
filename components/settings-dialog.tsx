@@ -32,12 +32,8 @@ interface SettingsDialogProps {
   setPreferredCategories: (categories: string[]) => void
   themePreference: boolean
   setThemePreference: (dark: boolean) => void
-  fontSize: string
-  setFontSize: (size: string) => void
   articlesPerPage: number
   setArticlesPerPage: (count: number) => void
-  cardSize?: number
-  setCardSize: (size: number) => void
   sortOrder: 'new-to-old' | 'old-to-new'
   setSortOrder: (order: 'new-to-old' | 'old-to-new') => void
 }
@@ -50,21 +46,15 @@ export function SettingsDialog({
   setPreferredCategories,
   themePreference,
   setThemePreference,
-  fontSize,
-  setFontSize,
   articlesPerPage,
   setArticlesPerPage,
-  cardSize = 100,
-  setCardSize,
   sortOrder,
   setSortOrder,
 }: SettingsDialogProps) {
   const { user, updatePassword, updateUser, providerId } = useAuth()
   const [localPreferredCategories, setLocalPreferredCategories] = useState<string[]>(preferredCategories)
   const [localThemePreference, setLocalThemePreference] = useState(themePreference)
-  const [localFontSize, setLocalFontSize] = useState(fontSize)
   const [localArticlesPerPage, setLocalArticlesPerPage] = useState(articlesPerPage)
-  const [localCardSize, setLocalCardSize] = useState<number>(cardSize)
   const [localSortOrder, setLocalSortOrder] = useState<'new-to-old' | 'old-to-new'>(sortOrder)
   const [activeTab, setActiveTab] = useState("content")
   const [passwordUpdateSuccess, setPasswordUpdateSuccess] = useState(false)
@@ -84,13 +74,11 @@ export function SettingsDialog({
       }
       setLocalPreferredCategories(Array.isArray(stored) ? stored : [])
       setLocalThemePreference(themePreference)
-      setLocalFontSize(fontSize)
       setLocalArticlesPerPage(articlesPerPage)
-      setLocalCardSize(cardSize)
       setLocalSortOrder(sortOrder)
       setPasswordUpdateSuccess(false)
     }
-  }, [open, themePreference, fontSize, articlesPerPage, cardSize, sortOrder, categories])
+  }, [open, themePreference, articlesPerPage, sortOrder, categories])
 
   const handleSave = async () => {
     setPreferredCategories(localPreferredCategories)
@@ -99,9 +87,7 @@ export function SettingsDialog({
       localStorage.setItem("preferredCategories", JSON.stringify(localPreferredCategories))
     }
     setThemePreference(localThemePreference)
-    setFontSize(localFontSize)
     setArticlesPerPage(localArticlesPerPage)
-    setCardSize(localCardSize)
     setSortOrder(localSortOrder)
 
     // Update user preferences if logged in
@@ -119,9 +105,7 @@ export function SettingsDialog({
           ...user.preferences,
           preferredCategories: localPreferredCategories,
           theme: localThemePreference ? 'dark' : 'light',
-          fontSize: localFontSize,
           articlesPerPage: localArticlesPerPage,
-          cardSize: localCardSize,
         }
         // Build payload and add providerId/emailVerified
         const payload = {
@@ -278,36 +262,6 @@ export function SettingsDialog({
                   checked={localThemePreference}
                   onCheckedChange={setLocalThemePreference}
                 />
-              </div>
-            </div>
-
-            <div>
-              <h3 className="text-sm font-medium mb-2">Font Size</h3>
-              <div className="grid grid-cols-3 gap-2">
-                <Button
-                  variant={localFontSize === "small" ? "default" : "outline"}
-                  size="sm"
-                  onClick={() => setLocalFontSize("small")}
-                  className={`w-full ${localFontSize === "small" ? "bg-primary hover:bg-primary/90" : ""}`}
-                >
-                  <span className="text-xs">Small</span>
-                </Button>
-                <Button
-                  variant={localFontSize === "medium" ? "default" : "outline"}
-                  size="sm"
-                  onClick={() => setLocalFontSize("medium")}
-                  className={`w-full ${localFontSize === "medium" ? "bg-primary hover:bg-primary/90" : ""}`}
-                >
-                  <span className="text-sm">Medium</span>
-                </Button>
-                <Button
-                  variant={localFontSize === "large" ? "default" : "outline"}
-                  size="sm"
-                  onClick={() => setLocalFontSize("large")}
-                  className={`w-full ${localFontSize === "large" ? "bg-primary hover:bg-primary/90" : ""}`}
-                >
-                  <span className="text-base">Large</span>
-                </Button>
               </div>
             </div>
 
