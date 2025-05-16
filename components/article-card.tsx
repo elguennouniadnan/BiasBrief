@@ -57,9 +57,9 @@ export function ArticleCard({ article, isBookmarked, toggleBookmark, cardSize }:
       setShowUnbiased(false)
       return;
     }
-    // If unbiasedTitle is already set (from previous visit or after unbiasing), just show it
+    // If unbiasedTitle is already set (from previous fetch or from article), just show it
     if ((unbiasedTitle && unbiasedTitle.trim() !== "") || (article.titleUnbiased && article.titleUnbiased.trim() !== "")) {
-      setUnbiasedTitle(article.titleUnbiased || article.title)
+      setUnbiasedTitle(article.titleUnbiased || unbiasedTitle || article.title)
       setShowUnbiased(true)
       setLoadingUnbiased(false)
       return;
@@ -67,7 +67,7 @@ export function ArticleCard({ article, isBookmarked, toggleBookmark, cardSize }:
     setLoadingUnbiased(true)
     try {
       const res = await fetch("https://rizgap5i.rpcl.app/webhook/unbias-title", {
-      method: "POST",
+        method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ id: article.id, titleBiased: article.titleBiased || article.title })
       })
