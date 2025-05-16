@@ -128,29 +128,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       if (cred.user && !cred.user.emailVerified) {
         await sendEmailVerification(cred.user)
       }
-      // Send user data and preferences to webhook
-      try {
-        // Get preferences from localStorage (if available)
-        let preferences = null
-        if (typeof window !== 'undefined') {
-          const prefStr = localStorage.getItem("preferredCategories")
-          preferences = prefStr ? JSON.parse(prefStr) : []
-        }
-        const payload = {
-          id: cred.user.uid,
-          email,
-          name,
-          photoURL: cred.user.photoURL || "",
-          preferences,
-        }
-        await fetch("https://rizgap5i.rpcl.app/webhook-test/create-user-data", {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify(payload),
-        })
-      } catch (err) {
-        console.error("Failed to send user data to webhook:", err)
-      }
+
       return true
     } catch (error) {
       console.error("Sign up error:", error)
@@ -166,33 +144,33 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       const result = await signInWithPopup(auth, googleProvider)
       // User profile will be created/updated by onAuthStateChanged
       // Send user data and preferences to webhook
-      try {
-        const googleUser = result.user
-        // Get preferences from localStorage (if available)
-        let preferences = null
-        if (typeof window !== 'undefined') {
-          const prefStr = localStorage.getItem("preferredCategories")
-          preferences = prefStr ? JSON.parse(prefStr) : []
-        }
-        const payload = {
-          id: googleUser.uid,
-          email: googleUser.email,
-          name: googleUser.displayName || googleUser.email?.split("@")[0] || "",
-          photoURL: googleUser.photoURL || "",
-          providerId: googleUser.providerData[0]?.providerId || null,
-          preferences,
-          // Any other info you want to send
-          phoneNumber: googleUser.phoneNumber || null,
-          emailVerified: googleUser.emailVerified,
-        }
-        await fetch("https://rizgap5i.rpcl.app/webhook-test/create-user-data", {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify(payload),
-        })
-      } catch (err) {
-        console.error("Failed to send Google user data to webhook:", err)
-      }
+      // try {
+      //   const googleUser = result.user
+      //   // Get preferences from localStorage (if available)
+      //   let preferences = null
+      //   if (typeof window !== 'undefined') {
+      //     const prefStr = localStorage.getItem("preferredCategories")
+      //     preferences = prefStr ? JSON.parse(prefStr) : []
+      //   }
+      //   const payload = {
+      //     id: googleUser.uid,
+      //     email: googleUser.email,
+      //     name: googleUser.displayName || googleUser.email?.split("@")[0] || "",
+      //     photoURL: googleUser.photoURL || "",
+      //     providerId: googleUser.providerData[0]?.providerId || null,
+      //     preferences,
+      //     // Any other info you want to send
+      //     phoneNumber: googleUser.phoneNumber || null,
+      //     emailVerified: googleUser.emailVerified,
+      //   }
+      //   await fetch("https://rizgap5i.rpcl.app/webhook-test/create-user-data", {
+      //     method: "POST",
+      //     headers: { "Content-Type": "application/json" },
+      //     body: JSON.stringify(payload),
+      //   })
+      // } catch (err) {
+      //   console.error("Failed to send Google user data to webhook:", err)
+      // }
       return true
     } catch (error) {
       console.error("Google sign-in error:", error)

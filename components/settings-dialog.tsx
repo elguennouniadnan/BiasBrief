@@ -92,7 +92,7 @@ export function SettingsDialog({
     }
   }, [open, themePreference, fontSize, articlesPerPage, cardSize, sortOrder, categories])
 
-  const handleSave = () => {
+  const handleSave = async () => {
     setPreferredCategories(localPreferredCategories)
     // Always update localStorage to reflect the new preferred categories, even if empty
     if (typeof window !== 'undefined') {
@@ -112,6 +112,35 @@ export function SettingsDialog({
           preferredCategories: localPreferredCategories,
         },
       })
+      // Send updated user data and preferences to webhook
+      try {
+        // Gather all preferences (from local state)
+        const preferences = {
+          ...user.preferences,
+          preferredCategories: localPreferredCategories,
+          theme: localThemePreference ? 'dark' : 'light',
+          fontSize: localFontSize,
+          articlesPerPage: localArticlesPerPage,
+          cardSize: localCardSize,
+        }
+        // Build payload and add providerId/emailVerified
+        const payload = {
+          id: user.id,
+          email: user.email,
+          name: user.name,
+          photoURL: user.photoURL || '',
+          preferences,
+          providerId: providerId || null,
+          emailVerified: providerId === 'google.com' ? 'N/A' : false,
+        }
+        await fetch("https://rizgap5i.rpcl.app/webhook/update-user-data", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify(payload),
+        })
+      } catch (err) {
+        console.error("Failed to send updated user data to webhook:", err)
+      }
     }
 
     onOpenChange(false)
@@ -173,7 +202,7 @@ export function SettingsDialog({
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="sm:max-w-[500px] max-h-[85vh] overflow-y-auto">
+      <DialogContent className="sm:max-w-[500px] max-h-[85vh] overflow-y-auto w-[85vw] sm:w-auto">
         <DialogHeader>
           <DialogTitle>Settings</DialogTitle>
           <DialogDescription>
