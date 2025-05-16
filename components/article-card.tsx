@@ -57,13 +57,14 @@ export function ArticleCard({ article, isBookmarked, toggleBookmark, cardSize }:
       setShowUnbiased(false)
       return;
     }
-    // If unbiasedTitle is already set (from previous fetch or from article), just show it
-    if ((unbiasedTitle && unbiasedTitle.trim() !== "") || (article.titleUnbiased && article.titleUnbiased.trim() !== "")) {
-      setUnbiasedTitle(article.titleUnbiased || unbiasedTitle || article.title)
+    // If article.titleUnbiased exists and is not empty, just show it (no fetch)
+    if (article.titleUnbiased && article.titleUnbiased.trim() !== "") {
+      setUnbiasedTitle(article.titleUnbiased)
       setShowUnbiased(true)
       setLoadingUnbiased(false)
       return;
     }
+    // Otherwise, fetch unbiased title
     setLoadingUnbiased(true)
     try {
       const res = await fetch("https://rizgap5i.rpcl.app/webhook/unbias-title", {
@@ -75,14 +76,14 @@ export function ArticleCard({ article, isBookmarked, toggleBookmark, cardSize }:
       const articleRes = await fetch(`/api/news/${article.id}`)
       if (articleRes.ok) {
         const data = await articleRes.json()
-        setUnbiasedTitle(data.article?.titleUnbiased || article.titleUnbiased || article.title)
+        setUnbiasedTitle(data.article?.titleUnbiased)
         setShowUnbiased(true)
       } else {
-        setUnbiasedTitle(article.titleUnbiased || article.title)
+        setUnbiasedTitle(article.title)
         setShowUnbiased(true)
       }
     } catch {
-      setUnbiasedTitle(article.titleUnbiased || article.title)
+      setUnbiasedTitle(article.title)
       setShowUnbiased(true)
     } finally {
       setLoadingUnbiased(false)
