@@ -438,8 +438,6 @@ export function NewsApp() {
             trackEvents.sortOrderChange(order);
           }}
           categories={categories}
-          defaultBiasMode={defaultBiasMode}
-          setDefaultBiasMode={setDefaultBiasMode}
           customNewsEnabled={customNewsEnabled}
           setCustomNewsEnabled={setCustomNewsEnabled}
           allCategories={allCategories}
@@ -510,12 +508,8 @@ export function NewsApp() {
           setPreferredCategories={updatePreferredCategories}
           themePreference={themePreference}
           setThemePreference={setThemePreference}
-          fontSize={fontSize}
-          setFontSize={setFontSize}
           articlesPerPage={articlesPerPage}
           setArticlesPerPage={setArticlesPerPage}
-          cardSize={cardSize}
-          setCardSize={setCardSize}
           sortOrder={sortOrder}
           setSortOrder={setSortOrder}
         />
