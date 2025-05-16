@@ -210,18 +210,12 @@ export function ArticleCard({ article, isBookmarked, toggleBookmark, cardSize }:
               toggleBookmark(article.id);
             }}
             className={
-              isBookmarked && typeof window !== 'undefined' && window.localStorage.getItem("customNewsEnabled") === 'true'
-                ? "text-red-500 hover:text-red-600"
-                : isBookmarked
+                isBookmarked
                   ? "text-primary hover:text-primary/80 hover:bg-primary/10"
                   : "text-muted-foreground hover:text-primary"
             }
           >
-            {typeof window !== 'undefined' && window.localStorage.getItem("customNewsEnabled") === 'true' ? (
-              <FolderHeart className={`h-4 w-4 ${isBookmarked ? "fill-red-500 text-red-200" : ""}`} />
-            ) : (
               <Bookmark className={`h-4 w-4 ${isBookmarked ? "fill-current" : ""}`} />
-            )}
           </Button>
         </CardFooter>
       </Card>

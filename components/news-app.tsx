@@ -1,6 +1,6 @@
 "use client"
 
-import { useEffect, useState, useMemo } from "react"
+import { useEffect, useState, useMemo, useRef } from "react"
 import { Navbar } from "@/components/navbar"
 import { CategoryFilter } from "@/components/category-filter"
 import { ArticleList } from "@/components/article-list"
@@ -61,6 +61,13 @@ export function NewsApp() {
     
     setBookmarks(newBookmarks)
     localStorage.setItem("bookmarks", JSON.stringify(newBookmarks))
+
+    //if bookmarks is empty, set showBookmarksOnly to false
+    if (newBookmarks.length === 0) {
+      setShowBookmarksOnly(false)
+    }
+    // Track bookmark toggle event
+    trackEvents.bookmarkToggle(articleId, !bookmarks.includes(articleId))
   }
 
   const handleCategoryChange = (category: string) => {
@@ -349,6 +356,39 @@ export function NewsApp() {
     }
     fetchBookmarkedArticles()
   }, [showBookmarksOnly, bookmarks, articlesPerPage])
+
+  // Cache for main feed state
+  const [cachedArticles, setCachedArticles] = useState<Article[] | null>(null)
+  const [cachedSelectedCategory, setCachedSelectedCategory] = useState<string | null>(null)
+  const [cachedCurrentPage, setCachedCurrentPage] = useState<number | null>(null)
+
+  // When showBookmarksOnly is toggled, cache or restore state
+  useEffect(() => {
+    if (showBookmarksOnly) {
+      // Cache current state before switching to bookmarks
+      setCachedArticles(allArticles)
+      setCachedSelectedCategory(selectedCategory)
+      setCachedCurrentPage(currentPage)
+    } else if (cachedArticles && cachedSelectedCategory !== null && cachedCurrentPage !== null) {
+      // Restore previous state
+      setAllArticles(cachedArticles)
+      setSelectedCategory(cachedSelectedCategory)
+      setCurrentPage(cachedCurrentPage)
+      setCachedArticles(null)
+      setCachedSelectedCategory(null)
+      setCachedCurrentPage(null)
+    }
+  }, [showBookmarksOnly])
+
+  // When showBookmarksOnly is turned off, reset to 'All' tab and page 1 (only on transition)
+  // const prevShowBookmarksOnly = useRef(showBookmarksOnly)
+  // useEffect(() => {
+  //   if (prevShowBookmarksOnly.current && !showBookmarksOnly) {
+  //     setSelectedCategory('All');
+  //     setCurrentPage(1);
+  //   }
+  //   prevShowBookmarksOnly.current = showBookmarksOnly;
+  // }, [showBookmarksOnly]);
 
   // When showBookmarksOnly is enabled, use allArticles directly (already fetched from API by IDs)
   // When customNewsEnabled and not showing bookmarks, use customTabArticles

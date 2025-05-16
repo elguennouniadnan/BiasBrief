@@ -221,13 +221,9 @@ export function Navbar({
                   size="icon"
                   onClick={() => setShowBookmarksOnly(!showBookmarksOnly)}
                   title="Show bookmarks"
-                  className={showBookmarksOnly && customNewsEnabled ? "bg-red-100 hover:bg-red-200" : showBookmarksOnly ? "bg-primary hover:bg-primary/90" : ""}
+                  className={showBookmarksOnly ? "bg-primary hover:bg-primary/90" : ""}
                 >
-                  {customNewsEnabled ? (
-                    <FolderHeart className={`h-4 w-4 ${showBookmarksOnly ? "text-red-500" : ""}`} />
-                  ) : (
                     <Bookmark className="h-4 w-4" />
-                  )}
                 </Button>
 
                 <Button
@@ -344,14 +340,10 @@ export function Navbar({
                 variant={showBookmarksOnly ? "default" : "ghost"}
                 size="icon"
                 onClick={() => setShowBookmarksOnly(!showBookmarksOnly)}
-                title="Show bookmarks"
-                className={showBookmarksOnly && customNewsEnabled ? "bg-red-100 hover:bg-red-200" : showBookmarksOnly ? "bg-primary hover:bg-primary/90" : ""}
+                title="Show bookmarks"                
+                className={showBookmarksOnly ? "bg-primary hover:bg-primary/90" : ""}
               >
-                {customNewsEnabled ? (
-                  <FolderHeart className={`h-4 w-4 ${showBookmarksOnly ? "text-red-500" : ""}`} />
-                ) : (
                   <Bookmark className="h-4 w-4" />
-                )}
               </Button>
 
               {/* Custom news toggle for mobile */}
