@@ -75,7 +75,8 @@ export function NewsApp() {
   const [articlesPerPage, setArticlesPerPage] = useState(15)
   const [currentPage, setCurrentPage] = useState(1)
   const [cardSize, setCardSize] = useState(3)
-  const [allArticles, setAllArticles] = useState<Article[]>([])
+  const [mainFeedArticles, setMainFeedArticles] = useState<Article[]>([]);
+  const [bookmarksArticles, setBookmarksArticles] = useState<Article[]>([]);
   const [categories, setCategories] = useState<string[]>(["All"])
   const [allCategories, setAllCategories] = useState<string[]>(["All"])
   const [isLoading, setIsLoading] = useState(true)
@@ -90,6 +91,12 @@ export function NewsApp() {
     return false;
   })
   const [settingsOpen, setSettingsOpen] = useState(false)
+
+  // Add state to cache main feed articles when switching to bookmarks view
+  const [mainFeedTotalPagesCache, setMainFeedTotalPagesCache] = useState<number | null>(null);
+  const [mainFeedTotalCountCache, setMainFeedTotalCountCache] = useState<number | null>(null);
+  const [mainFeedCurrentPageCache, setMainFeedCurrentPageCache] = useState<number | null>(null);
+  const [mainFeedSelectedCategoryCache, setMainFeedSelectedCategoryCache] = useState<string | null>(null);
 
   const toggleBookmark = (articleId: string) => {
     const newBookmarks = bookmarks.includes(articleId)
@@ -134,6 +141,7 @@ export function NewsApp() {
     trackEvents.bookmarkToggle(articleId, newIsBookmarked);
   };
 
+  // Fetch main feed articles from API
   const fetchArticles = async () => {
     try {
       setIsLoading(true)
@@ -142,7 +150,6 @@ export function NewsApp() {
       params.append('page', String(currentPage))
       params.append('pageSize', String(articlesPerPage))
       params.append('sortOrder', sortOrder)
-      // If searching, do NOT filter by preferredCategories, search all articles
       if (searchQuery) {
         // No preferredCategories/category param
       } else if (customNewsEnabled && preferredCategories.length > 0 && (!selectedCategory || selectedCategory === 'All')) {
@@ -153,7 +160,7 @@ export function NewsApp() {
       const response = await fetch(`/api/news?${params.toString()}`)
       if (!response.ok) throw new Error('Failed to fetch articles')
       const data = await response.json()
-      setAllArticles(data.articles)
+      setMainFeedArticles(data.articles)
       setTotalCount(data.totalCount)
       setTotalPages(Math.max(1, Math.ceil(data.totalCount / articlesPerPage)))
 
@@ -215,24 +222,25 @@ export function NewsApp() {
     preferredCategories,
   });
 
+  // On mount or when main feed filters/page change, restore or fetch main feed articles
   useEffect(() => {
-    if (!mounted) return;
+    if (!mounted || showBookmarksOnly) return;
     const cache = getArticlesListCache(cacheKey);
     if (cache) {
-      setAllArticles(cache.articles);
+      setMainFeedArticles(cache.articles);
       setTotalPages(cache.totalPages);
       setTotalCount(cache.totalCount);
       setIsLoading(false);
     } else {
       fetchArticles();
     }
-  }, [mounted, cacheKey]);
+  }, [mounted, cacheKey, showBookmarksOnly]);
 
-  // After fetching articles, update the cache
+  // After fetching main feed articles, update the cache
   useEffect(() => {
-    if (!isLoading && allArticles.length > 0) {
+    if (!isLoading && mainFeedArticles.length > 0 && !showBookmarksOnly) {
       setArticlesListCache(cacheKey, {
-        articles: allArticles,
+        articles: mainFeedArticles,
         page: currentPage,
         totalPages,
         totalCount,
@@ -247,7 +255,7 @@ export function NewsApp() {
         timestamp: Date.now(),
       });
     }
-  }, [allArticles, isLoading, cacheKey, totalPages, totalCount]);
+  }, [mainFeedArticles, isLoading, cacheKey, totalPages, totalCount, showBookmarksOnly]);
 
   // Prevent resetting to page 1 if restoring from history.state
   useEffect(() => {
@@ -335,31 +343,28 @@ export function NewsApp() {
 
   // When showBookmarksOnly is enabled, use allArticles directly (already fetched from API by IDs)
   const allTabArticles = useMemo(() => {
-    if (showBookmarksOnly) {
-      return allArticles
-    }
-    return allArticles.filter((article) => {
+    return mainFeedArticles.filter((article) => {
       const matchesCategory = selectedCategory === "All" || article.section === selectedCategory
       return matchesCategory
     })
-  }, [allArticles, selectedCategory, showBookmarksOnly])
+  }, [mainFeedArticles, selectedCategory])
 
   // Always extract all categories from allArticles, not just preferred
   useEffect(() => {
-    if (allArticles.length > 0) {
-      const sections = ['All', ...Array.from(new Set(allArticles.map((a) => String(a.section || ''))))]
+    if (mainFeedArticles.length > 0) {
+      const sections = ['All', ...Array.from(new Set(mainFeedArticles.map((a) => String(a.section || ''))))]
       setCategories(sections)
     }
-  }, [allArticles])
+  }, [mainFeedArticles])
 
   const customTabArticles = useMemo(() => {
     if (!preferredCategories.length) return []
-    return allArticles.filter((article) => {
+    return mainFeedArticles.filter((article) => {
       const matchesPreferences = article.category && preferredCategories.includes(article.category)
       const matchesBookmarks = !showBookmarksOnly || bookmarks.includes(article.id)
       return matchesPreferences && matchesBookmarks
     })
-  }, [allArticles, preferredCategories, showBookmarksOnly, bookmarks])
+  }, [mainFeedArticles, preferredCategories, showBookmarksOnly, bookmarks])
 
   useEffect(() => {
     if (mounted) {
@@ -403,99 +408,40 @@ export function NewsApp() {
     fetchAllCategories()
   }, [])
 
-  // Calculate totalPages based on filtered articles when showing bookmarks only
+  // Calculate totalPages and totalCount based on bookmarks when showBookmarksOnly is enabled
   useEffect(() => {
     if (showBookmarksOnly) {
-      const count = allTabArticles.length
-      setTotalPages(Math.max(1, Math.ceil(count / articlesPerPage)))
-    }
-  }, [showBookmarksOnly, allTabArticles, articlesPerPage])
-
-  // Fetch articles by IDs from API when showBookmarksOnly is enabled
-  useEffect(() => {
-    if (!showBookmarksOnly) return; // Only run when showBookmarksOnly is true
-    const fetchBookmarkedArticles = async () => {
-      if (bookmarks.length > 0) {
-        try {
-          const response = await fetch(`/api/news?ids=${bookmarks.join(',')}`)
-          if (!response.ok) throw new Error('Failed to fetch bookmarked articles')
-          const data = await response.json()
-          setAllArticles(data.articles)
-          setTotalCount(data.totalCount)
-          setTotalPages(Math.max(1, Math.ceil(data.totalCount / articlesPerPage)))
-        } catch (error) {
-          setAllArticles([])
-          setTotalCount(0)
-          setTotalPages(1)
-        }
+      const count = bookmarks.length;
+      setTotalCount(count);
+      setTotalPages(Math.max(1, Math.ceil(count / articlesPerPage)));
+      // If currentPage is out of range after bookmarks change, reset to 1
+      if (currentPage > Math.ceil(count / articlesPerPage)) {
+        setCurrentPage(1);
       }
     }
-    fetchBookmarkedArticles()
-  }, [showBookmarksOnly, bookmarks, articlesPerPage])
+  }, [showBookmarksOnly, bookmarks, articlesPerPage]);
 
-  // Cache for main feed state
-  const [cachedArticles, setCachedArticles] = useState<Article[] | null>(null)
-  const [cachedSelectedCategory, setCachedSelectedCategory] = useState<string | null>(null)
-  const [cachedCurrentPage, setCachedCurrentPage] = useState<number | null>(null)
-
-  // When showBookmarksOnly is toggled, cache or restore state
+  // Remove bookmarksListCache and related logic
+  // useEffect to fetch all bookmarked articles when showBookmarksOnly is enabled
   useEffect(() => {
-    if (showBookmarksOnly) {
-      // Cache current state before switching to bookmarks
-      setCachedArticles(allArticles)
-      setCachedSelectedCategory(selectedCategory)
-      setCachedCurrentPage(currentPage)
-    } else if (cachedArticles && cachedSelectedCategory !== null && cachedCurrentPage !== null) {
-      // Restore previous state
-      setAllArticles(cachedArticles)
-      setSelectedCategory(cachedSelectedCategory)
-      setCurrentPage(cachedCurrentPage)
-      setCachedArticles(null)
-      setCachedSelectedCategory(null)
-      setCachedCurrentPage(null)
-    }
-  }, [showBookmarksOnly])
-
-  // When showBookmarksOnly is turned off, reset to 'All' tab and page 1 (only on transition)
-  // const prevShowBookmarksOnly = useRef(showBookmarksOnly)
-  // useEffect(() => {
-  //   if (prevShowBookmarksOnly.current && !showBookmarksOnly) {
-  //     setSelectedCategory('All');
-  //     setCurrentPage(1);
-  //   }
-  //   prevShowBookmarksOnly.current = showBookmarksOnly;
-  // }, [showBookmarksOnly]);
-
-  // When showBookmarksOnly is enabled, use allArticles directly (already fetched from API by IDs)
-  // When customNewsEnabled and not showing bookmarks, use customTabArticles
-  // Otherwise, use allTabArticles
-  const displayedArticles = useMemo(() => {
-    if (showBookmarksOnly) {
-      return allArticles
-    } else if (customNewsEnabled && (!selectedCategory || selectedCategory === 'All')) {
-      return customTabArticles
-    } else {
-      return allTabArticles
-    }
-  }, [showBookmarksOnly, allArticles, customNewsEnabled, customTabArticles, allTabArticles, selectedCategory])
-
-  // Custom: Only update preferredCategories in localStorage, do not reload or update state here
-  const updatePreferredCategories = (newCategories: string[]) => {
-    if (typeof window !== 'undefined') {
-      localStorage.setItem("preferredCategories", JSON.stringify(newCategories))
-    }
-    // Do not update state or reload articles here
-  }
-
-  // Restore currentPage, selectedCategory, customNewsEnabled from history.state if available (for back navigation)
-  useEffect(() => {
-    if (typeof window !== 'undefined' && window.history.state) {
-      const { lastPage, lastCategory, lastCustomNewsEnabled } = window.history.state;
-      if (lastPage) setCurrentPage(lastPage);
-      if (lastCategory) setSelectedCategory(lastCategory);
-      if (typeof lastCustomNewsEnabled === 'boolean') setCustomNewsEnabled(lastCustomNewsEnabled);
-    }
-  }, []);
+    if (!showBookmarksOnly) return;
+    // Always fetch all bookmarked articles from API
+    const fetchAllBookmarkedArticles = async () => {
+      if (bookmarks.length > 0) {
+        try {
+          const response = await fetch(`/api/news?ids=${bookmarks.join(',')}`);
+          if (!response.ok) throw new Error('Failed to fetch bookmarked articles');
+          const data = await response.json();
+          setBookmarksArticles(data.articles);
+        } catch (error) {
+          setBookmarksArticles([]);
+        }
+      } else {
+        setBookmarksArticles([]);
+      }
+    };
+    fetchAllBookmarkedArticles();
+  }, [showBookmarksOnly, bookmarks]);
 
   // When changing page, store lastPage, lastCategory, lastCustomNewsEnabled in history.state for restoration
   const handlePageChange = (page: number) => {
@@ -510,6 +456,9 @@ export function NewsApp() {
     }
   };
 
+  // Only show correct pagination for bookmarks or main feed
+  const paginationTotalPages = showBookmarksOnly ? Math.max(1, Math.ceil(bookmarks.length / articlesPerPage)) : totalPages;
+
   // Always sync customNewsEnabled to localStorage when it changes
   useEffect(() => {
     if (typeof window !== 'undefined') {
@@ -517,6 +466,56 @@ export function NewsApp() {
       localStorage.setItem("customNewsEnabled", JSON.stringify(customNewsEnabled));
     }
   }, [customNewsEnabled]);
+
+  // Fix: Remove updatePreferredCategories (use setPreferredCategories directly)
+  // Fix: Define displayedArticles for rendering
+  const displayedArticles = useMemo(() => {
+    if (showBookmarksOnly) {
+      // Show all bookmarked articles (no pagination)
+      return bookmarksArticles;
+    } else if (customNewsEnabled && (!selectedCategory || selectedCategory === 'All')) {
+      return mainFeedArticles.filter((article) => {
+        const matchesPreferences = article.category && preferredCategories.includes(article.category)
+        const matchesBookmarks = !showBookmarksOnly || bookmarks.includes(article.id)
+        return matchesPreferences && matchesBookmarks
+      });
+    } else {
+      return mainFeedArticles.filter((article) => {
+        const matchesCategory = selectedCategory === "All" || article.section === selectedCategory
+        return matchesCategory
+      });
+    }
+  }, [showBookmarksOnly, bookmarksArticles, mainFeedArticles, customNewsEnabled, selectedCategory, preferredCategories, bookmarks]);
+
+  // Handler to update unbiased title in the correct article list
+  const handleUnbiasTitle = (id: string, unbiasedTitle: string) => {
+    console.log('[handleUnbiasTitle] called with:', { id, unbiasedTitle, showBookmarksOnly });
+    if (showBookmarksOnly) {
+      setBookmarksArticles(articles => {
+        const updated = articles.map(a => {
+          if (a.id === id) {
+            console.log('[handleUnbiasTitle] updating bookmark article:', a);
+            return { ...a, titleUnbiased: unbiasedTitle };
+          }
+          return a;
+        });
+        console.log('[handleUnbiasTitle] updated bookmarksArticles:', updated);
+        return updated;
+      });
+    } else {
+      setMainFeedArticles(articles => {
+        const updated = articles.map(a => {
+          if (a.id === id) {
+            console.log('[handleUnbiasTitle] updating mainFeed article:', a);
+            return { ...a, titleUnbiased: unbiasedTitle };
+          }
+          return a;
+        });
+        console.log('[handleUnbiasTitle] updated mainFeedArticles:', updated);
+        return updated;
+      });
+    }
+  };
 
   return (
     <AuthProvider>
@@ -527,7 +526,7 @@ export function NewsApp() {
           showBookmarksOnly={showBookmarksOnly}
           setShowBookmarksOnly={setShowBookmarksOnly}
           preferredCategories={preferredCategories}
-          setPreferredCategories={updatePreferredCategories}
+          setPreferredCategories={setPreferredCategories}
           themePreference={themePreference}
           setThemePreference={(isDark) => {
             setTheme(isDark ? "dark" : "light");
@@ -568,7 +567,13 @@ export function NewsApp() {
             </div>
           ) : showBookmarksOnly ? (
             <div className="flex items-center justify-between px-4 py-2">
-              <span className="text-xl font-semibold text-primary">Bookmarks</span>
+              <span className="text-xl font-semibold text-primary flex items-center gap-2">
+                <span
+                  className="inline-block rounded-full border px-3 py-1 text-sm font-medium transition-colors duration-300 bg-primary text-white border-primary shadow-sm"
+                >
+                  Bookmarks
+                </span>
+              </span>
             </div>
           ) : (
             <CategoryFilter
@@ -588,13 +593,22 @@ export function NewsApp() {
                 isBookmarked={(id: string) => bookmarks.includes(id)}
                 toggleBookmark={handleBookmarkToggle}
                 cardSize={cardSize}
+                onUnbiasTitle={(id, unbiasedTitle) => {
+                  console.log('[ArticleList onUnbiasTitle] called with:', { id, unbiasedTitle });
+                  handleUnbiasTitle(id, unbiasedTitle);
+                  // Log displayedArticles after update attempt
+                  setTimeout(() => {
+                    console.log('[ArticleList onUnbiasTitle] displayedArticles after update:', displayedArticles);
+                  }, 500);
+                }}
               />
-              {totalPages > 1 && (
+              {/* Only show pagination if not in bookmarks view */}
+              {!showBookmarksOnly && totalPages > 1 && (
                 <div className="mt-8">
-                  <Pagination 
-                    currentPage={currentPage} 
-                    totalPages={totalPages} 
-                    onPageChange={handlePageChange} 
+                  <Pagination
+                    currentPage={currentPage}
+                    totalPages={paginationTotalPages}
+                    onPageChange={handlePageChange}
                   />
                 </div>
               )}
@@ -616,7 +630,7 @@ export function NewsApp() {
           onOpenChange={setSettingsOpen}
           categories={allCategories} // Use the canonical categories list
           preferredCategories={preferredCategories}
-          setPreferredCategories={updatePreferredCategories}
+          setPreferredCategories={setPreferredCategories}
           themePreference={themePreference}
           setThemePreference={setThemePreference}
           articlesPerPage={articlesPerPage}

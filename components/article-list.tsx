@@ -7,8 +7,9 @@ import { Article } from "@/lib/types"
 interface ArticleListProps {
   articles: Article[]
   cardSize?: number
-  isBookmarked: (id: number) => boolean
-  toggleBookmark: (id: number) => void
+  isBookmarked: (id: string) => boolean
+  toggleBookmark: (id: string) => void
+  onUnbiasTitle?: (id: string, unbiasedTitle: string) => void // new prop
 }
 
 export function ArticleList({ articles, ...props }: ArticleListProps) {
@@ -34,6 +35,7 @@ export function ArticleList({ articles, ...props }: ArticleListProps) {
           cardSize={3} // Default to 3 for consistent card layout
           isBookmarked={props.isBookmarked(article.id)}
           toggleBookmark={props.toggleBookmark}
+          onUnbiasTitle={props.onUnbiasTitle}
         />
       ))}
     </div>

@@ -15,9 +15,10 @@ interface ArticleCardProps {
   isBookmarked: boolean
   toggleBookmark: (id: string) => void
   cardSize: number
+  onUnbiasTitle?: (id: string, unbiasedTitle: string) => void // new prop
 }
 
-export function ArticleCard({ article, isBookmarked, toggleBookmark, cardSize }: ArticleCardProps) {
+export function ArticleCard({ article, isBookmarked, toggleBookmark, cardSize, onUnbiasTitle }: ArticleCardProps) {
   const [showUnbiased, setShowUnbiased] = useState(false)
   const [loadingUnbiased, setLoadingUnbiased] = useState(false)
   const [unbiasedTitle, setUnbiasedTitle] = useState<string | null>(null)
@@ -85,6 +86,9 @@ export function ArticleCard({ article, isBookmarked, toggleBookmark, cardSize }:
       if (!unbiasedTitle) setUnbiasedTitle(article.titleUnbiased)
       setShowUnbiased(true)
       setLoadingUnbiased(false)
+      if (onUnbiasTitle) {
+        onUnbiasTitle(article.id, article.titleUnbiased)
+      }
       return;
     }
     // Otherwise, fetch unbiased title
@@ -98,23 +102,19 @@ export function ArticleCard({ article, isBookmarked, toggleBookmark, cardSize }:
       })
       if (!res.ok) throw new Error('Failed to generate unbiased title')
       // Always fetch the updated article from Firestore after webhook
-      // const articleRes = await fetch(`/api/news/${article.id}`)
-      // if (articleRes.ok) {
-      //   const data = await articleRes.json()
-      //   if (data.article?.titleUnbiased && data.article.titleUnbiased.trim() !== "") {
-      //     setUnbiasedTitle(data.article.titleUnbiased)
-      //   } else {
-      //     setUnbiasedTitle(article.title)
-      //   }
-      //   setShowUnbiased(true)
-      // } else {
-      //   setUnbiasedTitle(article.title)
-      //   setShowUnbiased(true)
-      //   setError('Could not fetch updated unbiased title.')
-      // }
-      // Instead, just use the local article object for now
-      setUnbiasedTitle(article.titleUnbiased || article.title)
+      const articleRes = await fetch(`/api/news?ids=${article.id}`)
+      let unbiased = article.title;
+      if (articleRes.ok) {
+        const data = await articleRes.json();
+        if (data.articles && data.articles[0] && data.articles[0].titleUnbiased && data.articles[0].titleUnbiased.trim() !== "") {
+          unbiased = data.articles[0].titleUnbiased;
+        }
+      }
+      setUnbiasedTitle(unbiased)
       setShowUnbiased(true)
+      if (onUnbiasTitle) {
+        onUnbiasTitle(article.id, unbiased)
+      }
     } catch (err) {
       setUnbiasedTitle(article.title)
       setShowUnbiased(true)
