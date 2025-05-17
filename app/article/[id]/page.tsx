@@ -154,6 +154,10 @@ export default function ArticlePage() {
     }
   }, [customNewsEnabled]);
 
+  useEffect(() => {
+    console.log('[ArticlePage] loaded article:', article);
+  }, [article]);
+
   if (!article) {
     return (
       <div className="flex items-center justify-center min-h-screen">
@@ -205,8 +209,9 @@ export default function ArticlePage() {
       const articleRes = await fetch(`/api/news?ids=${article?.id}`)
       if (articleRes.ok) {
         const data = await articleRes.json()
-        if (data.article?.titleUnbiased && data.article.titleUnbiased.trim() !== "") {
-          setUnbiasedTitle(data.article.titleUnbiased)
+        console.log('[ArticlePage] after webhook, fetched article:', data.articles?.[0]);
+        if (data.articles && data.articles[0] && data.articles[0].titleUnbiased && data.articles[0].titleUnbiased.trim() !== "") {
+          setUnbiasedTitle(data.articles[0].titleUnbiased)
         } else {
           setUnbiasedTitle(article?.title)
         }
