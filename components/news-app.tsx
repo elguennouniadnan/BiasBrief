@@ -11,8 +11,39 @@ import { trackEvents } from "@/lib/analytics"
 import { SettingsDialog } from "@/components/settings-dialog"
 import type { Article } from "@/lib/types"
 import { Button } from "@/components/ui/button"
+import { articlesListCache, setArticlesListCache, getArticlesListCache } from "@/lib/article-list-cache"
+import { useRouter } from "next/navigation"
+
+function getArticlesListCacheKey({
+  page,
+  selectedCategory,
+  searchQuery,
+  articlesPerPage,
+  sortOrder,
+  customNewsEnabled,
+  preferredCategories,
+}: {
+  page: number;
+  selectedCategory: string;
+  searchQuery: string;
+  articlesPerPage: number;
+  sortOrder: string;
+  customNewsEnabled: boolean;
+  preferredCategories: string[];
+}) {
+  return JSON.stringify({
+    page,
+    selectedCategory,
+    searchQuery,
+    articlesPerPage,
+    sortOrder,
+    customNewsEnabled,
+    preferredCategories,
+  });
+}
 
 export function NewsApp() {
+  const router = useRouter();
   const { theme, setTheme } = useTheme()
   const [mounted, setMounted] = useState(false)
   const [themePreference, setThemePreference] = useState(() => {
@@ -158,44 +189,61 @@ export function NewsApp() {
     }
   }, [])
 
-  useEffect(() => {
-    if (mounted) {
-      fetchArticles()
-    }
-  }, [mounted, searchQuery, currentPage, articlesPerPage, sortOrder, selectedCategory, customNewsEnabled, preferredCategories])
+  // --- ARTICLES LIST CACHE LOGIC ---
+  // On mount, restore articles list from cache if available and matches current filters/page
+  const cacheKey = getArticlesListCacheKey({
+    page: currentPage,
+    selectedCategory,
+    searchQuery,
+    articlesPerPage,
+    sortOrder,
+    customNewsEnabled,
+    preferredCategories,
+  });
 
   useEffect(() => {
-    if (mounted) {
-      localStorage.setItem("bookmarks", JSON.stringify(bookmarks))
+    if (!mounted) return;
+    const cache = getArticlesListCache(cacheKey);
+    if (cache) {
+      setAllArticles(cache.articles);
+      setTotalPages(cache.totalPages);
+      setTotalCount(cache.totalCount);
+      setIsLoading(false);
+    } else {
+      fetchArticles();
     }
-  }, [bookmarks, mounted])
+  }, [mounted, cacheKey]);
 
+  // After fetching articles, update the cache
   useEffect(() => {
-    if (mounted && preferredCategories.length > 0) {
-      localStorage.setItem("preferredCategories", JSON.stringify(preferredCategories))
+    if (!isLoading && allArticles.length > 0) {
+      setArticlesListCache(cacheKey, {
+        articles: allArticles,
+        page: currentPage,
+        totalPages,
+        totalCount,
+        filters: {
+          searchQuery,
+          selectedCategory,
+          articlesPerPage,
+          sortOrder,
+          customNewsEnabled,
+          preferredCategories: [...preferredCategories],
+        },
+        timestamp: Date.now(),
+      });
     }
-  }, [preferredCategories, mounted])
+  }, [allArticles, isLoading, cacheKey, totalPages, totalCount]);
 
+  // Prevent resetting to page 1 if restoring from history.state
   useEffect(() => {
-    if (mounted) {
-      localStorage.setItem("customNewsEnabled", JSON.stringify(customNewsEnabled))
+    // Only reset to page 1 if NOT restoring from history.state
+    if (
+      typeof window !== 'undefined' &&
+      (!window.history.state || !window.history.state.lastPage)
+    ) {
+      setCurrentPage(1);
     }
-  }, [customNewsEnabled, mounted])
-
-  useEffect(() => {
-    if (mounted) {
-      localStorage.setItem("fontSize", fontSize)
-    }
-  }, [fontSize, mounted])
-
-  useEffect(() => {
-    if (mounted) {
-      localStorage.setItem("articlesPerPage", articlesPerPage.toString())
-    }
-  }, [articlesPerPage, mounted])
-
-  useEffect(() => {
-    setCurrentPage(1)
   }, [selectedCategory, showBookmarksOnly, preferredCategories, searchQuery])
 
   // Remove only obsolete localStorage keys
@@ -425,6 +473,21 @@ export function NewsApp() {
     // Do not update state or reload articles here
   }
 
+  // Restore currentPage from history.state if available (for back navigation)
+  useEffect(() => {
+    if (typeof window !== 'undefined' && window.history.state && window.history.state.lastPage) {
+      setCurrentPage(window.history.state.lastPage);
+    }
+  }, []);
+
+  // When changing page, store lastPage in history.state for restoration
+  const handlePageChange = (page: number) => {
+    setCurrentPage(page);
+    if (typeof window !== 'undefined') {
+      window.history.replaceState({ ...(window.history.state || {}), lastPage: page }, '');
+    }
+  };
+
   return (
     <AuthProvider>
       <div className="flex flex-col min-h-screen bg-background text-foreground mx-2">
@@ -497,7 +560,7 @@ export function NewsApp() {
                   <Pagination 
                     currentPage={currentPage} 
                     totalPages={totalPages} 
-                    onPageChange={setCurrentPage} 
+                    onPageChange={handlePageChange} 
                   />
                 </div>
               )}
