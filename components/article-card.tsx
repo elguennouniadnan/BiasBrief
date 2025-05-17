@@ -20,9 +20,14 @@ export function ArticleCard({ article, isBookmarked, toggleBookmark, cardSize }:
   const [showUnbiased, setShowUnbiased] = useState(false)
   const [loadingUnbiased, setLoadingUnbiased] = useState(false)
   const [unbiasedTitle, setUnbiasedTitle] = useState<string | null>(null)
+  const [error, setError] = useState<string | null>(null)
+  const fetchInProgress = useRef(false)
+  // Prefer unbiasedTitle from state if available, then article.titleUnbiased, then fallback
   const displayTitle = showUnbiased
-    ? (unbiasedTitle ?? article.titleUnbiased ?? article.title)
-    : (article.titleBiased || article.title)
+    ? (unbiasedTitle && unbiasedTitle.trim() !== ''
+        ? unbiasedTitle
+        : (article.titleUnbiased && article.titleUnbiased.trim() !== '' ? article.titleUnbiased : article.title))
+    : (article.titleBiased && article.titleBiased.trim() !== '' ? article.titleBiased : article.title)
     
   const categoryColor = getCategoryColor(article.category || article.section) // Use category or fallback to section
   const contentRef = useRef<HTMLDivElement>(null)
@@ -51,42 +56,65 @@ export function ArticleCard({ article, isBookmarked, toggleBookmark, cardSize }:
     return () => resizeObserver.disconnect()
   }, [isSingleColumn])
 
+  // Reset unbiasedTitle and error if article changes
+  useEffect(() => {
+    setUnbiasedTitle(null)
+    setShowUnbiased(false)
+    setError(null)
+  }, [article.id])
+
   const handleUnbiasClick = async (e: React.MouseEvent) => {
     e.preventDefault();
+    setError(null)
+    if (loadingUnbiased || fetchInProgress.current) return;
     if (showUnbiased) {
       setShowUnbiased(false)
       return;
     }
+    // If unbiasedTitle is already set and non-empty, just show it
+    if (unbiasedTitle && unbiasedTitle.trim() !== "") {
+      setShowUnbiased(true)
+      return;
+    }
     // If article.titleUnbiased exists and is not empty, just show it (no fetch)
     if (article.titleUnbiased && article.titleUnbiased.trim() !== "") {
-      setUnbiasedTitle(article.titleUnbiased)
+      if (!unbiasedTitle) setUnbiasedTitle(article.titleUnbiased)
       setShowUnbiased(true)
       setLoadingUnbiased(false)
       return;
     }
     // Otherwise, fetch unbiased title
     setLoadingUnbiased(true)
+    fetchInProgress.current = true
     try {
       const res = await fetch("https://rizgap5i.rpcl.app/webhook/unbias-title", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ id: article.id, titleBiased: article.titleBiased || article.title })
       })
+      if (!res.ok) throw new Error('Failed to generate unbiased title')
       // Always fetch the updated article from Firestore after webhook
       const articleRes = await fetch(`/api/news/${article.id}`)
       if (articleRes.ok) {
         const data = await articleRes.json()
-        setUnbiasedTitle(data.article?.titleUnbiased)
+        if (data.article?.titleUnbiased && data.article.titleUnbiased.trim() !== "") {
+          setUnbiasedTitle(data.article.titleUnbiased)
+        } else {
+          setUnbiasedTitle(article.title)
+        }
         setShowUnbiased(true)
       } else {
         setUnbiasedTitle(article.title)
         setShowUnbiased(true)
+        setError('Could not fetch updated unbiased title.')
       }
-    } catch {
+    } catch (err) {
       setUnbiasedTitle(article.title)
       setShowUnbiased(true)
+      setError('Failed to unbias title. Please try again.')
     } finally {
       setLoadingUnbiased(false)
+      fetchInProgress.current = false
     }
   }
 
