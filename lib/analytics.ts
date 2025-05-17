@@ -157,7 +157,7 @@ export const trackEvents = {
   /**
    * Track article view
    */
-  articleView: (articleId: number, title: string, source?: string, category?: string) => {
+  articleView: (articleId: string, title: string, source?: string, category?: string) => {
     safeTrack('article_view', { 
       articleId, 
       title, 
@@ -183,21 +183,21 @@ export const trackEvents = {
   /**
    * Track bookmark action
    */
-  bookmarkArticle: (articleId: number) => {
+  bookmarkArticle: (articleId: string) => {
     safeTrack('bookmark_article', { articleId });
   },
   
   /**
    * Track unbookmark action
    */
-  unbookmarkArticle: (articleId: number) => {
+  unbookmarkArticle: (articleId: string) => {
     safeTrack('unbookmark_article', { articleId });
   },
   
   /**
    * Track bookmark toggle (for backward compatibility)
    */
-  bookmarkToggle: (articleId: number, isBookmarked: boolean) => {
+  bookmarkToggle: (articleId: string, isBookmarked: boolean) => {
     if (isBookmarked) {
       safeTrack('bookmark_article', { articleId });
     } else {

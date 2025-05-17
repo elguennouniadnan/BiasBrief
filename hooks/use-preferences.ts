@@ -25,7 +25,7 @@ interface UsePreferencesReturn {
   cardSize: number;
   articlesPerPage: number;
   preferredCategories: string[];
-  bookmarks: number[];
+  bookmarks: string[];
   isLoading: boolean;
   toggleTheme: () => void;
   setDefaultBiasMode: (value: boolean) => void; 
@@ -34,9 +34,9 @@ interface UsePreferencesReturn {
   setCardSize: (size: number) => void;
   setArticlesPerPage: (count: number) => void;
   setPreferredCategories: (categories: string[]) => void;
-  addBookmark: (articleId: number) => void;
-  removeBookmark: (articleId: number) => void;
-  isBookmarked: (articleId: number) => boolean;
+  addBookmark: (articleId: string) => void;
+  removeBookmark: (articleId: string) => void;
+  isBookmarked: (articleId: string) => boolean;
   saveAllPreferences: (preferences: Partial<UserPreferences>) => void;
   resetPreferences: () => void;
 }
@@ -64,7 +64,7 @@ export function usePreferences({
   const [cardSize, setCardSize] = useState(initialCardSize);
   const [articlesPerPage, setArticlesPerPage] = useState(initialArticlesPerPage);
   const [preferredCategories, setPreferredCategories] = useState<string[]>([]);
-  const [bookmarks, setBookmarks] = useState<number[]>([]);
+  const [bookmarks, setBookmarks] = useState<string[]>([]);
 
   // Handle storage errors
   const handleStorageError = (error: Error | undefined, fallbackMessage: string) => {
@@ -242,7 +242,7 @@ export function usePreferences({
   };
   
   // Add bookmark
-  const addBookmark = (articleId: number) => {
+  const addBookmark = (articleId: string) => {
     const result = storageService.addBookmark(articleId);
     
     if (result.success) {
@@ -258,7 +258,7 @@ export function usePreferences({
   };
   
   // Remove bookmark
-  const removeBookmark = (articleId: number) => {
+  const removeBookmark = (articleId: string) => {
     const result = storageService.removeBookmark(articleId);
     
     if (result.success) {
@@ -271,7 +271,7 @@ export function usePreferences({
   };
   
   // Check if article is bookmarked
-  const isBookmarked = (articleId: number): boolean => {
+  const isBookmarked = (articleId: string): boolean => {
     return bookmarks.includes(articleId);
   };
   

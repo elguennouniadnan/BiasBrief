@@ -5,14 +5,14 @@ import { Card, CardContent, CardFooter, CardHeader } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
 import type { Article } from "@/lib/types"
-import Link from "next/link"
 import { getCategoryColor } from "@/lib/utils"
 import { useEffect, useRef, useState } from "react"
+import { useRouter } from "next/navigation"
 
 interface ArticleCardProps {
   article: Article
   isBookmarked: boolean
-  toggleBookmark: (id: number) => void
+  toggleBookmark: (id: string) => void
   cardSize: number
 }
 
@@ -22,6 +22,8 @@ export function ArticleCard({ article, isBookmarked, toggleBookmark, cardSize }:
   const [unbiasedTitle, setUnbiasedTitle] = useState<string | null>(null)
   const [error, setError] = useState<string | null>(null)
   const fetchInProgress = useRef(false)
+  const router = useRouter();
+
   // Prefer unbiasedTitle from state if available, then article.titleUnbiased, then fallback
   const displayTitle = showUnbiased
     ? (unbiasedTitle && unbiasedTitle.trim() !== ''
@@ -94,20 +96,23 @@ export function ArticleCard({ article, isBookmarked, toggleBookmark, cardSize }:
       })
       if (!res.ok) throw new Error('Failed to generate unbiased title')
       // Always fetch the updated article from Firestore after webhook
-      const articleRes = await fetch(`/api/news/${article.id}`)
-      if (articleRes.ok) {
-        const data = await articleRes.json()
-        if (data.article?.titleUnbiased && data.article.titleUnbiased.trim() !== "") {
-          setUnbiasedTitle(data.article.titleUnbiased)
-        } else {
-          setUnbiasedTitle(article.title)
-        }
-        setShowUnbiased(true)
-      } else {
-        setUnbiasedTitle(article.title)
-        setShowUnbiased(true)
-        setError('Could not fetch updated unbiased title.')
-      }
+      // const articleRes = await fetch(`/api/news/${article.id}`)
+      // if (articleRes.ok) {
+      //   const data = await articleRes.json()
+      //   if (data.article?.titleUnbiased && data.article.titleUnbiased.trim() !== "") {
+      //     setUnbiasedTitle(data.article.titleUnbiased)
+      //   } else {
+      //     setUnbiasedTitle(article.title)
+      //   }
+      //   setShowUnbiased(true)
+      // } else {
+      //   setUnbiasedTitle(article.title)
+      //   setShowUnbiased(true)
+      //   setError('Could not fetch updated unbiased title.')
+      // }
+      // Instead, just use the local article object for now
+      setUnbiasedTitle(article.titleUnbiased || article.title)
+      setShowUnbiased(true)
     } catch (err) {
       setUnbiasedTitle(article.title)
       setShowUnbiased(true)
@@ -124,7 +129,16 @@ export function ArticleCard({ article, isBookmarked, toggleBookmark, cardSize }:
         className="overflow-hidden h-full flex flex-col group shadow-md p-1 border border-gray-200 dark:border-gray-700 rounded-xl hover:shadow-lg dark:shadow-blue-900/40 transition-all duration-300 border-t-2 hover:-translate-y-1"
         style={{ borderTopColor: categoryColor }}
       >
-        <Link href={`/article/${article.id}`} className="flex-grow flex flex-col">
+        <div
+          className="flex-grow flex flex-col cursor-pointer"
+          onClick={() => {
+            // Pass article data via history.state
+            if (typeof window !== 'undefined') {
+              window.history.replaceState({ ...(window.history.state || {}), article }, '');
+            }
+            router.push(`/article/${article.id}`);
+          }}
+        >
           <div className="absolute inset-0 bg-gradient-to-br from-white/5 to-transparent dark:from-black/5 opacity-0 group-hover:opacity-100 transition-opacity duration-300 pointer-events-none" />
 
           <CardHeader className={`p-2 sm:p-4 pb-1 sm:pb-2 flex flex-col gap-2 sm:gap-4 ${isSingleColumn ? 'flex-1' : ''}`}>
@@ -167,14 +181,14 @@ export function ArticleCard({ article, isBookmarked, toggleBookmark, cardSize }:
                   <h3 className="text-lg font-bold leading-tight group-hover:text-primary transition-colors duration-300 min-h-[2.5rem]">
                     {loadingUnbiased ? (
                       <span className="flex flex-col items-start">
-                        <span className="inline-flex items-center gap-2 mt-2">
+                        <span className="inline-flex items-center gap-2 my-2">
                           <span className="relative flex h-8 w-8">
                             <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-blue-400 opacity-75"></span>
                             <span className="relative inline-flex rounded-full h-8 w-8 bg-blue-500">
-                              <Sparkles className="h-7 w-7 text-white m-auto animate-spin" />
+                              <Sparkles className="h-6 w-6 m-1 text-white animate-spin" />
                             </span>
                           </span>
-                          <span className="text-blue-500 font-medium text-base">Unbiasing title…</span>
+                          <span className="text-blue-500 font-medium text-base">Calling BiasBrief AI Agent…</span>
                         </span>
                       </span>
                     ) : displayTitle}
@@ -233,7 +247,7 @@ export function ArticleCard({ article, isBookmarked, toggleBookmark, cardSize }:
               />
             </CardContent>
           )}
-        </Link>
+        </div>
         <CardFooter className="p-2 sm:p-4 pt-0 flex justify-between items-center border-t border-gray-100 dark:border-gray-800">
           <div className="flex flex-col gap-0.5 text-sm mt-2">
             <span className="font-medium text-gray-700 dark:text-gray-300">{article.source}</span>

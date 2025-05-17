@@ -52,26 +52,52 @@ export default function ArticlePage() {
   const fetchInProgress = React.useRef(false)
   const { toast } = useToast()
 
+  // Prevent double-fetch: only fetch if not already fetched
+  const hasFetched = React.useRef(false);
   useEffect(() => {
-    // Get article by ID from Firestore API, not localStorage
-    const fetchArticle = async () => {
-      const articleId = params.id?.toString();
-      if (!articleId) {
-        router.replace("/");
-        return;
+    if (hasFetched.current) return;
+    hasFetched.current = true;
+    // Try to get article from navigation state (history.state)
+    let navArticle: Article | null = null;
+    if (typeof window !== 'undefined' && window.history.state && window.history.state.article) {
+      navArticle = window.history.state.article;
+    }
+    if (navArticle) {
+      setArticle(navArticle);
+      // Set bookmark state, font size, etc. as before
+      const savedBookmarks = localStorage.getItem("bookmarks");
+      if (savedBookmarks) {
+        const bookmarks = JSON.parse(savedBookmarks);
+        setIsBookmarked(bookmarks.includes(navArticle.id?.toString()));
       }
+      const savedFontSize = localStorage.getItem("fontSize");
+      if (savedFontSize) {
+        setFontSize(savedFontSize);
+      }
+      // Track view event (cast id to number if needed)
+      let viewId = navArticle.id;
+      const displayTitle = navArticle.titleUnbiased || navArticle.title || 'Article';
+      trackEvents.articleView(viewId, displayTitle, navArticle.source, navArticle.category);
+      return;
+    }
+    // Fallback: fetch from main /api/news endpoint by id param
+    const articleId = params.id?.toString();
+    if (!articleId) {
+      router.replace("/");
+      return;
+    }
+    const fetchArticle = async () => {
       try {
-        const response = await fetch(`/api/news/${articleId}`);
+        const response = await fetch(`/api/news?ids=${articleId}`);
         if (!response.ok) {
           router.replace("/");
           return;
         }
         const data = await response.json();
-        console.log("Fetched article data:", data);
-        if (data && data.article) {
-          setArticle(data.article);
-          const displayTitle = data.article.titleUnbiased || data.article.title || 'Article';
-          trackEvents.articleView(data.article.id, displayTitle, data.article.source, data.article.category);
+        if (data && data.articles && data.articles.length > 0) {
+          setArticle(data.articles[0]);
+          const displayTitle = data.articles[0].titleUnbiased || data.articles[0].title || 'Article';
+          trackEvents.articleView(data.articles[0].id, displayTitle, data.articles[0].source, data.articles[0].category);
         } else {
           router.replace("/");
         }
@@ -82,33 +108,44 @@ export default function ArticlePage() {
     fetchArticle();
 
     // Load theme preference from localStorage
-    const savedTheme = localStorage.getItem("theme")
+    const savedTheme = localStorage.getItem("theme");
     if (savedTheme) {
-      setTheme(savedTheme)
+      setTheme(savedTheme);
     }
-
-
-    const savedBookmarks = localStorage.getItem("bookmarks")
+    const savedBookmarks = localStorage.getItem("bookmarks");
     if (savedBookmarks) {
-      const bookmarks = JSON.parse(savedBookmarks)
-      setIsBookmarked(bookmarks.includes(params.id?.toString()))
+      const bookmarks = JSON.parse(savedBookmarks);
+      setIsBookmarked(bookmarks.includes(articleId));
     }
-
-    const savedFontSize = localStorage.getItem("fontSize")
+    const savedFontSize = localStorage.getItem("fontSize");
     if (savedFontSize) {
-      setFontSize(savedFontSize)
+      setFontSize(savedFontSize);
     }
   }, [params.id, router, setTheme])
 
   useEffect(() => {
-    // Fetch all categories for settings dialog
+    // Fetch all categories for settings dialog, but cache in localStorage to avoid redundant requests
     async function fetchAllCategories() {
+      let cached = null;
+      if (typeof window !== 'undefined') {
+        try {
+          cached = JSON.parse(localStorage.getItem('allCategories') || 'null');
+        } catch {}
+      }
+      if (Array.isArray(cached) && cached.length > 0) {
+        setAllCategories(cached);
+        return;
+      }
       try {
         const response = await fetch('/api/sections')
         if (!response.ok) return
         const data = await response.json()
         if (Array.isArray(data.categories) && data.categories.length > 0) {
-          setAllCategories(['All', ...data.categories.filter((c: string) => c && c !== 'All')])
+          const categories = ['All', ...data.categories.filter((c: string) => c && c !== 'All')];
+          setAllCategories(categories)
+          if (typeof window !== 'undefined') {
+            localStorage.setItem('allCategories', JSON.stringify(categories));
+          }
         }
       } catch (e) {
         // ignore
@@ -165,7 +202,7 @@ export default function ArticlePage() {
         body: JSON.stringify({ id: article?.id, titleBiased: article?.titleBiased || article?.title })
       })
       if (!res.ok) throw new Error('Failed to generate unbiased title')
-      const articleRes = await fetch(`/api/news/${article?.id}`)
+      const articleRes = await fetch(`/api/news?ids=${article?.id}`)
       if (articleRes.ok) {
         const data = await articleRes.json()
         if (data.article?.titleUnbiased && data.article.titleUnbiased.trim() !== "") {
@@ -277,11 +314,28 @@ export default function ArticlePage() {
                 <Button
                   variant="ghost"
                   size="icon"
-                  onClick={() => {}}
-                  className="hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors border-gray-100 border- dark:border-gray-800"
+                  onClick={() => {
+                    // Toggle bookmark state and update localStorage
+                    const articleId = article.id?.toString();
+                    if (!articleId) return;
+                    let bookmarks = [];
+                    try {
+                      bookmarks = JSON.parse(localStorage.getItem("bookmarks") || "[]");
+                    } catch {}
+                    let updated;
+                    if (bookmarks.includes(articleId)) {
+                      updated = bookmarks.filter((id: string) => id !== articleId);
+                      setIsBookmarked(false);
+                    } else {
+                      updated = [...bookmarks, articleId];
+                      setIsBookmarked(true);
+                    }
+                    localStorage.setItem("bookmarks", JSON.stringify(updated));
+                  }}
+                  className={`hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors border-gray-100 border- dark:border-gray-800 ${isBookmarked ? 'text-primary' : ''}`}
                   style={{ borderWidth: 1 }}
                 >
-                  <Bookmark className="h-5 w-5" />
+                  <Bookmark className={`h-5 w-5 ${isBookmarked ? 'fill-current' : ''}`} />
                   <span className="sr-only">Bookmark</span>
                 </Button>
                 {/* AI Icon for Unbias Title button */}
@@ -303,13 +357,13 @@ export default function ArticlePage() {
             <h1 className="text-3xl md:text-4xl font-bold bg-gradient-to-b from-gray-900 to-gray-700 dark:from-white dark:to-gray-300 bg-clip-text text-transparent flex items-center gap-2 m-0 p-0">
               {loadingUnbiased ? (
                 <span className="inline-flex items-center gap-2">
-                  <span className="relative flex h-8 w-8">
+                  <span className="relative flex h-8 w-8 my-4">
                     <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-blue-400 opacity-75"></span>
-                    <span className="relative inline-flex rounded-full h-8 w-8 bg-blue-500">
-                      <svg className="h-7 w-7 text-white m-auto animate-spin" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24"><path d="M12 3v2m0 14v2m9-9h-2M5 12H3m15.364-6.364l-1.414 1.414M6.05 17.95l-1.414 1.414m12.728 0l-1.414-1.414M6.05 6.05L4.636 4.636" /></svg>
-                    </span>
+                      <span className="relative inline-flex rounded-full h-8 w-8 bg-blue-500">
+                        <Sparkles className="h-6 w-6 m-1 text-white animate-spin" />
+                      </span>
                   </span>
-                  <span className="text-blue-500 font-medium text-base">Unbiasing title…</span>
+                  <span className="text-blue-500 font-medium text-base">Calling BiasBrief AI Agent…</span>
                 </span>
               ) : displayTitle}
             </h1>
@@ -317,7 +371,7 @@ export default function ArticlePage() {
               <div className="text-xs text-red-500 mb-2">{error}</div>
             )}
 
-            <div className="flex flex-wrap items-center text-sm mt-2 text-gray-500 dark:text-gray-400 mb-6 gap-x-4 gap-y-2">
+            <div className="flex flex-wrap items-center text-sm mt-3 text-gray-500 dark:text-gray-400 mb-6 gap-x-4 gap-y-2">
               <div className="font-medium text-gray-700 dark:text-gray-300">{article.source}</div>
               <div>{article.date}</div>
               <div className="flex items-center">

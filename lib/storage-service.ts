@@ -32,7 +32,7 @@ const DEFAULTS = {
   CARD_SIZE: 3,
   ARTICLES_PER_PAGE: 15,
   PREFERRED_CATEGORIES: [] as string[],
-  BOOKMARKS: [] as number[],
+  BOOKMARKS: [] as string[],
 };
 
 /**
@@ -232,7 +232,7 @@ class StorageService {
   /**
    * Get bookmarked articles
    */
-  getBookmarks(): StorageResult<number[]> {
+  getBookmarks(): StorageResult<string[]> {
     try {
       const bookmarks = safeStorage.getItem(STORAGE_KEYS.BOOKMARKS);
       if (!bookmarks) return { success: true, data: DEFAULTS.BOOKMARKS };
@@ -252,7 +252,7 @@ class StorageService {
   /**
    * Save bookmarked articles
    */
-  saveBookmarks(bookmarks: number[]): StorageResult<void> {
+  saveBookmarks(bookmarks: string[]): StorageResult<void> {
     try {
       const success = safeStorage.setItem(STORAGE_KEYS.BOOKMARKS, JSON.stringify(bookmarks));
       return { success };
@@ -264,11 +264,11 @@ class StorageService {
   /**
    * Add a bookmark
    */
-  addBookmark(articleId: number): StorageResult<void> {
+  addBookmark(articleId: string): StorageResult<void> {
     try {
       const bookmarksResult = this.getBookmarks();
       if (!bookmarksResult.success) {
-        // Transform StorageResult<number[]> to StorageResult<void>
+        // Transform StorageResult<string[]> to StorageResult<void>
         return { 
           success: false, 
           error: bookmarksResult.error 
@@ -289,7 +289,7 @@ class StorageService {
   /**
    * Remove a bookmark
    */
-  removeBookmark(articleId: number): StorageResult<void> {
+  removeBookmark(articleId: string): StorageResult<void> {
     try {
       const bookmarksResult = this.getBookmarks();
       if (!bookmarksResult.success) {
@@ -342,7 +342,7 @@ class StorageService {
   /**
    * Check if an article is bookmarked
    */
-  isBookmarked(articleId: number): StorageResult<boolean> {
+  isBookmarked(articleId: string): StorageResult<boolean> {
     try {
       const bookmarksResult = this.getBookmarks();
       if (!bookmarksResult.success) return { ...bookmarksResult, data: false };

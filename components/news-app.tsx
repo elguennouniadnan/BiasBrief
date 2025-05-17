@@ -36,7 +36,7 @@ export function NewsApp() {
   const [searchQuery, setSearchQuery] = useState("")
   const [selectedCategory, setSelectedCategory] = useState("All")
   const [isBiasedMode, setIsBiasedMode] = useState(false)
-  const [bookmarks, setBookmarks] = useState<number[]>([])
+  const [bookmarks, setBookmarks] = useState<string[]>([])
   const [showBookmarksOnly, setShowBookmarksOnly] = useState(false)
   const [preferredCategories, setPreferredCategories] = useState<string[]>([])
   const [defaultBiasMode, setDefaultBiasMode] = useState(false)
@@ -54,7 +54,7 @@ export function NewsApp() {
   const [customNewsEnabled, setCustomNewsEnabled] = useState(false)
   const [settingsOpen, setSettingsOpen] = useState(false)
 
-  const toggleBookmark = (articleId: number) => {
+  const toggleBookmark = (articleId: string) => {
     const newBookmarks = bookmarks.includes(articleId)
       ? bookmarks.filter((id) => id !== articleId)
       : [...bookmarks, articleId]
@@ -83,7 +83,7 @@ export function NewsApp() {
     }
   };
 
-  const handleBookmarkToggle = (articleId: number) => {
+  const handleBookmarkToggle = (articleId: string) => {
     const newIsBookmarked = !bookmarks.includes(articleId);
     toggleBookmark(articleId);
     trackEvents.bookmarkToggle(articleId, newIsBookmarked);
@@ -313,12 +313,26 @@ export function NewsApp() {
   // New: fetch all categories/sections from /api/sections (1 doc read)
   useEffect(() => {
     async function fetchAllCategories() {
+      let cached = null;
+      if (typeof window !== 'undefined') {
+        try {
+          cached = JSON.parse(localStorage.getItem('allCategories') || 'null');
+        } catch {}
+      }
+      if (Array.isArray(cached) && cached.length > 0) {
+        setAllCategories(cached);
+        return;
+      }
       try {
         const response = await fetch('/api/sections')
         if (!response.ok) return
         const data = await response.json()
         if (Array.isArray(data.categories) && data.categories.length > 0) {
-          setAllCategories(['All', ...data.categories.filter((c: string) => c && c !== 'All')])
+          const categories = ['All', ...data.categories.filter((c: string) => c && c !== 'All')];
+          setAllCategories(categories)
+          if (typeof window !== 'undefined') {
+            localStorage.setItem('allCategories', JSON.stringify(categories));
+          }
         }
       } catch (e) {
         // ignore
@@ -474,7 +488,7 @@ export function NewsApp() {
             <>
               <ArticleList
                 articles={displayedArticles}
-                isBookmarked={(id: number) => bookmarks.includes(id)}
+                isBookmarked={(id: string) => bookmarks.includes(id)}
                 toggleBookmark={handleBookmarkToggle}
                 cardSize={cardSize}
               />

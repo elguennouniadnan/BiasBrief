@@ -9,7 +9,7 @@
 export interface Article {
   [x: string]: any;
   /** Unique identifier for the article */
-  id: number;
+  id: string;
   /** Publication date in ISO format */
   date: string;
   /** Alternative image URL for the article */
@@ -82,7 +82,7 @@ export interface UserPreferences {
   /** User's preferred article categories */
   preferredCategories: string[];
   /** User's bookmarked article IDs */
-  bookmarks: number[];
+  bookmarks: string[];
 }
 
 /**
