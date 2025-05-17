@@ -159,7 +159,7 @@ export function ArticleCard({ article, isBookmarked, toggleBookmark, cardSize, o
                 </Badge>
                 <Badge
                   variant="outline"
-                  className="font-medium transition-colors mb-0.5 sm:mb-1 duration-300 text-yellow-800 border-yellow-300 dark:bg-primary-600 dark:text-blue-400 dark:border-blue-400"
+                  className="font-medium transition-colors mb-0.5 sm:mb-1 duration-300 text-yellow-800 border-yellow-300 dark:bg-primary-600 dark:text-blue-500 dark:border-blue-900 dark:bg-blue-950"
                   style={{}}
                 >
                   {showUnbiased ? "Unbiased" : "Biased"}
