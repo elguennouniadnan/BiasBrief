@@ -15,6 +15,7 @@ import { useToast } from "@/components/ui/use-toast"
 import { Navbar } from "@/components/navbar"
 import { SettingsDialog } from "@/components/settings-dialog"
 import React from "react"
+import { Sparkles } from "lucide-react"
 
 // Utility to extract <img> and <figcaption> from imageHtml
 function extractImageAndCaption(imageHtml: string): { imgHtml: string | null, captionHtml: string | null } {
@@ -44,6 +45,11 @@ export default function ArticlePage() {
   const [sortOrder, setSortOrder] = useState<'new-to-old' | 'old-to-new'>('new-to-old')
   const [settingsOpen, setSettingsOpen] = useState(false)
   const [allCategories, setAllCategories] = useState<string[]>([])
+  const [showUnbiased, setShowUnbiased] = useState(false)
+  const [loadingUnbiased, setLoadingUnbiased] = useState(false)
+  const [unbiasedTitle, setUnbiasedTitle] = useState<string | null>(null)
+  const [error, setError] = useState<string | null>(null)
+  const fetchInProgress = React.useRef(false)
   const { toast } = useToast()
 
   useEffect(() => {
@@ -119,10 +125,69 @@ export default function ArticlePage() {
     )
   }
 
+  // Prefer unbiasedTitle from state if available, then article.titleUnbiased, then fallback
+  const displayTitle = showUnbiased
+    ? (unbiasedTitle && unbiasedTitle.trim() !== ''
+        ? unbiasedTitle
+        : (article.titleUnbiased && article.titleUnbiased.trim() !== '' ? article.titleUnbiased : article.title))
+    : (article.titleBiased && article.titleBiased.trim() !== '' ? article.titleBiased : article.title)
+
   // Always prefer titleUnbiased, then titleBiased, then fallback
   const title = article.titleUnbiased || article.titleBiased || article.title || "Untitled";
   const categoryColor = getCategoryColor(article.category || article.section || "Uncategorized")
   const readingTime = getReadingTime(article?.body?.replace(/<[^>]*>/g, '') || '')
+
+  // --- Unbias Title logic (from ArticleCard) ---
+  const handleUnbiasClick = async (e: React.MouseEvent) => {
+    e.preventDefault();
+    setError(null)
+    if (loadingUnbiased || fetchInProgress.current) return;
+    if (showUnbiased) {
+      setShowUnbiased(false)
+      return;
+    }
+    if (unbiasedTitle && unbiasedTitle.trim() !== "") {
+      setShowUnbiased(true)
+      return;
+    }
+    if (article?.titleUnbiased && article.titleUnbiased.trim() !== "") {
+      if (!unbiasedTitle) setUnbiasedTitle(article.titleUnbiased)
+      setShowUnbiased(true)
+      setLoadingUnbiased(false)
+      return;
+    }
+    setLoadingUnbiased(true)
+    fetchInProgress.current = true
+    try {
+      const res = await fetch("https://rizgap5i.rpcl.app/webhook/unbias-title", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ id: article?.id, titleBiased: article?.titleBiased || article?.title })
+      })
+      if (!res.ok) throw new Error('Failed to generate unbiased title')
+      const articleRes = await fetch(`/api/news/${article?.id}`)
+      if (articleRes.ok) {
+        const data = await articleRes.json()
+        if (data.article?.titleUnbiased && data.article.titleUnbiased.trim() !== "") {
+          setUnbiasedTitle(data.article.titleUnbiased)
+        } else {
+          setUnbiasedTitle(article?.title)
+        }
+        setShowUnbiased(true)
+      } else {
+        setUnbiasedTitle(article?.title)
+        setShowUnbiased(true)
+        setError('Could not fetch updated unbiased title.')
+      }
+    } catch (err) {
+      setUnbiasedTitle(article?.title)
+      setShowUnbiased(true)
+      setError('Failed to unbias title. Please try again.')
+    } finally {
+      setLoadingUnbiased(false)
+      fetchInProgress.current = false
+    }
+  }
 
   return (
     <AuthProvider>
@@ -188,35 +253,71 @@ export default function ArticlePage() {
             </Button>
 
             <div className="flex items-center justify-between mb-2">
-              <Badge
-                variant="outline"
-                className="font-medium transition-colors duration-300"
-                style={{
-                  backgroundColor: `${categoryColor}15`,
-                  color: categoryColor,
-                  borderColor: `${categoryColor}30`,
-                }}
-              >
-                {article.category || article.section || "Uncategorized"}
-              </Badge>
+              <div className="flex items-center gap-2">
+                <Badge
+                  variant="outline"
+                  className="font-medium transition-colors duration-300"
+                  style={{
+                    backgroundColor: `${categoryColor}15`,
+                    color: categoryColor,
+                    borderColor: `${categoryColor}70`, // lighter border
+                  }}
+                >
+                  {article.category || article.section || "Uncategorized"}
+                </Badge>
+                <Badge
+                  variant="outline"
+                  className="font-medium transition-colors duration-300 text-yellow-800 border-yellow-300 dark:bg-primary-600 dark:text-blue-400 dark:border-blue-400"
+                  style={{}}
+                >
+                  {showUnbiased ? "Unbiased" : "Biased"}
+                </Badge>
+              </div>
               <div className="flex items-center gap-2">
                 <Button
                   variant="ghost"
                   size="icon"
                   onClick={() => {}}
-                  className="hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors"
+                  className="hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors border-gray-100 border- dark:border-gray-800"
+                  style={{ borderWidth: 1 }}
                 >
                   <Bookmark className="h-5 w-5" />
                   <span className="sr-only">Bookmark</span>
                 </Button>
+                {/* AI Icon for Unbias Title button */}
+                <div className="flex gap-2 items-center">
+                  <Button
+                    variant={showUnbiased ? "default" : "outline"}
+                    size="icon"
+                    onClick={handleUnbiasClick}
+                    className="ml-2"
+                    title={showUnbiased ? "Show Biased Title" : "Unbias Title with AI"}
+                    disabled={loadingUnbiased}
+                  >
+                    {/* AI Chip (main icon for Unbias Title, matches ArticleCard) */}
+                    <Sparkles className="h-4 w-4" />
+                  </Button>
+                </div>
               </div>
             </div>
-
-            <h1 className="text-3xl md:text-4xl font-bold mb-4 bg-gradient-to-b from-gray-900 to-gray-700 dark:from-white dark:to-gray-300 bg-clip-text text-transparent">
-              {title}
+            <h1 className="text-3xl md:text-4xl font-bold bg-gradient-to-b from-gray-900 to-gray-700 dark:from-white dark:to-gray-300 bg-clip-text text-transparent flex items-center gap-2 m-0 p-0">
+              {loadingUnbiased ? (
+                <span className="inline-flex items-center gap-2">
+                  <span className="relative flex h-8 w-8">
+                    <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-blue-400 opacity-75"></span>
+                    <span className="relative inline-flex rounded-full h-8 w-8 bg-blue-500">
+                      <svg className="h-7 w-7 text-white m-auto animate-spin" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24"><path d="M12 3v2m0 14v2m9-9h-2M5 12H3m15.364-6.364l-1.414 1.414M6.05 17.95l-1.414 1.414m12.728 0l-1.414-1.414M6.05 6.05L4.636 4.636" /></svg>
+                    </span>
+                  </span>
+                  <span className="text-blue-500 font-medium text-base">Unbiasing title…</span>
+                </span>
+              ) : displayTitle}
             </h1>
+            {error && (
+              <div className="text-xs text-red-500 mb-2">{error}</div>
+            )}
 
-            <div className="flex flex-wrap items-center text-sm text-gray-500 dark:text-gray-400 mb-6 gap-x-4 gap-y-2">
+            <div className="flex flex-wrap items-center text-sm mt-2 text-gray-500 dark:text-gray-400 mb-6 gap-x-4 gap-y-2">
               <div className="font-medium text-gray-700 dark:text-gray-300">{article.source}</div>
               <div>{article.date}</div>
               <div className="flex items-center">

@@ -19,18 +19,23 @@ const db = getFirestore(app);
 
 export async function GET(
   request: Request,
-  { params }: { params: { id: string } }
+  context: { params: { id: string } }
 ) {
+  const { params } = context;
+  const id = params.id;
   try {
-    const articleRef = doc(db, 'articles', params.id);
+    const articleRef = doc(db, 'articles', id);
     const articleSnap = await getDoc(articleRef);
     if (!articleSnap.exists()) {
       return NextResponse.json({ error: 'Article not found' }, { status: 404 });
     }
     // Merge doc data with id and ensure all Article fields are present
     const data = articleSnap.data() as Partial<Article> | undefined;
+    // Convert id to number if possible, else fallback to string
+    let articleId: number | string = Number(id);
+    if (isNaN(articleId)) articleId = id;
     const article: Article = {
-      id: Number(params.id),
+      id: articleId,
       date: data?.date ?? '',
       imageUrl: data?.imageUrl ?? '',
       source: data?.source ?? '',

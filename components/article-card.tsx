@@ -129,17 +129,26 @@ export function ArticleCard({ article, isBookmarked, toggleBookmark, cardSize }:
 
           <CardHeader className={`p-2 sm:p-4 pb-1 sm:pb-2 flex flex-col gap-2 sm:gap-4 ${isSingleColumn ? 'flex-1' : ''}`}>
             <div className="flex items-center justify-between">
-              <Badge
-                variant="outline"
-                className="self-start mb-0.5 sm:mb-1 font-medium transition-colors duration-300"
-                style={{
-                  backgroundColor: `${categoryColor}15`,
-                  color: categoryColor,
-                  borderColor: `${categoryColor}30`,
-                }}
-              >
-                {article.category || article.section}
-              </Badge>
+              <div className="flex gap-2">
+                <Badge
+                  variant="outline"
+                  className="self-start mb-0.5 sm:mb-1 font-medium transition-colors duration-300"
+                  style={{
+                    backgroundColor: `${categoryColor}15`,
+                    color: categoryColor,
+                    borderColor: `${categoryColor}10`,
+                  }}
+                >
+                  {article.category || article.section}
+                </Badge>
+                <Badge
+                  variant="outline"
+                  className="font-medium transition-colors mb-0.5 sm:mb-1 duration-300 text-yellow-800 border-yellow-300 dark:bg-primary-600 dark:text-blue-400 dark:border-blue-400"
+                  style={{}}
+                >
+                  {showUnbiased ? "Unbiased" : "Biased"}
+                </Badge>
+              </div>
               <Button
                 variant={showUnbiased ? "default" : "outline"}
                 size="icon"
