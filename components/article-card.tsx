@@ -8,6 +8,7 @@ import type { Article } from "@/lib/types"
 import { getCategoryColor } from "@/lib/utils"
 import { useEffect, useRef, useState } from "react"
 import { useRouter } from "next/navigation"
+import { articleCache } from "@/lib/article-cache"
 
 interface ArticleCardProps {
   article: Article
@@ -132,8 +133,8 @@ export function ArticleCard({ article, isBookmarked, toggleBookmark, cardSize }:
         <div
           className="flex-grow flex flex-col cursor-pointer"
           onClick={() => {
-            // Pass article data via history.state
             if (typeof window !== 'undefined') {
+              articleCache[article.id] = article;
               window.history.replaceState({ ...(window.history.state || {}), article }, '');
             }
             router.push(`/article/${article.id}`);

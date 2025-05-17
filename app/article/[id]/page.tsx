@@ -1,6 +1,6 @@
 "use client"
 
-import { useEffect, useState } from "react"
+import { useEffect, useState, useRef } from "react"
 import { useParams, useRouter } from "next/navigation"
 import { ArrowLeft, Bookmark, Share2, Clock } from "lucide-react"
 import { Button } from "@/components/ui/button"
@@ -16,6 +16,7 @@ import { Navbar } from "@/components/navbar"
 import { SettingsDialog } from "@/components/settings-dialog"
 import React from "react"
 import { Sparkles } from "lucide-react"
+import { articleCache } from "@/lib/article-cache"
 
 // Utility to extract <img> and <figcaption> from imageHtml
 function extractImageAndCaption(imageHtml: string): { imgHtml: string | null, captionHtml: string | null } {
@@ -57,30 +58,33 @@ export default function ArticlePage() {
   useEffect(() => {
     if (hasFetched.current) return;
     hasFetched.current = true;
-    // Try to get article from navigation state (history.state)
-    let navArticle: Article | null = null;
-    if (typeof window !== 'undefined' && window.history.state && window.history.state.article) {
-      navArticle = window.history.state.article;
+    // Try to get article from in-memory cache first
+    let cachedArticle: Article | null = null;
+    if (typeof window !== 'undefined' && params.id) {
+      cachedArticle = articleCache[params.id.toString()] || null;
     }
-    if (navArticle) {
-      setArticle(navArticle);
+    if (!cachedArticle && typeof window !== 'undefined' && window.history.state && window.history.state.article) {
+      cachedArticle = window.history.state.article;
+    }
+    if (cachedArticle) {
+      setArticle(cachedArticle);
       // Set bookmark state, font size, etc. as before
       const savedBookmarks = localStorage.getItem("bookmarks");
       if (savedBookmarks) {
         const bookmarks = JSON.parse(savedBookmarks);
-        setIsBookmarked(bookmarks.includes(navArticle.id?.toString()));
+        setIsBookmarked(bookmarks.includes(cachedArticle.id?.toString()));
       }
       const savedFontSize = localStorage.getItem("fontSize");
       if (savedFontSize) {
         setFontSize(savedFontSize);
       }
       // Track view event (cast id to number if needed)
-      let viewId = navArticle.id;
-      const displayTitle = navArticle.titleUnbiased || navArticle.title || 'Article';
-      trackEvents.articleView(viewId, displayTitle, navArticle.source, navArticle.category);
+      let viewId = cachedArticle.id;
+      const displayTitle = cachedArticle.titleUnbiased || cachedArticle.title || 'Article';
+      trackEvents.articleView(viewId, displayTitle, cachedArticle.source, cachedArticle.category);
       return;
     }
-    // Fallback: fetch from main /api/news endpoint by id param
+    // Fallback: fetch from API if not in cache or navigation state
     const articleId = params.id?.toString();
     if (!articleId) {
       router.replace("/");
@@ -96,8 +100,6 @@ export default function ArticlePage() {
         const data = await response.json();
         if (data && data.articles && data.articles.length > 0) {
           setArticle(data.articles[0]);
-          const displayTitle = data.articles[0].titleUnbiased || data.articles[0].title || 'Article';
-          trackEvents.articleView(data.articles[0].id, displayTitle, data.articles[0].source, data.articles[0].category);
         } else {
           router.replace("/");
         }
@@ -106,21 +108,6 @@ export default function ArticlePage() {
       }
     };
     fetchArticle();
-
-    // Load theme preference from localStorage
-    const savedTheme = localStorage.getItem("theme");
-    if (savedTheme) {
-      setTheme(savedTheme);
-    }
-    const savedBookmarks = localStorage.getItem("bookmarks");
-    if (savedBookmarks) {
-      const bookmarks = JSON.parse(savedBookmarks);
-      setIsBookmarked(bookmarks.includes(articleId));
-    }
-    const savedFontSize = localStorage.getItem("fontSize");
-    if (savedFontSize) {
-      setFontSize(savedFontSize);
-    }
   }, [params.id, router, setTheme])
 
   useEffect(() => {
