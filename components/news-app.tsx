@@ -82,7 +82,13 @@ export function NewsApp() {
   const [sortOrder, setSortOrder] = useState<'new-to-old' | 'old-to-new'>('new-to-old')
   const [totalPages, setTotalPages] = useState(1)
   const [totalCount, setTotalCount] = useState(0)
-  const [customNewsEnabled, setCustomNewsEnabled] = useState(false)
+  const [customNewsEnabled, setCustomNewsEnabled] = useState(() => {
+    if (typeof window !== 'undefined') {
+      const saved = localStorage.getItem("customNewsEnabled");
+      if (saved !== null) return JSON.parse(saved);
+    }
+    return false;
+  })
   const [settingsOpen, setSettingsOpen] = useState(false)
 
   const toggleBookmark = (articleId: string) => {
@@ -104,6 +110,14 @@ export function NewsApp() {
   const handleCategoryChange = (category: string) => {
     setSelectedCategory(category);
     setCurrentPage(1); // Always reset to page 1 when changing category
+    if (typeof window !== 'undefined') {
+      window.history.replaceState({
+        ...(window.history.state || {}),
+        lastPage: 1,
+        lastCategory: category,
+        lastCustomNewsEnabled: customNewsEnabled,
+      }, '');
+    }
     trackEvents.categorySelect(category);
   };
 
@@ -473,20 +487,36 @@ export function NewsApp() {
     // Do not update state or reload articles here
   }
 
-  // Restore currentPage from history.state if available (for back navigation)
+  // Restore currentPage, selectedCategory, customNewsEnabled from history.state if available (for back navigation)
   useEffect(() => {
-    if (typeof window !== 'undefined' && window.history.state && window.history.state.lastPage) {
-      setCurrentPage(window.history.state.lastPage);
+    if (typeof window !== 'undefined' && window.history.state) {
+      const { lastPage, lastCategory, lastCustomNewsEnabled } = window.history.state;
+      if (lastPage) setCurrentPage(lastPage);
+      if (lastCategory) setSelectedCategory(lastCategory);
+      if (typeof lastCustomNewsEnabled === 'boolean') setCustomNewsEnabled(lastCustomNewsEnabled);
     }
   }, []);
 
-  // When changing page, store lastPage in history.state for restoration
+  // When changing page, store lastPage, lastCategory, lastCustomNewsEnabled in history.state for restoration
   const handlePageChange = (page: number) => {
     setCurrentPage(page);
     if (typeof window !== 'undefined') {
-      window.history.replaceState({ ...(window.history.state || {}), lastPage: page }, '');
+      window.history.replaceState({
+        ...(window.history.state || {}),
+        lastPage: page,
+        lastCategory: selectedCategory,
+        lastCustomNewsEnabled: customNewsEnabled,
+      }, '');
     }
   };
+
+  // Always sync customNewsEnabled to localStorage when it changes
+  useEffect(() => {
+    if (typeof window !== 'undefined') {
+      console.log('[customNewsEnabled] changed:', customNewsEnabled);
+      localStorage.setItem("customNewsEnabled", JSON.stringify(customNewsEnabled));
+    }
+  }, [customNewsEnabled]);
 
   return (
     <AuthProvider>
@@ -535,6 +565,10 @@ export function NewsApp() {
               <span className=" text-gray-600 dark:text-gray-300 font-medium truncate max-w-[60vw] text-right">
                   Search results for: "{searchQuery}"
               </span>
+            </div>
+          ) : showBookmarksOnly ? (
+            <div className="flex items-center justify-between px-4 py-2">
+              <span className="text-xl font-semibold text-primary">Bookmarks</span>
             </div>
           ) : (
             <CategoryFilter

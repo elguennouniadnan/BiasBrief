@@ -50,6 +50,13 @@ export default function ArticlePage() {
   const [loadingUnbiased, setLoadingUnbiased] = useState(false)
   const [unbiasedTitle, setUnbiasedTitle] = useState<string | null>(null)
   const [error, setError] = useState<string | null>(null)
+  const [customNewsEnabled, setCustomNewsEnabled] = useState(() => {
+    if (typeof window !== 'undefined') {
+      const saved = localStorage.getItem("customNewsEnabled");
+      if (saved !== null) return JSON.parse(saved);
+    }
+    return false;
+  });
   const fetchInProgress = React.useRef(false)
   const { toast } = useToast()
 
@@ -140,6 +147,12 @@ export default function ArticlePage() {
     }
     fetchAllCategories()
   }, [])
+
+  useEffect(() => {
+    if (typeof window !== 'undefined') {
+      localStorage.setItem("customNewsEnabled", JSON.stringify(customNewsEnabled));
+    }
+  }, [customNewsEnabled]);
 
   if (!article) {
     return (
@@ -243,8 +256,8 @@ export default function ArticlePage() {
             trackEvents.sortOrderChange(order);
           }}
           categories={article.category ? [article.category] : []}
-          customNewsEnabled={false}
-          setCustomNewsEnabled={() => {}}
+          customNewsEnabled={customNewsEnabled}
+          setCustomNewsEnabled={setCustomNewsEnabled}
           allCategories={allCategories}
         />
         <SettingsDialog

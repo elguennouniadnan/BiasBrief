@@ -68,6 +68,7 @@ export function ArticleCard({ article, isBookmarked, toggleBookmark, cardSize }:
 
   const handleUnbiasClick = async (e: React.MouseEvent) => {
     e.preventDefault();
+    e.stopPropagation(); // Prevent card click from firing
     setError(null)
     if (loadingUnbiased || fetchInProgress.current) return;
     if (showUnbiased) {
