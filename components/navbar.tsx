@@ -138,7 +138,7 @@ export function Navbar({
     }`}>
       <div className="w-full px-2 md:container md:px-4 mx-auto">
         <div className="flex items-center justify-between h-16">
-          <div className="flex-shrink-0 mt-0 mr-2 md:mr-4 sm:ml-0">
+          <div className="flex-shrink-0 mt-1 mr-2 md:mr-4 sm:ml-0 md:mt-2">
             <Logo className="w-[200px] h-[70px] md:w-[220px] md:h-[80px]" />
           </div>
 

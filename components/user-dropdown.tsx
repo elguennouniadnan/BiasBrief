@@ -59,7 +59,7 @@ export function UserDropdown({ openSettings, showSignedOutMenu = false, onSignIn
               aria-label="User"
             >
               <Avatar className="h-9 w-9 ring-2 ring-offset-2 ring-offset-white dark:ring-offset-gray-900 ring-primary/20">
-                <AvatarFallback className="bg-gradient-to-br from-primary to-primary/70 text-white text-base font-bold">
+                <AvatarFallback className="bg-gradient-to-bl from-primary/40 via-primary/60  to-primary/100 text-white text-base font-bold">
                   <svg viewBox="0 0 24 24" fill="none" className="h-6 w-6 text-white"><circle cx="12" cy="8" r="4" stroke="currentColor" strokeWidth="2"/><path d="M4 20c0-2.21 3.582-4 8-4s8 1.79 8 4" stroke="currentColor" strokeWidth="2"/></svg>
                 </AvatarFallback>
               </Avatar>
@@ -114,7 +114,7 @@ export function UserDropdown({ openSettings, showSignedOutMenu = false, onSignIn
                   referrerPolicy="no-referrer"
                 />
               ) : (
-                <AvatarFallback className="bg-gradient-to-br from-primary to-primary/70 text-white text-base font-bold">
+                <AvatarFallback className="bg-gradient-to-br from-primary/40 via-primary/60  to-primary/100 text-white text-base font-bold">
                   {getInitials(user.email)}
                 </AvatarFallback>
               )}
