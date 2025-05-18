@@ -133,7 +133,7 @@ export function Navbar({
   const ThemeIcon = mounted ? theme === "dark" ? Sun : Moon : null
 
   return (
-    <header className={`sticky top-0 z-50 w-full bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60 ${
+    <header className={`sticky top-0 z-50 pb-2 w-full bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60 ${
       scrolled ? "shadow-sm border-b border-border/50" : ""
     }`}>
       <div className="w-full px-2 md:container md:px-4 mx-auto">
@@ -143,7 +143,7 @@ export function Navbar({
           </div>
 
           {!isMobile && (
-            <div className="flex items-center gap-3 flex-1 justify-end">
+            <div className="flex items-center gap-3 flex-1 justify-end pt-2">
               <div className="search-container flex justify-end relative w-full max-w-xl">
                 <motion.div
                   animate={{
