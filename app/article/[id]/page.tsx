@@ -17,6 +17,7 @@ import { SettingsDialog } from "@/components/settings-dialog"
 import React from "react"
 import { Sparkles } from "lucide-react"
 import { articleCache } from "@/lib/article-cache"
+import { DotLottieReact } from '@lottiefiles/dotlottie-react';
 
 // Utility to extract <img> and <figcaption> from imageHtml
 function extractImageAndCaption(imageHtml: string): { imgHtml: string | null, captionHtml: string | null } {
@@ -207,11 +208,12 @@ export default function ArticlePage() {
       })
       if (!res.ok) throw new Error('Failed to generate unbiased title')
       const articleRes = await fetch(`/api/news?ids=${article?.id}`)
+      let newUnbiasedTitle = article?.title;
       if (articleRes.ok) {
         const data = await articleRes.json()
-        console.log('[ArticlePage] after webhook, fetched article:', data.articles?.[0]);
         if (data.articles && data.articles[0] && data.articles[0].titleUnbiased && data.articles[0].titleUnbiased.trim() !== "") {
-          setUnbiasedTitle(data.articles[0].titleUnbiased)
+          newUnbiasedTitle = data.articles[0].titleUnbiased;
+          setUnbiasedTitle(newUnbiasedTitle)
         } else {
           setUnbiasedTitle(article?.title)
         }
@@ -221,6 +223,31 @@ export default function ArticlePage() {
         setShowUnbiased(true)
         setError('Could not fetch updated unbiased title.')
       }
+      // --- Update cached article list with new unbiased title ---
+      if (typeof window !== 'undefined' && article?.id && newUnbiasedTitle) {
+        try {
+          // Update in-memory articlesListCache
+          const { articlesListCache, setArticlesListCache } = await import('@/lib/article-list-cache');
+          Object.keys(articlesListCache).forEach((key) => {
+            const cache = articlesListCache[key];
+            if (!cache || !Array.isArray(cache.articles)) return;
+            let updated = false;
+            const newArticles = cache.articles.map(a => {
+              if (a.id === article.id && a.titleUnbiased !== newUnbiasedTitle) {
+                updated = true;
+                return { ...a, titleUnbiased: newUnbiasedTitle };
+              }
+              return a;
+            });
+            if (updated) {
+              setArticlesListCache(key, { ...cache, articles: newArticles });
+            }
+          });
+        } catch (err) {
+          // fail silently
+        }
+      }
+      // ---
     } catch (err) {
       setUnbiasedTitle(article?.title)
       setShowUnbiased(true)
@@ -353,7 +380,6 @@ export default function ArticlePage() {
                     title={showUnbiased ? "Show Biased Title" : "Unbias Title with AI"}
                     disabled={loadingUnbiased}
                   >
-                    {/* AI Chip (main icon for Unbias Title, matches ArticleCard) */}
                     <Sparkles className="h-4 w-4" />
                   </Button>
                 </div>
@@ -362,13 +388,23 @@ export default function ArticlePage() {
             <h1 className="text-3xl md:text-4xl font-bold bg-gradient-to-b from-gray-900 to-gray-700 dark:from-white dark:to-gray-300 bg-clip-text text-transparent flex items-center gap-2 m-0 p-0">
               {loadingUnbiased ? (
                 <span className="inline-flex items-center gap-2">
-                  <span className="relative flex h-8 w-8 my-4">
-                    <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-blue-400 opacity-75"></span>
-                      <span className="relative inline-flex rounded-full h-8 w-8 bg-blue-500">
-                        <Sparkles className="h-6 w-6 m-1 text-white animate-spin" />
-                      </span>
+                  <span className="relative flex p-0 h-20">
+                    {theme === 'dark' ? (
+                      <DotLottieReact
+                        src="https://lottie.host/bb7e5e2b-d41b-4006-b557-038ceca5ac19/h8qTPdwZXn.lottie"
+                        loop
+                        speed={2}
+                        autoplay
+                      />
+                    ) : (
+                      <DotLottieReact
+                        src="https://lottie.host/5b37c7be-2940-4faf-bd6a-69dd69a5a115/1fj6mX7aib.lottie"
+                        loop
+                        speed={2}
+                        autoplay
+                      />
+                    )}
                   </span>
-                  <span className="text-blue-500 font-medium text-base">Calling BiasBrief AI Agent…</span>
                 </span>
               ) : displayTitle}
             </h1>

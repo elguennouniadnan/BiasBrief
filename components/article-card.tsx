@@ -9,6 +9,8 @@ import { getCategoryColor } from "@/lib/utils"
 import { useEffect, useRef, useState } from "react"
 import { useRouter } from "next/navigation"
 import { articleCache } from "@/lib/article-cache"
+import { DotLottieReact } from '@lottiefiles/dotlottie-react';
+import { useTheme } from "next-themes";
 
 interface ArticleCardProps {
   article: Article
@@ -25,6 +27,7 @@ export function ArticleCard({ article, isBookmarked, toggleBookmark, cardSize, o
   const [error, setError] = useState<string | null>(null)
   const fetchInProgress = useRef(false)
   const router = useRouter();
+  const { theme } = useTheme();
 
   // Prefer unbiasedTitle from state if available, then article.titleUnbiased, then fallback
   const displayTitle = showUnbiased
@@ -159,7 +162,7 @@ export function ArticleCard({ article, isBookmarked, toggleBookmark, cardSize, o
                 </Badge>
                 <Badge
                   variant="outline"
-                  className="font-medium transition-colors mb-0.5 sm:mb-1 duration-300 text-yellow-800 border-yellow-300 dark:bg-primary-600 dark:text-blue-500 dark:border-blue-900 dark:bg-blue-950"
+                  className="font-medium transition-colors mb-0.5 sm:mb-1 duration-300 text-yellow-800 border-yellow-300 dark:bg-primary-600 dark:text-blue-500 dark:border-blue-900 dark:bg-blue-95p0"
                   style={{}}
                 >
                   {showUnbiased ? "Unbiased" : "Biased"}
@@ -184,13 +187,23 @@ export function ArticleCard({ article, isBookmarked, toggleBookmark, cardSize, o
                     {loadingUnbiased ? (
                       <span className="flex flex-col items-start">
                         <span className="inline-flex items-center gap-2 my-2">
-                          <span className="relative flex h-8 w-8">
-                            <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-blue-400 opacity-75"></span>
-                            <span className="relative inline-flex rounded-full h-8 w-8 bg-blue-500">
-                              <Sparkles className="h-6 w-6 m-1 text-white animate-spin" />
-                            </span>
+                          <span className="relative flex p-0">
+                            {theme === 'dark' ? (
+                              <DotLottieReact
+                                src="https://lottie.host/bb7e5e2b-d41b-4006-b557-038ceca5ac19/h8qTPdwZXn.lottie"
+                                loop
+                                speed={2}
+                                autoplay
+                              />
+                            ) : (
+                              <DotLottieReact
+                                src="https://lottie.host/5b37c7be-2940-4faf-bd6a-69dd69a5a115/1fj6mX7aib.lottie"
+                                loop
+                                speed={2}
+                                autoplay
+                              />
+                            )}
                           </span>
-                          <span className="text-blue-500 font-medium text-base">Calling BiasBrief AI Agent…</span>
                         </span>
                       </span>
                     ) : displayTitle}

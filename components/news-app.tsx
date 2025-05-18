@@ -443,6 +443,19 @@ export function NewsApp() {
     fetchAllBookmarkedArticles();
   }, [showBookmarksOnly, bookmarks]);
 
+  // On mount, restore selectedCategory and currentPage from history.state if available
+  useEffect(() => {
+    if (typeof window !== 'undefined' && window.history.state) {
+      const { lastCategory, lastPage } = window.history.state;
+      if (lastCategory && lastCategory !== selectedCategory) {
+        setSelectedCategory(lastCategory);
+      }
+      if (lastPage && lastPage !== currentPage) {
+        setCurrentPage(lastPage);
+      }
+    }
+  }, [mounted]);
+
   // When changing page, store lastPage, lastCategory, lastCustomNewsEnabled in history.state for restoration
   const handlePageChange = (page: number) => {
     setCurrentPage(page);
