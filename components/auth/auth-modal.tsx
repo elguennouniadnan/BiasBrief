@@ -17,7 +17,7 @@ export function AuthModal({ isOpen, onClose, defaultTab = "sign-in" }: AuthModal
 
   return (
     <Dialog open={isOpen} onOpenChange={(open) => !open && onClose()}>
-      <DialogContent className="sm:max-w-[425px]">
+      <DialogContent className="sm:max-w-[425px] max-h-[85vh] overflow-y-auto w-[85vw] sm:w-auto">
         <DialogHeader>
           <DialogTitle>Welcome to BiasBrief</DialogTitle>
           <DialogDescription>
