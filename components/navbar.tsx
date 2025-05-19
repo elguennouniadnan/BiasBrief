@@ -216,9 +216,9 @@ export function Navbar({
                           variant="ghost"
                           size="icon"
                           onClick={() => setSearchBarOpen(true)}
-                          className="h-11 w-11 rounded-full bg-primary/90 text-white shadow-md p-0 transition-all duration-200 hover:bg-primary hover:scale-110 focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2 opacity-90 hover:opacity-100 flex items-center justify-center"
+                          className="h-9 w-9 rounded-full bg-gray-800 dark:bg-gray-200 text-gray-100 dark:text-gray-900 shadow-md p-0 transition-all duration-200 hover:bg-gray-700 dark:hover:bg-gray-300 hover:scale-110 focus:outline-none flex items-center justify-center group"
                         >
-                          <Search className="h-6 w-6" />
+                          <Search className="h-5 w-5 transition-colors duration-200" />
                         </Button>
                       )
                     )}
@@ -233,13 +233,13 @@ export function Navbar({
                       size="icon"
                       onClick={() => setShowBookmarksOnly(!showBookmarksOnly)}
                       className={cn(
-                        "h-11 w-11 rounded-full shadow-md p-0 transition-all duration-200 flex items-center justify-center",
+                        "h-10 w-10 rounded-full shadow-md p-0 transition-all duration-200 flex items-center justify-center",
                         showBookmarksOnly
-                          ? "bg-primary/90 text-white hover:bg-primary hover:scale-110 opacity-90 hover:opacity-100"
-                          : "bg-gray-100 dark:bg-gray-800 text-gray-700 dark:text-gray-200 hover:bg-primary/80 hover:text-white hover:scale-110 opacity-90 hover:opacity-100"
+                          ? "bg-gray-800 dark:bg-gray-200 text-gray-100 dark:text-gray-900 hover:bg-gray-700 dark:hover:bg-gray-300 hover:scale-110 opacity-90 hover:opacity-100"
+                          : "bg-gray-100 dark:bg-gray-800 text-gray-700 dark:text-gray-200 hover:bg-gray-200 dark:hover:bg-gray-700 hover:scale-110 opacity-90 hover:opacity-100"
                       )}
                     >
-                      <Bookmark className="h-6 w-6" />
+                      <Bookmark className="h-5 w-5" />
                     </Button>
                   )}
 
@@ -249,28 +249,36 @@ export function Navbar({
                     size="icon"
                     onClick={handleThemeChange}
                     title="Toggle theme"
-                    className="h-9 w-9 hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors duration-200"
+                    className="h-9 w-9 rounded-full bg-amber-200 dark:bg-amber-400 text-amber-700 dark:text-amber-800 shadow-md p-0 transition-all duration-200 hover:bg-amber-100 dark:hover:bg-amber-300 dark:hover:text-amber-100 hover:text-amber-500 hover:scale-110 opacity-90 hover:opacity-100 flex items-center justify-center"
                   >
-                    {ThemeIcon && <ThemeIcon className="h-4 w-4 mx-2 text-amber-500" />}
+                    {ThemeIcon && (
+                      <span className="h-5 w-5 inline-flex items-center dark:text-amber-800 justify-center  dark:bg-gradient-to-tr dark:from-yellow-400 dark:via-amber-300 dark:to-yellow-200 dark:text-transparent dark:bg-clip-text">
+                        <ThemeIcon className="h-5 w-5 dark:text-amber-800 dark:text-transparent dark:bg-clip-text" />
+                      </span>
+                    )}
                   </Button>
 
                   {user ? (
-                    <UserDropdown 
-                      openSettings={() => setIsSettingsOpen(true)}
-                      customNewsEnabled={customNewsEnabled}
-                      setCustomNewsEnabled={setCustomNewsEnabled}
-                    />
+                    <div className="transition-all duration-200 hover:scale-110 hover:opacity-90">
+                      <UserDropdown 
+                        openSettings={() => setIsSettingsOpen(true)}
+                        customNewsEnabled={customNewsEnabled}
+                        setCustomNewsEnabled={setCustomNewsEnabled}
+                      />
+                    </div>
                   ) : (
-                    <UserDropdown
-                      openSettings={() => setIsSettingsOpen(true)}
-                      showSignedOutMenu={true}
-                      onSignIn={() => {
-                        setAuthModalTab("sign-in");
-                        setAuthModalOpen(true);
-                      }}
-                      customNewsEnabled={customNewsEnabled}
-                      setCustomNewsEnabled={setCustomNewsEnabled}
-                    />
+                    <div className="transition-all duration-200 hover:scale-110 hover:opacity-90">
+                      <UserDropdown
+                        openSettings={() => setIsSettingsOpen(true)}
+                        showSignedOutMenu={true}
+                        onSignIn={() => {
+                          setAuthModalTab("sign-in");
+                          setAuthModalOpen(true);
+                        }}
+                        customNewsEnabled={customNewsEnabled}
+                        setCustomNewsEnabled={setCustomNewsEnabled}
+                      />
+                    </div>
                   )}
                 </div>
               </div>
@@ -333,9 +341,9 @@ export function Navbar({
                         variant="ghost"
                         size="icon"
                         onClick={() => setSearchBarOpen(true)}
-                        className="h-11 w-11 rounded-full bg-primary/90 text-white shadow-md p-0 transition-all duration-200 hover:bg-primary hover:scale-110 focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2 opacity-90 hover:opacity-100 flex items-center justify-center"
+                        className="h-9 w-9 rounded-full bg-gray-800 dark:bg-gray-200 text-gray-100 dark:text-gray-900 shadow-md p-0 transition-all duration-200 hover:bg-gray-700 dark:hover:bg-gray-300 hover:scale-110 focus:outline-none flex items-center justify-center group"
                       >
-                        <Search className="h-6 w-6" />
+                        <Search className="h-5 w-5 transition-colors duration-200 group-hover:text-primary" />
                       </Button>
                     )
                   )}
@@ -348,13 +356,13 @@ export function Navbar({
                     size="icon"
                     onClick={() => setShowBookmarksOnly(!showBookmarksOnly)}
                     className={cn(
-                      "h-12 w-12 rounded-full shadow-md p-0 transition-all duration-200 flex items-center justify-center",
+                      "h-9 w-9 rounded-full shadow-md p-0 transition-all duration-200 flex items-center justify-center",
                       showBookmarksOnly
-                        ? "bg-primary/90 text-white hover:bg-primary hover:scale-110 opacity-90 hover:opacity-100"
-                        : "bg-gray-100 dark:bg-gray-800 text-gray-700 dark:text-gray-200 hover:bg-primary/80 hover:text-white hover:scale-110 opacity-90 hover:opacity-100"
+                        ? "bg-gray-800 dark:bg-gray-200 text-gray-100 dark:text-gray-900 hover:bg-gray-700 dark:hover:bg-gray-300 hover:scale-110 opacity-90 hover:opacity-100"
+                        : "bg-gray-100 dark:bg-gray-800 text-gray-700 dark:text-gray-200 hover:bg-gray-200 dark:hover:bg-gray-700 hover:scale-110 opacity-90 hover:opacity-100"
                     )}
                   >
-                    <Bookmark className="h-6 w-6" />
+                    <Bookmark className="h-5 w-5" />
                   </Button>
                 )}
 
@@ -364,25 +372,33 @@ export function Navbar({
                   size="icon"
                   onClick={handleThemeChange}
                   title="Toggle theme"
-                  className="h-9 w-9 mr-2 hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors duration-200"
+                  className="h-9 w-9 rounded-full bg-amber-200 dark:bg-amber-800 text-amber-700 dark:text-amber-200 shadow-md p-0 transition-all duration-200 hover:bg-amber-100 dark:hover:bg-amber-900 hover:scale-110 opacity-90 hover:opacity-100 flex items-center justify-center mr-2"
                 >
-                  {ThemeIcon && <ThemeIcon className="h-4 w-4 text-amber-500" />}
+                  {ThemeIcon && (
+                    <span className="h-5 w-5 inline-flex items-center justify-center text-amber-500 dark:bg-gradient-to-tr dark:from-yellow-400 dark:via-amber-300 dark:to-yellow-200 dark:text-transparent dark:bg-clip-text">
+                      <ThemeIcon className="h-5 w-5 text-amber-500 dark:text-transparent dark:bg-clip-text" />
+                    </span>
+                  )}
                 </Button>
 
                 {/* User avatar or sign in/settings for mobile */}
                 {user ? (
-                  <UserDropdown openSettings={() => setIsSettingsOpen(true)} />
+                  <div className="transition-all duration-200 hover:scale-110 hover:opacity-90">
+                    <UserDropdown openSettings={() => setIsSettingsOpen(true)} />
+                  </div>
                 ) : (
-                  <UserDropdown
-                    openSettings={() => setIsSettingsOpen(true)}
-                    showSignedOutMenu={true}
-                    onSignIn={() => {
-                      setAuthModalTab("sign-in");
-                      setAuthModalOpen(true);
-                    }}
-                    customNewsEnabled={customNewsEnabled}
-                    setCustomNewsEnabled={setCustomNewsEnabled}
-                  />
+                  <div className="transition-all duration-200 hover:scale-110 hover:opacity-90">
+                    <UserDropdown
+                      openSettings={() => setIsSettingsOpen(true)}
+                      showSignedOutMenu={true}
+                      onSignIn={() => {
+                        setAuthModalTab("sign-in");
+                        setAuthModalOpen(true);
+                      }}
+                      customNewsEnabled={customNewsEnabled}
+                      setCustomNewsEnabled={setCustomNewsEnabled}
+                    />
+                  </div>
                 )}
               </div>
             )}
