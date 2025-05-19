@@ -202,36 +202,38 @@ export function SettingsDialog({
           </TabsList>
 
           <TabsContent value="content" className="space-y-6 mt-4 px-2">
-            <div>
-              <h3 className="text-sm font-medium mb-2">Preferred Categories</h3>
-              <p className="text-sm text-muted-foreground mb-4">Select which categories you want to see in your feed</p>
+            {user && user.email && (
+              <div>
+                <h3 className="text-sm font-medium mb-2">Preferred Categories</h3>
+                <p className="text-sm text-muted-foreground mb-4">Select which categories you want to see in your feed</p>
 
-              <div className="flex justify-between mb-2">
-                <Button variant="outline" size="sm" onClick={selectAllCategories}>
-                  Select All
-                </Button>
-                <Button variant="outline" size="sm" onClick={clearAllCategories}>
-                  Clear All
-                </Button>
-              </div>
-
-              <ScrollArea className="h-[140px] border p-3 rounded-sm">
-                <div className="space-y-4">
-                  {categories
-                    .filter((category) => category !== "All")
-                    .map((category) => (
-                      <div key={category} className="flex items-center space-x-2">
-                        <Checkbox
-                          id={`category-${category}`}
-                          checked={localPreferredCategories.includes(category)}
-                          onCheckedChange={() => toggleCategory(category)}
-                        />
-                        <Label htmlFor={`category-${category}`}>{category}</Label>
-                      </div>
-                    ))}
+                <div className="flex justify-between mb-2">
+                  <Button variant="outline" size="sm" onClick={selectAllCategories}>
+                    Select All
+                  </Button>
+                  <Button variant="outline" size="sm" onClick={clearAllCategories}>
+                    Clear All
+                  </Button>
                 </div>
-              </ScrollArea>
-            </div>
+
+                <ScrollArea className="h-[140px] border p-3 rounded-sm">
+                  <div className="space-y-4">
+                    {categories
+                      .filter((category) => category !== "All")
+                      .map((category) => (
+                        <div key={category} className="flex items-center space-x-2">
+                          <Checkbox
+                            id={`category-${category}`}
+                            checked={localPreferredCategories.includes(category)}
+                            onCheckedChange={() => toggleCategory(category)}
+                          />
+                          <Label htmlFor={`category-${category}`}>{category}</Label>
+                        </div>
+                      ))}
+                  </div>
+                </ScrollArea>
+              </div>
+            )}
 
             <div>
               <h3 className="text-sm font-medium mb-2">Sort Articles</h3>

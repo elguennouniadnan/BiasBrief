@@ -51,6 +51,8 @@ export function UserDropdown({ openSettings, showSignedOutMenu = false, onSignIn
     return email.substring(0, 2).toUpperCase()
   }
 
+  console.log('UserDropdown: user value', user);
+
   if (!user && showSignedOutMenu) {
     return (
       <>
@@ -166,7 +168,7 @@ export function UserDropdown({ openSettings, showSignedOutMenu = false, onSignIn
               </div>
             </DropdownMenuLabel>
             {/* Custom News Toggle - now as a non-clickable row with checkbox */}
-            {typeof customNewsEnabled === 'boolean' && typeof setCustomNewsEnabled === 'function' && (
+            {user && user.email && typeof customNewsEnabled === 'boolean' && typeof setCustomNewsEnabled === 'function' && (
               <>
                 <DropdownMenuSeparator />
                 <div className="flex items-center justify-start gap-4 ml-1.5 mr-2 mb-2 text-sm text-gray-700 dark:text-gray-200">
