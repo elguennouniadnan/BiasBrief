@@ -226,22 +226,20 @@ export function Navbar({
                     title="Show bookmarks"
                     className={showBookmarksOnly ? "bg-primary hover:bg-primary/90" : ""}
                   >
-                    <Bookmark className="h-4 w-4" />
+                    <Bookmark className="h-4 w-4 mx-2" />
                   </Button>
                 )}
 
-                {/* Add theme button to article page in desktop, between custom news toggle and user avatar */}
-                {isArticlePage && (
-                  <Button
-                    variant="ghost"
-                    size="icon"
-                    onClick={handleThemeChange}
-                    title="Toggle theme"
-                    className="h-9 w-9 hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors duration-200"
-                  >
-                    {ThemeIcon && <ThemeIcon className="h-4 w-4 text-amber-500" />}
-                  </Button>
-                )}
+                {/* Theme toggle button - always visible on desktop */}
+                <Button
+                  variant="ghost"
+                  size="icon"
+                  onClick={handleThemeChange}
+                  title="Toggle theme"
+                  className="h-9 w-9 hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors duration-200"
+                >
+                  {ThemeIcon && <ThemeIcon className="h-4 w-4 mx-2 text-amber-500" />}
+                </Button>
 
                 {user ? (
                   <UserDropdown 
@@ -343,18 +341,16 @@ export function Navbar({
                 </Button>
               )}
 
-              {/* Add theme button to article page in mobile, between custom news toggle and user avatar */}
-              {isArticlePage && (
-                <Button
-                  variant="ghost"
-                  size="icon"
-                  onClick={handleThemeChange}
-                  title="Toggle theme"
-                  className="h-9 w-9 hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors duration-200"
-                >
-                  {ThemeIcon && <ThemeIcon className="h-4 w-4 text-amber-500" />}
-                </Button>
-              )}
+              {/* Theme toggle button - always visible on mobile */}
+              <Button
+                variant="ghost"
+                size="icon"
+                onClick={handleThemeChange}
+                title="Toggle theme"
+                className="h-9 w-9 mr-2 hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors duration-200"
+              >
+                {ThemeIcon && <ThemeIcon className="h-4 w-4 text-amber-500" />}
+              </Button>
 
               {/* User avatar or sign in/settings for mobile */}
               {user ? (
