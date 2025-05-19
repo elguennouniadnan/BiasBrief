@@ -28,7 +28,7 @@ export function Logo({ className = "" }: LogoProps) {
       ? "/logo3.png"
       : "/logo2.png"
 
-  const logoSize = isMobile ? { width: 170, height: 92 } : { width: 220, height: 118.8 }
+  const logoSize = isMobile ? { width: 148, height: 80 } : { width: 220, height: 118.8 }
 
   return (
     <Link href="/" className={`relative block ${className}`} style={logoSize}>

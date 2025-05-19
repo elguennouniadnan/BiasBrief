@@ -136,9 +136,9 @@ export function Navbar({
     <header className={`sticky top-0 z-50 pb-2 w-full bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60 ${
       scrolled ? "shadow-sm border-b border-border/50" : ""
     }`}>
-      <div className="w-full px-2 md:container md:px-4 mx-auto">
+      <div className="w-full md:container md:px-4 mx-auto">
         <div className="flex items-center justify-between h-16">
-          <div className="flex-shrink-0 mt-1 mr-2 md:mr-4 sm:ml-0 md:mt-2">
+          <div className="flex-shrink-0 mt-1 mx-1 md:mr-2 md:mt-2">
             <Logo className="w-[200px] h-[70px] md:w-[220px] md:h-[80px]" />
           </div>
 
