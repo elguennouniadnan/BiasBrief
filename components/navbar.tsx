@@ -241,15 +241,17 @@ export function Navbar({
                   {ThemeIcon && <ThemeIcon className="h-4 w-4 text-amber-500" />}
                 </Button>
 
-                <div className="flex items-center gap-1">
+                <div className="flex items-center gap-0">
                   <Switch
                     id="custom-news-toggle"
                     checked={customNewsEnabled}
                     onCheckedChange={setCustomNewsEnabled}
                   />
                   <Label htmlFor="custom-news-toggle" className="text-xs px-2 leading-tight">
-                    <span className="block">Custom</span>
-                    <span className="block">News</span>
+                    <div className="flex flex-col items-center justify-center">
+                      <span className="block">Custom</span>
+                      <span className="block">News</span>
+                    </div>
                   </Label>
                 </div>
 
@@ -342,14 +344,19 @@ export function Navbar({
               </Button>
 
               {/* Custom news toggle for mobile */}
-              <div className="flex items-center gap-1 scale-90">
+              <div className="flex items-center gap-0 scale-90">
                 <Switch
                   id="custom-news-toggle-mobile"
                   checked={customNewsEnabled}
                   onCheckedChange={setCustomNewsEnabled}
                   className="h-6 w-11"
                 />
-                <Label htmlFor="custom-news-toggle-mobile" className="text-[10px] px-1">Custom News</Label>
+                <Label htmlFor="custom-news-toggle-mobile" className="text-[10px] px-1">
+                  <div className="flex flex-col items-center justify-center">
+                    <span className="block text-[10px]">Custom</span>
+                    <span className="block text-[10px]">News</span>
+                  </div>
+                </Label>
               </div>
 
               {/* User avatar or sign in/settings for mobile */}
