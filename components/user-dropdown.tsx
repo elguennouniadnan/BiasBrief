@@ -169,7 +169,7 @@ export function UserDropdown({ openSettings, showSignedOutMenu = false, onSignIn
             {typeof customNewsEnabled === 'boolean' && typeof setCustomNewsEnabled === 'function' && (
               <>
                 <DropdownMenuSeparator />
-                <div className="flex items-center justify-start gap-3.5 ml-1.5 mr-2 my-2 text-sm text-gray-700 dark:text-gray-200">
+                <div className="flex items-center justify-start gap-4 ml-1.5 mr-2 mb-2 text-sm text-gray-700 dark:text-gray-200">
                   <motion.span
                     className="relative inline-block h-3.5 w-3.5"
                     style={{ minWidth: 16 }}
@@ -190,7 +190,7 @@ export function UserDropdown({ openSettings, showSignedOutMenu = false, onSignIn
                       </svg>
                     )}
                   </motion.span>
-                  <label htmlFor="custom-news-toggle-dropdown" className="cursor-pointer select-none flex items-center gap-1">
+                  <label htmlFor="custom-news-toggle-dropdown" className="cursor-pointer select-none flex items-center gap-1 mt-1">
                     Custom News (All Tab)
                   </label>
                 </div>
