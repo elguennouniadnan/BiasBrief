@@ -295,7 +295,7 @@ export function ArticleCard({ article, isBookmarked, toggleBookmark, cardSize, o
             }}
             className={
                 isBookmarked
-                  ? "text-red-400 hover:bg-green-50/40 hover:text-red-400 dark:text-red-500 dark:hover:bg-primary/10 hover:shadow-[2px_-4px_12px_0_rgba(0,0,0,0.07)] hover:scale-110 opacity-90 hover:opacity-100"
+                  ? "text-amber-500 hover:bg-green-50/40 hover:text-amber-500 dark:text-amber-500 dark:hover:bg-primary/10 hover:shadow-[2px_-4px_12px_0_rgba(0,0,0,0.07)] hover:scale-110 opacity-90 hover:opacity-100"
                   : "text-black hover:text-gray-700 hover:bg-green-50/40 dark:text-gray-200 dark:hover:bg-primary/10 hover:shadow-[2px_-4px_12px_0_rgba(0,0,0,0.07)] hover:scale-110 opacity-90 hover:opacity-100"
             }
           >
