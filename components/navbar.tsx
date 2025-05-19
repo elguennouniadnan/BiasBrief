@@ -156,7 +156,7 @@ export function Navbar({
           setAuthModalTab("sign-up");
           setAuthModalOpen(true);
           setShowAccountSuggestionDialog(false);
-        }} onClose={() => setShowAccountSuggestionDialog(false)} />
+        }} />
       )}
       <header className={`sticky top-0 z-50 pb-2 w-full bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60 ${
         scrolled ? "shadow-sm border-b border-border/50" : ""
@@ -262,7 +262,7 @@ export function Navbar({
                     size="icon"
                     onClick={handleThemeChange}
                     title="Toggle theme"
-                    className="h-9 w-9 rounded-full text-amber-500 dark:text-amber-50 dark:hover:shadow-md hover:shadow-md p-0 transition-all duration-200 hover:bg-amber-200 dark:hover:bg-amber-400 dark:hover:text-amber-700 hover:text-amber-500 hover:scale-110 opacity-90 hover:opacity-100 flex items-center justify-center"
+                    className="h-9 w-9 rounded-full text-amber-500 dark:text-amber-500 dark:hover:shadow-md hover:shadow-md p-0 transition-all duration-200 hover:bg-amber-200 dark:hover:bg-amber-400 dark:hover:text-amber-700 hover:text-amber-500 hover:scale-110 opacity-90 hover:opacity-100 flex items-center justify-center"
                   >
                     {ThemeIcon && (
                       <span className="h-5 w-5 inline-flex items-center justify-center dark:bg-clip-text">
