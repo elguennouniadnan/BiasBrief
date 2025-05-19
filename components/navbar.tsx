@@ -18,6 +18,7 @@ import { useAuth } from "@/lib/auth"
 import { AuthModal } from "@/components/auth/auth-modal"
 import { AccountSuggestionDialog } from "@/components/account-suggestion-dialog"
 import { usePathname } from "next/navigation"
+import { cn } from "@/lib/utils"
 
 interface NavbarProps {
   searchQuery: string
@@ -230,7 +231,7 @@ export function Navbar({
                     <Button
                       variant={showBookmarksOnly ? "default" : "ghost"}
                       size="icon"
-                      onClick={() => setShowBookmarksOnly((v) => !v)}
+                      onClick={() => setShowBookmarksOnly(!showBookmarksOnly)}
                       className={cn(
                         "h-11 w-11 rounded-full shadow-md p-0 transition-all duration-200 flex items-center justify-center",
                         showBookmarksOnly
@@ -325,12 +326,16 @@ export function Navbar({
                               <X className="h-4 w-4 text-gray-400" />
                             </Button>
                           </form>
+                        </div>
+                      </div>
+                    ) : (
+                      <Button
                         variant="ghost"
                         size="icon"
                         onClick={() => setSearchBarOpen(true)}
-                        className="h-9 w-9 rounded-full hover:bg-gray-100 dark:hover:bg-gray-800"
+                        className="h-11 w-11 rounded-full bg-primary/90 text-white shadow-md p-0 transition-all duration-200 hover:bg-primary hover:scale-110 focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2 opacity-90 hover:opacity-100 flex items-center justify-center"
                       >
-                        <Search className="h-4 w-4" />
+                        <Search className="h-6 w-6" />
                       </Button>
                     )
                   )}
@@ -342,10 +347,14 @@ export function Navbar({
                     variant={showBookmarksOnly ? "default" : "ghost"}
                     size="icon"
                     onClick={() => setShowBookmarksOnly(!showBookmarksOnly)}
-                    title="Show bookmarks"
-                    className={showBookmarksOnly ? "bg-primary hover:bg-primary/90" : ""}
+                    className={cn(
+                      "h-12 w-12 rounded-full shadow-md p-0 transition-all duration-200 flex items-center justify-center",
+                      showBookmarksOnly
+                        ? "bg-primary/90 text-white hover:bg-primary hover:scale-110 opacity-90 hover:opacity-100"
+                        : "bg-gray-100 dark:bg-gray-800 text-gray-700 dark:text-gray-200 hover:bg-primary/80 hover:text-white hover:scale-110 opacity-90 hover:opacity-100"
+                    )}
                   >
-                    <Bookmark className="h-4 w-4" />
+                    <Bookmark className="h-6 w-6" />
                   </Button>
                 )}
 
