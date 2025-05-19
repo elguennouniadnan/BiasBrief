@@ -148,7 +148,7 @@ export function ArticleCard({ article, isBookmarked, toggleBookmark, cardSize, o
   return (
     <div className="px-2 sm:px-0">
       <Card
-        className="overflow-hidden h-full flex flex-col group shadow-md p-1 border border-gray-200 dark:border-gray-700 rounded-xl hover:shadow-lg dark:shadow-blue-900/40 transition-all duration-300 border-t-2 hover:-translate-y-1 bg-gradient-to-br from-[#fffbe6] via-[#f0f4ff] to-[#e6fff9] dark:from-[#23272f] dark:via-[#23243a] dark:to-[#1a1a2e]"
+        className="overflow-hidden h-full flex flex-col group shadow-md p-1 border border-gray-200 dark:border-gray-700 rounded-xl hover:shadow-lg dark:shadow-blue-900/40 transition-all duration-300 border-t-2 hover:-translate-y-1 bg-gradient-to-br from-[#fffbe6] via-[#f0f4ff] to-[#e6fff9] dark:from-blue-950/20 dark:via-blue-950/50 dark:to-blue-950/100 dark:bg-gradient-to-br"
         style={{ borderTopColor: categoryColor }}
       >
         <div
@@ -189,7 +189,7 @@ export function ArticleCard({ article, isBookmarked, toggleBookmark, cardSize, o
                 variant={showUnbiased ? "default" : "outline"}
                 size="icon"
                 onClick={handleUnbiasClick}
-                className="ml-2"
+                className="ml-2 border-0 bg-transparent hover:bg-gray-50/40 dark:hover:bg-primary/10 hover:shadow-[2px_-4px_12px_0_rgba(0,0,0,0.07)] hover:scale-110 opacity-90 hover:opacity-100"
                 title={showUnbiased ? "Show Biased Title" : "Unbias Title with AI"}
                 disabled={loadingUnbiased}
               >
@@ -295,8 +295,8 @@ export function ArticleCard({ article, isBookmarked, toggleBookmark, cardSize, o
             }}
             className={
                 isBookmarked
-                  ? "text-primary hover:text-primary/80 hover:bg-primary/10"
-                  : "text-muted-foreground hover:text-primary"
+                  ? "text-red-400 hover:bg-green-50/40 hover:text-red-400 dark:text-red-500 dark:hover:bg-primary/10 hover:shadow-[2px_-4px_12px_0_rgba(0,0,0,0.07)] hover:scale-110 opacity-90 hover:opacity-100"
+                  : "text-black hover:text-gray-700 hover:bg-green-50/40 dark:text-gray-200 dark:hover:bg-primary/10 hover:shadow-[2px_-4px_12px_0_rgba(0,0,0,0.07)] hover:scale-110 opacity-90 hover:opacity-100"
             }
           >
               <Bookmark className={`h-4 w-4 ${isBookmarked ? "fill-current" : ""}`} />
