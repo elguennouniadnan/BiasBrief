@@ -148,7 +148,7 @@ export function ArticleCard({ article, isBookmarked, toggleBookmark, cardSize, o
   return (
     <div className="px-2 sm:px-0">
       <Card
-        className="overflow-hidden h-full flex flex-col group shadow-md p-1 border border-gray-200 dark:border-gray-700 rounded-xl hover:shadow-lg dark:shadow-blue-900/40 transition-all duration-300 border-t-2 hover:-translate-y-1"
+        className="overflow-hidden h-full flex flex-col group shadow-md p-1 border border-gray-200 dark:border-gray-700 rounded-xl hover:shadow-lg dark:shadow-blue-900/40 transition-all duration-300 border-t-2 hover:-translate-y-1 bg-gradient-to-br from-[#fffbe6] via-[#f0f4ff] to-[#e6fff9] dark:from-[#23272f] dark:via-[#23243a] dark:to-[#1a1a2e]"
         style={{ borderTopColor: categoryColor }}
       >
         <div

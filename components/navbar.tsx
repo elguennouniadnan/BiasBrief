@@ -73,6 +73,7 @@ export function Navbar({
   const [pendingSearch, setPendingSearch] = useState(searchQuery)
   const [authModalOpen, setAuthModalOpen] = useState(false)
   const [authModalTab, setAuthModalTab] = useState<"sign-in" | "sign-up">("sign-in")
+  const [showAccountSuggestionDialog, setShowAccountSuggestionDialog] = useState(false);
   const isMobile = useMediaQuery("(max-width: 768px)")
   const searchInputRef = React.useRef<HTMLInputElement>(null)
   const pathname = usePathname();
@@ -135,15 +136,27 @@ export function Navbar({
     return () => window.removeEventListener('open-auth-modal', handleOpenAuthModal as EventListener)
   }, [])
 
+  useEffect(() => {
+    if (user) return; // Only for unsigned users
+    if (typeof window === 'undefined') return;
+    if (sessionStorage.getItem('accountSuggestionShown')) return;
+    const timer = setTimeout(() => {
+      setShowAccountSuggestionDialog(true);
+      sessionStorage.setItem('accountSuggestionShown', 'true');
+    }, 10000);
+    return () => clearTimeout(timer);
+  }, [user]);
+
   const ThemeIcon = mounted ? theme === "dark" ? Sun : Moon : null
 
   return (
     <>
-      {!user && (
+      {!user && showAccountSuggestionDialog && (
         <AccountSuggestionDialog onSignUp={() => {
           setAuthModalTab("sign-up");
           setAuthModalOpen(true);
-        }} />
+          setShowAccountSuggestionDialog(false);
+        }} onClose={() => setShowAccountSuggestionDialog(false)} />
       )}
       <header className={`sticky top-0 z-50 pb-2 w-full bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60 ${
         scrolled ? "shadow-sm border-b border-border/50" : ""
@@ -384,7 +397,11 @@ export function Navbar({
                 {/* User avatar or sign in/settings for mobile */}
                 {user ? (
                   <div className="transition-all duration-200 hover:scale-110 hover:opacity-90">
-                    <UserDropdown openSettings={() => setIsSettingsOpen(true)} />
+                    <UserDropdown 
+                      openSettings={() => setIsSettingsOpen(true)}
+                      customNewsEnabled={customNewsEnabled}
+                      setCustomNewsEnabled={setCustomNewsEnabled}
+                    />
                   </div>
                 ) : (
                   <div className="transition-all duration-200 hover:scale-110 hover:opacity-90">

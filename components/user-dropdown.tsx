@@ -15,6 +15,7 @@ import { Avatar, AvatarFallback } from "@/components/ui/avatar"
 import { useState, useEffect } from "react"
 import { AuthModal } from "@/components/auth/auth-modal"
 import { motion } from "framer-motion"
+import { useMediaQuery } from "@/hooks/use-media-query"
 
 interface UserDropdownProps {
   openSettings: () => void
@@ -32,6 +33,7 @@ export function UserDropdown({ openSettings, showSignedOutMenu = false, onSignIn
   const [verificationLoading, setVerificationLoading] = useState(false)
   const [verificationError, setVerificationError] = useState<string | null>(null)
   const [checkboxAnim, setCheckboxAnim] = useState<any>(null)
+  const isMobile = useMediaQuery("(max-width: 768px)")
 
   useEffect(() => {
     function handleOpenAuthModal(e: CustomEvent) {
@@ -165,11 +167,15 @@ export function UserDropdown({ openSettings, showSignedOutMenu = false, onSignIn
                 <p className="text-xs leading-none text-muted-foreground">{user.email}</p>
               </div>
             </DropdownMenuLabel>
-            {/* Custom News Toggle - now as a non-clickable row with checkbox */}
-            {user && user.email && typeof customNewsEnabled === 'boolean' && typeof setCustomNewsEnabled === 'function' && (
+            {/* Custom News Toggle - always rendered, but adjust spacing for mobile */}
+            {typeof customNewsEnabled === 'boolean' && typeof setCustomNewsEnabled === 'function' && (
               <>
                 <DropdownMenuSeparator />
-                <div className="flex items-center justify-start gap-4 ml-1.5 mr-2 mb-2 text-sm text-gray-700 dark:text-gray-200">
+                <div className={
+                  isMobile
+                    ? "flex items-center gap-2 px-1.5 py-1 text-sm text-gray-700 dark:text-gray-200"
+                    : "flex items-center justify-start gap-4 ml-1.5 mr-2 mb-2 text-sm text-gray-700 dark:text-gray-200"
+                }>
                   <motion.span
                     className="relative inline-block h-3.5 w-3.5"
                     style={{ minWidth: 16 }}
@@ -190,7 +196,12 @@ export function UserDropdown({ openSettings, showSignedOutMenu = false, onSignIn
                       </svg>
                     )}
                   </motion.span>
-                  <label htmlFor="custom-news-toggle-dropdown" className="cursor-pointer select-none flex items-center gap-1 mt-1">
+                  <label
+                    htmlFor="custom-news-toggle-dropdown"
+                    className={
+                      `cursor-pointer select-none flex items-center gap-1 mt-1${isMobile ? ' ml-2' : ''}`
+                    }
+                  >
                     Custom News (All Tab)
                   </label>
                 </div>
