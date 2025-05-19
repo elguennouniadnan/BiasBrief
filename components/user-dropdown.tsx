@@ -20,15 +20,18 @@ interface UserDropdownProps {
   openSettings: () => void
   showSignedOutMenu?: boolean
   onSignIn?: () => void
+  customNewsEnabled?: boolean
+  setCustomNewsEnabled?: (enabled: boolean) => void
 }
 
-export function UserDropdown({ openSettings, showSignedOutMenu = false, onSignIn }: UserDropdownProps) {
+export function UserDropdown({ openSettings, showSignedOutMenu = false, onSignIn, customNewsEnabled, setCustomNewsEnabled }: UserDropdownProps) {
   const { user, signOut, isEmailVerified, providerId, resendVerificationEmail } = useAuth()
   const [authModalOpen, setAuthModalOpen] = useState(false)
   const [authModalTab, setAuthModalTab] = useState<"sign-in" | "sign-up">("sign-in")
   const [verificationSent, setVerificationSent] = useState(false)
   const [verificationLoading, setVerificationLoading] = useState(false)
   const [verificationError, setVerificationError] = useState<string | null>(null)
+  const [checkboxAnim, setCheckboxAnim] = useState<any>(null)
 
   useEffect(() => {
     function handleOpenAuthModal(e: CustomEvent) {
@@ -162,7 +165,38 @@ export function UserDropdown({ openSettings, showSignedOutMenu = false, onSignIn
                 <p className="text-xs leading-none text-muted-foreground">{user.email}</p>
               </div>
             </DropdownMenuLabel>
-            <DropdownMenuSeparator />
+            {/* Custom News Toggle - now as a non-clickable row with checkbox */}
+            {typeof customNewsEnabled === 'boolean' && typeof setCustomNewsEnabled === 'function' && (
+              <>
+                <DropdownMenuSeparator />
+                <div className="flex items-center justify-start gap-3.5 ml-1.5 mr-2 my-2 text-sm text-gray-700 dark:text-gray-200">
+                  <motion.span
+                    className="relative inline-block h-3.5 w-3.5"
+                    style={{ minWidth: 16 }}
+                    animate={{ scale: customNewsEnabled ? 1 : 0.8 }}
+                    transition={{ type: "spring", stiffness: 400, damping: 18, duration: 0.18 }}
+                  >
+                    <input
+                      type="checkbox"
+                      id="custom-news-toggle-dropdown"
+                      checked={customNewsEnabled}
+                      onChange={e => setCustomNewsEnabled(e.target.checked)}
+                      className="h-5 w-5 rounded-full border-2 border-gray-300 appearance-none checked:bg-primary checked:border-primary transition-colors cursor-pointer"
+                      style={{ minWidth: 12 }}
+                    />
+                    {customNewsEnabled && (
+                      <svg className="absolute right-0 top-0 h-6 w-6 pointer-events-none" viewBox="-4 3 20 18" fill="none">
+                        <path d="M5 10.5L9 14.5L15 7.5" stroke="white" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round"/>
+                      </svg>
+                    )}
+                  </motion.span>
+                  <label htmlFor="custom-news-toggle-dropdown" className="cursor-pointer select-none flex items-center gap-1">
+                    Custom News (All Tab)
+                  </label>
+                </div>
+                <DropdownMenuSeparator />
+              </>
+            )}
             <DropdownMenuItem
               onClick={openSettings}
               className="cursor-pointer hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors"
