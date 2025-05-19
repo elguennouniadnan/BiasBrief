@@ -2,7 +2,7 @@
 
 import * as React from "react"
 import { useState, useEffect } from "react"
-import { Search, Bookmark, Sun, Moon, Settings, FolderHeart, X } from "lucide-react"
+import { Search, Bookmark, Sun, Moon, Settings, FolderHeart, X, BookMarkedIcon } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Switch } from "@/components/ui/switch"
@@ -216,9 +216,9 @@ export function Navbar({
                           variant="ghost"
                           size="icon"
                           onClick={() => setSearchBarOpen(true)}
-                          className="h-9 w-9 rounded-full bg-gray-800 dark:bg-gray-200 text-gray-100 dark:text-gray-900 shadow-md p-0 transition-all duration-200 hover:bg-gray-700 dark:hover:bg-gray-300 hover:scale-110 focus:outline-none flex items-center justify-center group"
+                          className="h-9 w-9 rounded-full text-black hover:text-gray-700 dark:text-gray-200 hover:shadow-md p-0 transition-all duration-200 hover:bg-gray-100 dark:hover:bg-gray-700 hover:scale-110 focus:outline-none flex items-center justify-center group"
                         >
-                          <Search className="h-5 w-5 transition-colors duration-200" />
+                          <Search className="h-5 w-5 transition-colors duration-200 group-hover:text-primary" />
                         </Button>
                       )
                     )}
@@ -233,10 +233,10 @@ export function Navbar({
                       size="icon"
                       onClick={() => setShowBookmarksOnly(!showBookmarksOnly)}
                       className={cn(
-                        "h-10 w-10 rounded-full shadow-md p-0 transition-all duration-200 flex items-center justify-center",
+                        "h-9 w-9 rounded-full p-0 transition-all duration-200 flex items-center justify-center",
                         showBookmarksOnly
-                          ? "bg-gray-800 dark:bg-gray-200 text-gray-100 dark:text-gray-900 hover:bg-gray-700 dark:hover:bg-gray-300 hover:scale-110 opacity-90 hover:opacity-100"
-                          : "bg-gray-100 dark:bg-gray-800 text-gray-700 dark:text-gray-200 hover:bg-gray-200 dark:hover:bg-gray-700 hover:scale-110 opacity-90 hover:opacity-100"
+                          ? "dark:bg-gray-300 text-gray-100 hover:bg-primary dark:text-gray-900 dark:hover:bg-gray-300 shadow-md hover:shadow-md hover:scale-110 opacity-90 hover:opacity-100"
+                          : "text-black hover:text-gray-700 hover:bg-gray-100 dark:text-gray-200 dark:hover:bg-gray-700 hover:shadow-md hover:scale-110 opacity-90 hover:opacity-100"
                       )}
                     >
                       <Bookmark className="h-5 w-5" />
@@ -249,11 +249,11 @@ export function Navbar({
                     size="icon"
                     onClick={handleThemeChange}
                     title="Toggle theme"
-                    className="h-9 w-9 rounded-full bg-amber-200 dark:bg-amber-400 text-amber-700 dark:text-amber-800 shadow-md p-0 transition-all duration-200 hover:bg-amber-100 dark:hover:bg-amber-300 dark:hover:text-amber-100 hover:text-amber-500 hover:scale-110 opacity-90 hover:opacity-100 flex items-center justify-center"
+                    className="h-9 w-9 rounded-full text-amber-500 dark:text-amber-50 dark:hover:shadow-md hover:shadow-md p-0 transition-all duration-200 hover:bg-amber-200 dark:hover:bg-amber-400 dark:hover:text-amber-700 hover:text-amber-500 hover:scale-110 opacity-90 hover:opacity-100 flex items-center justify-center"
                   >
                     {ThemeIcon && (
-                      <span className="h-5 w-5 inline-flex items-center dark:text-amber-800 justify-center  dark:bg-gradient-to-tr dark:from-yellow-400 dark:via-amber-300 dark:to-yellow-200 dark:text-transparent dark:bg-clip-text">
-                        <ThemeIcon className="h-5 w-5 dark:text-amber-800 dark:text-transparent dark:bg-clip-text" />
+                      <span className="h-5 w-5 inline-flex items-center justify-center dark:bg-clip-text">
+                        <ThemeIcon className="h-5 w-5 dark:bg-clip-text" />
                       </span>
                     )}
                   </Button>
@@ -372,11 +372,11 @@ export function Navbar({
                   size="icon"
                   onClick={handleThemeChange}
                   title="Toggle theme"
-                  className="h-9 w-9 rounded-full bg-amber-200 dark:bg-amber-800 text-amber-700 dark:text-amber-200 shadow-md p-0 transition-all duration-200 hover:bg-amber-100 dark:hover:bg-amber-900 hover:scale-110 opacity-90 hover:opacity-100 flex items-center justify-center mr-2"
+                  className="h-9 w-9 rounded-full hover:bg-amber-100 dark:hover:bg-amber-700 shadow-md p-0 transition-all duration-200  hover:scale-110 opacity-90 hover:opacity-100 flex items-center justify-center mr-2"
                 >
                   {ThemeIcon && (
-                    <span className="h-5 w-5 inline-flex items-center justify-center text-amber-500 dark:bg-gradient-to-tr dark:from-yellow-400 dark:via-amber-300 dark:to-yellow-200 dark:text-transparent dark:bg-clip-text">
-                      <ThemeIcon className="h-5 w-5 text-amber-500 dark:text-transparent dark:bg-clip-text" />
+                    <span className="h-5 w-5 inline-flex items-center justify-center  dark:text-amber-200 dark:bg-clip-text">
+                      <ThemeIcon className="h-5 w-5 text-amber-300" />
                     </span>
                   )}
                 </Button>
