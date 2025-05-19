@@ -218,7 +218,7 @@ export function Navbar({
                           onClick={() => setSearchBarOpen(true)}
                           className="h-9 w-9 rounded-full text-black hover:text-gray-700 dark:text-gray-200 hover:shadow-md p-0 transition-all duration-200 hover:bg-gray-100 dark:hover:bg-gray-700 hover:scale-110 focus:outline-none flex items-center justify-center group"
                         >
-                          <Search className="h-5 w-5 transition-colors duration-200 group-hover:text-primary" />
+                          <Search className="h-5 w-5 transition-colors duration-200" />
                         </Button>
                       )
                     )}
@@ -341,9 +341,9 @@ export function Navbar({
                         variant="ghost"
                         size="icon"
                         onClick={() => setSearchBarOpen(true)}
-                        className="h-9 w-9 rounded-full bg-gray-800 dark:bg-gray-200 text-gray-100 dark:text-gray-900 shadow-md p-0 transition-all duration-200 hover:bg-gray-700 dark:hover:bg-gray-300 hover:scale-110 focus:outline-none flex items-center justify-center group"
+                        className="h-9 w-9 rounded-full text-black hover:text-gray-700 dark:text-gray-200 hover:shadow-md p-0 transition-all duration-200 hover:bg-gray-100 dark:hover:bg-gray-700 hover:scale-110 focus:outline-none flex items-center justify-center group"
                       >
-                        <Search className="h-5 w-5 transition-colors duration-200 group-hover:text-primary" />
+                        <Search className="h-5 w-5 transition-colors duration-200" />
                       </Button>
                     )
                   )}
@@ -356,10 +356,10 @@ export function Navbar({
                     size="icon"
                     onClick={() => setShowBookmarksOnly(!showBookmarksOnly)}
                     className={cn(
-                      "h-9 w-9 rounded-full shadow-md p-0 transition-all duration-200 flex items-center justify-center",
+                      "h-9 w-9 rounded-full p-0 transition-all duration-200 flex items-center justify-center",
                       showBookmarksOnly
-                        ? "bg-gray-800 dark:bg-gray-200 text-gray-100 dark:text-gray-900 hover:bg-gray-700 dark:hover:bg-gray-300 hover:scale-110 opacity-90 hover:opacity-100"
-                        : "bg-gray-100 dark:bg-gray-800 text-gray-700 dark:text-gray-200 hover:bg-gray-200 dark:hover:bg-gray-700 hover:scale-110 opacity-90 hover:opacity-100"
+                        ? "bg-primary dark:bg-gray-200 text-gray-100 dark:text-gray-900 hover:scale-110"
+                        : "text-gray-700 dark:text-gray-200 hover:scale-110"
                     )}
                   >
                     <Bookmark className="h-5 w-5" />
@@ -372,11 +372,11 @@ export function Navbar({
                   size="icon"
                   onClick={handleThemeChange}
                   title="Toggle theme"
-                  className="h-9 w-9 rounded-full hover:bg-amber-100 dark:hover:bg-amber-700 shadow-md p-0 transition-all duration-200  hover:scale-110 opacity-90 hover:opacity-100 flex items-center justify-center mr-2"
+                  className="h-9 w-9 rounded-full text-amber-500 dark:text-amber-50 dark:hover:shadow-md hover:shadow-md p-0 transition-all duration-200 hover:bg-amber-200 dark:hover:bg-amber-400 dark:hover:text-amber-700 hover:text-amber-500 hover:scale-110 opacity-90 hover:opacity-100 flex items-center justify-center mr-2"
                 >
                   {ThemeIcon && (
-                    <span className="h-5 w-5 inline-flex items-center justify-center  dark:text-amber-200 dark:bg-clip-text">
-                      <ThemeIcon className="h-5 w-5 text-amber-300" />
+                    <span className="h-5 w-5 inline-flex items-center justify-center dark:bg-clip-text">
+                      <ThemeIcon className="h-5 w-5 dark:bg-clip-text" />
                     </span>
                   )}
                 </Button>
@@ -419,6 +419,7 @@ export function Navbar({
           setSortOrder={setSortOrder}
         />
 
+        {/* Auth modal - separate from UserDropdown to avoid unmounting issues */}
         <AuthModal isOpen={authModalOpen} onClose={() => setAuthModalOpen(false)} defaultTab={authModalTab} />
       </header>
     </>
