@@ -175,6 +175,8 @@ export default function ArticlePage() {
       setSummarizedHtml(article.unbiased_summary);
       setSummarizeError(null);
       setSummarizeLoading(false);
+      setSummaryDialogOpen(true);
+      setSummaryRevealed(true);
       return;
     }
     setSummarizeLoading(true)
@@ -190,6 +192,8 @@ export default function ArticlePage() {
       const data = await res.json()
       if (Array.isArray(data) && data[0] && data[0].unbiased_summary) {
         setSummarizedHtml(data[0].unbiased_summary)
+        setSummaryDialogOpen(true)
+        setSummaryRevealed(true)
         // Update article cache and state with new unbiased_summary
         setArticle(prev => {
           if (!prev) return prev;
@@ -219,6 +223,8 @@ export default function ArticlePage() {
         })
       } else if (data && typeof data === 'object' && data.unbiased_summary) {
         setSummarizedHtml(data.unbiased_summary)
+        setSummaryDialogOpen(true)
+        setSummaryRevealed(true)
         // Update article cache and state with new unbiased_summary
         setArticle(prev => {
           if (!prev) return prev;
@@ -377,7 +383,7 @@ export default function ArticlePage() {
       return;
     }
     // If no summary, run the normal summarize logic
-    setSummaryDialogOpen(true);
+    // Do NOT open dialog yet; open it after summary is set in handleSummarize
     if (!summarizedHtml && !summarizeLoading) handleSummarize();
   };
 
@@ -613,7 +619,7 @@ export default function ArticlePage() {
           {/* --- Summarize & Unbias Button (centered above image) --- */}
           <div className="flex justify-center my-6">
             <div className="flex flex-col items-center w-full">
-              {showSummaryLoading && (
+              {(showSummaryLoading || summarizeLoading) && (
                 <div className="w-full flex justify-center items-center h-20 mb-2">
                   {theme === 'dark' ? (
                     <DotLottieReact
@@ -639,13 +645,11 @@ export default function ArticlePage() {
                 className="flex items-center gap-2 text-amber-600 dark:text-amber-500"
               >
                 <Sparkles className="h-5 w-5" />
-                {showSummaryLoading
+                {(showSummaryLoading || summarizeLoading)
                   ? "Summarizing and unbiasing..."
                   : summaryRevealed
                     ? "Unbiased Summary"
-                    : summarizeLoading
-                      ? "Summarizing and unbiasing..."
-                      : "Summarize & Unbias Article"}
+                    : "Summarize & Unbias Article"}
               </Button>
             </div>
           </div>
@@ -669,28 +673,6 @@ export default function ArticlePage() {
               <DialogTitle>Summarized & Unbiased Article</DialogTitle>
             </DialogHeader>
             {showSummaryLoading && (
-              <div className="flex flex-col items-center py-8">
-                <div className="w-full flex justify-center items-center h-20">
-                  {theme === 'dark' ? (
-                    <DotLottieReact
-                      src="https://lottie.host/bb7e5e2b-d41b-4006-b557-038ceca5ac19/h8qTPdwZXn.lottie"
-                      loop
-                      speed={2}
-                      autoplay
-                    />
-                  ) : (
-                    <DotLottieReact
-                      src="https://lottie.host/5b37c7be-2940-4faf-bd6a-69dd69a5a115/1fj6mX7aib.lottie"
-                      loop
-                      speed={2}
-                      autoplay
-                    />
-                  )}
-                </div>
-                <span className="mt-2 text-gray-500 dark:text-gray-300">Summarizing...</span>
-              </div>
-            )}
-            {!showSummaryLoading && summarizeLoading && (
               <div className="flex flex-col items-center py-8">
                 <div className="w-full flex justify-center items-center h-20">
                   {theme === 'dark' ? (
