@@ -18,6 +18,7 @@ import React from "react"
 import { Sparkles } from "lucide-react"
 import { articleCache } from "@/lib/article-cache"
 import { DotLottieReact } from '@lottiefiles/dotlottie-react';
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog"
 
 // Utility to extract <img> and <figcaption> from imageHtml
 function extractImageAndCaption(imageHtml: string): { imgHtml: string | null, captionHtml: string | null } {
@@ -60,6 +61,11 @@ export default function ArticlePage() {
   });
   const fetchInProgress = React.useRef(false)
   const { toast } = useToast()
+
+  const [summaryDialogOpen, setSummaryDialogOpen] = useState(false)
+  const [summarizedHtml, setSummarizedHtml] = useState<string | null>(null)
+  const [summarizeLoading, setSummarizeLoading] = useState(false)
+  const [summarizeError, setSummarizeError] = useState<string | null>(null)
 
   // Prevent double-fetch: only fetch if not already fetched
   const hasFetched = React.useRef(false);
@@ -159,25 +165,52 @@ export default function ArticlePage() {
     console.log('[ArticlePage] loaded article:', article);
   }, [article]);
 
-  if (!article) {
-    return (
-      <div className="flex items-center justify-center min-h-screen">
-        <div className="animate-pulse">Loading article...</div>
-      </div>
-    )
+  const handleSummarize = async () => {
+    if (!article || !article.body) {
+      setSummarizeError("Article content is not available.");
+      return;
+    }
+    // If unbiased_summary is already present, just show it
+    if (article.unbiased_summary) {
+      setSummarizedHtml(article.unbiased_summary);
+      setSummarizeError(null);
+      setSummarizeLoading(false);
+      return;
+    }
+    setSummarizeLoading(true)
+    setSummarizeError(null)
+    setSummarizedHtml(null)
+    try {
+      const res = await fetch("https://rizgap5i.rpcl.app/webhook/summarize-and-unbias-article", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ id: article.id, body: article.body })
+      })
+      if (!res.ok) throw new Error("Failed to summarize and unbias article")
+      const data = await res.json()
+      if (Array.isArray(data) && data[0] && data[0].unbiased_summary) {
+        setSummarizedHtml(data[0].unbiased_summary)
+        // Update article cache with new unbiased_summary
+        setArticle(prev => prev ? { ...prev, unbiased_summary: data[0].unbiased_summary } : prev)
+        if (typeof window !== 'undefined' && article?.id) {
+          articleCache[article.id] = { ...article, unbiased_summary: data[0].unbiased_summary }
+        }
+      } else if (data && typeof data === 'object' && data.unbiased_summary) {
+        setSummarizedHtml(data.unbiased_summary)
+        // Update article cache with new unbiased_summary
+        setArticle(prev => prev ? { ...prev, unbiased_summary: data.unbiased_summary } : prev)
+        if (typeof window !== 'undefined' && article?.id) {
+          articleCache[article.id] = { ...article, unbiased_summary: data.unbiased_summary }
+        }
+      } else {
+        setSummarizeError("No summary returned from server.")
+      }
+    } catch (err: any) {
+      setSummarizeError(err.message || "Unknown error")
+    } finally {
+      setSummarizeLoading(false)
+    }
   }
-
-  // Prefer unbiasedTitle from state if available, then article.titleUnbiased, then fallback
-  const displayTitle = showUnbiased
-    ? (unbiasedTitle && unbiasedTitle.trim() !== ''
-        ? unbiasedTitle
-        : (article.titleUnbiased && article.titleUnbiased.trim() !== '' ? article.titleUnbiased : article.title))
-    : (article.titleBiased && article.titleBiased.trim() !== '' ? article.titleBiased : article.title)
-
-  // Always prefer titleUnbiased, then titleBiased, then fallback
-  const title = article.titleUnbiased || article.titleBiased || article.title || "Untitled";
-  const categoryColor = getCategoryColor(article.category || article.section || "Uncategorized")
-  const readingTime = getReadingTime(article?.body?.replace(/<[^>]*>/g, '') || '')
 
   // --- Unbias Title logic (from ArticleCard) ---
   const handleUnbiasClick = async (e: React.MouseEvent) => {
@@ -257,6 +290,26 @@ export default function ArticlePage() {
       fetchInProgress.current = false
     }
   }
+
+  if (!article) {
+    return (
+      <div className="flex items-center justify-center min-h-screen">
+        <div className="animate-pulse">Loading article...</div>
+      </div>
+    )
+  }
+
+  // Prefer unbiasedTitle from state if available, then article.titleUnbiased, then fallback
+  const displayTitle = showUnbiased
+    ? (unbiasedTitle && unbiasedTitle.trim() !== ''
+        ? unbiasedTitle
+        : (article.titleUnbiased && article.titleUnbiased.trim() !== '' ? article.titleUnbiased : article.title))
+    : (article.titleBiased && article.titleBiased.trim() !== '' ? article.titleBiased : article.title)
+
+  // Always prefer titleUnbiased, then titleBiased, then fallback
+  const title = article.titleUnbiased || article.titleBiased || article.title || "Untitled";
+  const categoryColor = getCategoryColor(article.category || article.section || "Uncategorized")
+  const readingTime = getReadingTime(article?.body?.replace(/<[^>]*>/g, '') || '')
 
   return (
     <AuthProvider>
@@ -421,7 +474,8 @@ export default function ArticlePage() {
               </div>
             </div>
 
-            {/* Show imageHtml if present, else imageUrl or image, else placeholder */}
+
+            {/* --- End Summarize & Unbias Button --- */}
             {article.imageHtml ? (() => {
               const { imgHtml, captionHtml } = extractImageAndCaption(article.imageHtml)
               return (
@@ -454,6 +508,27 @@ export default function ArticlePage() {
             )}
           </motion.div>
 
+          {/* --- Summarize & Unbias Button (centered above image) --- */}
+          <div className="flex justify-center my-6">
+            <Button
+              variant="outline"
+              onClick={() => {
+                setSummaryDialogOpen(true)
+                if (!summarizedHtml && !summarizeLoading) handleSummarize()
+                else if (article && article.unbiased_summary && !summarizedHtml) setSummarizedHtml(article.unbiased_summary)
+              }}
+              disabled={summarizeLoading}
+              className="flex items-center gap-2 text-primary dark:text-yellow-500"
+            >
+              <Sparkles className="h-5 w-5" />
+              {summarizeLoading
+                ? "Summarizing and unbiasing..."
+                : (summarizedHtml || (article && article.unbiased_summary))
+                  ? "Unbiased Summary"
+                  : "Summarize & Unbias Article"}
+            </Button>
+          </div>
+
           <motion.div
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
@@ -467,6 +542,43 @@ export default function ArticlePage() {
             )}
           </motion.div>
         </div>
+        <Dialog open={summaryDialogOpen} onOpenChange={(open) => setSummaryDialogOpen(open)}>
+          <DialogContent className="max-w-2xl bg-gray-300 dark:bg-gray-800">
+            <DialogHeader className="flex items-center justify-between text-black dark:text-yellow-500 my-2">
+              <DialogTitle>Summarized & Unbiased Article</DialogTitle>
+            </DialogHeader>
+            {summarizeLoading && (
+              <div className="flex flex-col items-center py-8">
+                <span className="relative flex p-0 h-20">
+                  {theme === 'dark' ? (
+                    <DotLottieReact
+                      src="https://lottie.host/bb7e5e2b-d41b-4006-b557-038ceca5ac19/h8qTPdwZXn.lottie"
+                      loop
+                      speed={2}
+                      autoplay
+                    />
+                  ) : (
+                    <DotLottieReact
+                      src="https://lottie.host/5b37c7be-2940-4faf-bd6a-69dd69a5a115/1fj6mX7aib.lottie"
+                      loop
+                      speed={2}
+                      autoplay
+                    />
+                  )}
+                </span>
+                <span className="mt-2 text-gray-500 dark:text-gray-300">Summarizing...</span>
+              </div>
+            )}
+            {summarizeError && <div className="text-red-500 py-4">{summarizeError}</div>}
+            {summarizedHtml && (
+              <div
+                className="prose dark:prose-invert max-w-none overflow-y-auto px-1"
+                style={{ WebkitOverflowScrolling: 'touch', maxHeight: '60vh' }}
+                dangerouslySetInnerHTML={{ __html: summarizedHtml }}
+              />
+            )}
+          </DialogContent>
+        </Dialog>
       </div>
     </AuthProvider>
   )
