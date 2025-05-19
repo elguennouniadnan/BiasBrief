@@ -51,8 +51,6 @@ export function UserDropdown({ openSettings, showSignedOutMenu = false, onSignIn
     return email.substring(0, 2).toUpperCase()
   }
 
-  console.log('UserDropdown: user value', user);
-
   if (!user && showSignedOutMenu) {
     return (
       <>

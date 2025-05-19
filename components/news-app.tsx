@@ -475,7 +475,6 @@ export function NewsApp() {
   // Always sync customNewsEnabled to localStorage when it changes
   useEffect(() => {
     if (typeof window !== 'undefined') {
-      console.log('[customNewsEnabled] changed:', customNewsEnabled);
       localStorage.setItem("customNewsEnabled", JSON.stringify(customNewsEnabled));
     }
   }, [customNewsEnabled]);
@@ -502,29 +501,24 @@ export function NewsApp() {
 
   // Handler to update unbiased title in the correct article list
   const handleUnbiasTitle = (id: string, unbiasedTitle: string) => {
-    console.log('[handleUnbiasTitle] called with:', { id, unbiasedTitle, showBookmarksOnly });
     if (showBookmarksOnly) {
       setBookmarksArticles(articles => {
         const updated = articles.map(a => {
           if (a.id === id) {
-            console.log('[handleUnbiasTitle] updating bookmark article:', a);
             return { ...a, titleUnbiased: unbiasedTitle };
           }
           return a;
         });
-        console.log('[handleUnbiasTitle] updated bookmarksArticles:', updated);
         return updated;
       });
     } else {
       setMainFeedArticles(articles => {
         const updated = articles.map(a => {
           if (a.id === id) {
-            console.log('[handleUnbiasTitle] updating mainFeed article:', a);
             return { ...a, titleUnbiased: unbiasedTitle };
           }
           return a;
         });
-        console.log('[handleUnbiasTitle] updated mainFeedArticles:', updated);
         return updated;
       });
     }
@@ -607,7 +601,6 @@ export function NewsApp() {
                 toggleBookmark={handleBookmarkToggle}
                 cardSize={cardSize}
                 onUnbiasTitle={(id, unbiasedTitle) => {
-                  console.log('[ArticleList onUnbiasTitle] called with:', { id, unbiasedTitle });
                   handleUnbiasTitle(id, unbiasedTitle);
                   // Log displayedArticles after update attempt
                   setTimeout(() => {
