@@ -29,6 +29,9 @@ export function ArticleCard({ article, isBookmarked, toggleBookmark, cardSize, o
   const router = useRouter();
   const { theme } = useTheme();
 
+  // Track if user has ever clicked unbias for this article in this session
+  const hasClickedUnbiasRef = useRef<{ [id: string]: boolean }>({});
+
   // Prefer unbiasedTitle from state if available, then article.titleUnbiased, then fallback
   const displayTitle = showUnbiased
     ? (unbiasedTitle && unbiasedTitle.trim() !== ''
@@ -84,15 +87,29 @@ export function ArticleCard({ article, isBookmarked, toggleBookmark, cardSize, o
       setShowUnbiased(true)
       return;
     }
-    // If article.titleUnbiased exists and is not empty, just show it (no fetch)
+    // If article.titleUnbiased exists and is not empty, show animation for 3s on first click only
     if (article.titleUnbiased && article.titleUnbiased.trim() !== "") {
-      if (!unbiasedTitle) setUnbiasedTitle(article.titleUnbiased)
-      setShowUnbiased(true)
-      setLoadingUnbiased(false)
-      if (onUnbiasTitle) {
-        onUnbiasTitle(article.id, article.titleUnbiased)
+      if (!hasClickedUnbiasRef.current[article.id]) {
+        setLoadingUnbiased(true)
+        hasClickedUnbiasRef.current[article.id] = true;
+        setTimeout(() => {
+          setUnbiasedTitle(article.titleUnbiased || article.title)
+          setShowUnbiased(true)
+          setLoadingUnbiased(false)
+          if (onUnbiasTitle) {
+            onUnbiasTitle(article.id, article.titleUnbiased || article.title)
+          }
+        }, 3000)
+        return;
+      } else {
+        setUnbiasedTitle(article.titleUnbiased || article.title)
+        setShowUnbiased(true)
+        setLoadingUnbiased(false)
+        if (onUnbiasTitle) {
+          onUnbiasTitle(article.id, article.titleUnbiased || article.title)
+        }
+        return;
       }
-      return;
     }
     // Otherwise, fetch unbiased title
     setLoadingUnbiased(true)
