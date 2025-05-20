@@ -4,7 +4,7 @@ import { useTheme } from "next-themes"
 export function Footer() {
   const { theme } = useTheme();
   return (
-    <footer className="w-full mx-2 mt-10 mb-10 pb-6 pt-8 flex flex-col items-center gap-1 md:gap-2 text-[8px] md:text-[10px] text-muted-foreground select-none">
+    <footer className="w-full mx-2 mt-10 mb-3 pb-6 pt-8 flex flex-col items-center gap-1 md:gap-2 text-[8px] md:text-[10px] text-muted-foreground select-none">
       <div className="w-full max-w-5xl mx-auto flex flex-col md:flex-row items-center md:items-stretch justify-between gap-1 md:gap-2">
         {/* Left: Made by */}
         <div className="flex flex-row items-center gap-1 min-w-0 flex-1 w-full md:w-auto md:justify-start justify-center py-1 md:py-0">
