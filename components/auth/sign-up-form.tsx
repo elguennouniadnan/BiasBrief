@@ -9,6 +9,7 @@ import { Input } from "@/components/ui/input"
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form"
 import { useAuth } from "@/lib/auth"
 import { Loader2 } from "lucide-react"
+import { FcGoogle } from "react-icons/fc"
 
 const formSchema = z
   .object({
@@ -126,7 +127,7 @@ export function SignUpForm({ onSuccess }: SignUpFormProps) {
         </Button>
         <Button
           type="button"
-          className="w-full mt-2"
+          className="w-full mt-2 flex items-center justify-center gap-2"
           variant="outline"
           disabled={isLoading}
           onClick={async () => {
@@ -145,7 +146,10 @@ export function SignUpForm({ onSuccess }: SignUpFormProps) {
               Signing up with Google...
             </>
           ) : (
-            "Sign up with Google"
+            <>
+              <FcGoogle className="h-5 w-5" />
+              Sign up with Google
+            </>
           )}
         </Button>
       </form>

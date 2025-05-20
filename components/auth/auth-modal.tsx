@@ -5,6 +5,7 @@ import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } f
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { SignInForm } from "@/components/auth/sign-in-form"
 import { SignUpForm } from "@/components/auth/sign-up-form"
+import { toast } from "sonner"
 
 interface AuthModalProps {
   isOpen: boolean
@@ -14,13 +15,14 @@ interface AuthModalProps {
 
 export function AuthModal({ isOpen, onClose, defaultTab = "sign-in" }: AuthModalProps) {
   const [activeTab, setActiveTab] = useState<"sign-in" | "sign-up">(defaultTab)
+  const [loading, setLoading] = useState<null | 'email' | 'google'>(null)
 
   return (
     <Dialog open={isOpen} onOpenChange={(open) => !open && onClose()}>
       <DialogContent className="sm:max-w-[425px] max-h-[85vh] overflow-y-auto w-[85vw] sm:w-auto">
         <DialogHeader>
-          <DialogTitle>Welcome to BiasBrief</DialogTitle>
-          <DialogDescription>
+          <DialogTitle className="mb-4 mt-1">Welcome to BiasBrief</DialogTitle>
+          <DialogDescription className="text-sm text-muted-foreground">
             {activeTab === "sign-in"
               ? "Sign in to access your personalized news experience."
               : "Create an account to personalize your news experience."}
@@ -39,13 +41,21 @@ export function AuthModal({ isOpen, onClose, defaultTab = "sign-in" }: AuthModal
 
           <TabsContent value="sign-in" className="mt-4">
             <SignInForm 
-              onSuccess={onClose} 
-              onSignUpClick={() => setActiveTab("sign-up")} 
+              onSuccess={() => {
+                toast('Signed in', { description: 'You have signed in successfully.', duration: 1000 });
+                onClose();
+              }}
+              onSignUpClick={() => setActiveTab("sign-up")}
+              loading={loading}
+              setLoading={setLoading}
             />
           </TabsContent>
 
           <TabsContent value="sign-up" className="mt-4">
-            <SignUpForm onSuccess={onClose} />
+            <SignUpForm onSuccess={() => {
+              toast('Signed up', { description: 'Your account has been created successfully.', duration:1000 });
+              onClose();
+            }} />
           </TabsContent>
         </Tabs>
       </DialogContent>

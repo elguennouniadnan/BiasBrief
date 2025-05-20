@@ -16,6 +16,7 @@ import { useState, useEffect } from "react"
 import { AuthModal } from "@/components/auth/auth-modal"
 import { motion } from "framer-motion"
 import { useMediaQuery } from "@/hooks/use-media-query"
+import { toast } from "sonner"
 
 interface UserDropdownProps {
   openSettings: () => void
@@ -26,7 +27,7 @@ interface UserDropdownProps {
 }
 
 export function UserDropdown({ openSettings, showSignedOutMenu = false, onSignIn, customNewsEnabled, setCustomNewsEnabled }: UserDropdownProps) {
-  const { user, signOut, isEmailVerified, providerId, resendVerificationEmail } = useAuth()
+  const { user, signOut, isEmailVerified, providerId, resendVerificationEmail, signIn } = useAuth()
   const [authModalOpen, setAuthModalOpen] = useState(false)
   const [authModalTab, setAuthModalTab] = useState<"sign-in" | "sign-up">("sign-in")
   const [verificationSent, setVerificationSent] = useState(false)
@@ -51,6 +52,32 @@ export function UserDropdown({ openSettings, showSignedOutMenu = false, onSignIn
 
   const getInitials = (email: string) => {
     return email.substring(0, 2).toUpperCase()
+  }
+
+  // Helper to show toast and call signOut
+  const handleSignOut = async () => {
+    try {
+      await signOut();
+      toast('Signed out', { 
+        description: 'You have signed out successfully.',
+      });
+    } catch (e) {
+      toast('Sign out failed', { 
+        description: (e as any)?.message || 'There was a problem signing out.',
+        duration: 4000,
+      });
+    }
+  }
+
+  // Helper to open sign-in modal
+  const handleSignIn = async () => {
+    if (onSignIn) {
+      try {
+        await onSignIn();
+      } catch (e) {
+        console.error('Failed to trigger sign-in:', e);
+      }
+    }
   }
 
   if (!user && showSignedOutMenu) {
@@ -81,7 +108,7 @@ export function UserDropdown({ openSettings, showSignedOutMenu = false, onSignIn
               </DropdownMenuItem>
               <DropdownMenuSeparator />
               <DropdownMenuItem
-                onClick={() => onSignIn && onSignIn()}
+                onClick={handleSignIn}
                 className="cursor-pointer hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors"
               >
                 <LogIn className="h-4 w-4 text-primary" />
@@ -217,7 +244,7 @@ export function UserDropdown({ openSettings, showSignedOutMenu = false, onSignIn
             </DropdownMenuItem>
             <DropdownMenuSeparator />
             <DropdownMenuItem
-              onClick={signOut}
+              onClick={handleSignOut}
               className="cursor-pointer hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors"
             >
               <LogOut className="mr-2 h-4 w-4" />

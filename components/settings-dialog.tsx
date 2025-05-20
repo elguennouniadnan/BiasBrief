@@ -188,9 +188,9 @@ export function SettingsDialog({
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="sm:max-w-[500px] max-h-[85vh] overflow-y-auto w-[85vw] sm:w-auto">
         <DialogHeader>
-          <DialogTitle>Settings</DialogTitle>
+          <DialogTitle className="mb-2 mt-1">Settings</DialogTitle>
           <DialogDescription>
-            Customize your news experience. Changes will be saved when you click Save.
+              Customize your news experience. Changes will be saved when you click Save.
           </DialogDescription>
         </DialogHeader>
 

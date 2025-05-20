@@ -11,6 +11,7 @@ import { useRouter } from "next/navigation"
 import { articleCache } from "@/lib/article-cache"
 import { DotLottieReact } from '@lottiefiles/dotlottie-react';
 import { useTheme } from "next-themes";
+import { toast } from "sonner"
 
 interface ArticleCardProps {
   article: Article
@@ -139,6 +140,7 @@ export function ArticleCard({ article, isBookmarked, toggleBookmark, cardSize, o
       setUnbiasedTitle(article.title)
       setShowUnbiased(true)
       setError('Failed to unbias title. Please try again.')
+      toast('Unbias failed', { description: 'Failed to unbias title. Please try again.', variant: 'destructive' });
     } finally {
       setLoadingUnbiased(false)
       fetchInProgress.current = false
@@ -148,7 +150,7 @@ export function ArticleCard({ article, isBookmarked, toggleBookmark, cardSize, o
   return (
     <div className="px-2 sm:px-0">
       <Card
-        className="overflow-hidden h-full flex flex-col group shadow-md p-1 border border-gray-200 dark:border-gray-700 rounded-xl hover:shadow-lg dark:shadow-blue-900/40 transition-all duration-300 border-t-2 hover:-translate-y-1 bg-gradient-to-br from-[#fffbe6] via-[#f0f4ff] to-[#e6fff9] dark:from-blue-950/20 dark:via-blue-950/50 dark:to-blue-950/100 dark:bg-gradient-to-br"
+        className="overflow-hidden h-full flex flex-col group shadow-md p-1 border border-gray-200 dark:border-gray-700 rounded-xl hover:shadow-lg dark:shadow-blue-900/40 transition-all duration-300 border-t-2 hover:-translate-y-1 bg-gradient-to-br from-[#fffbe6] via-[#f0f4ff] to-[#e6fff9] dark:from-blue-950/20 dark:via-blue-950/30 dark:to-blue-950/60 dark:bg-gradient-to-br"
         style={{ borderTopColor: categoryColor }}
       >
         <div
@@ -189,7 +191,7 @@ export function ArticleCard({ article, isBookmarked, toggleBookmark, cardSize, o
                 variant={showUnbiased ? "default" : "outline"}
                 size="icon"
                 onClick={handleUnbiasClick}
-                className="ml-2 border-0 bg-transparent hover:bg-gray-50/40 dark:hover:bg-primary/10 hover:shadow-[2px_-4px_12px_0_rgba(0,0,0,0.07)] hover:scale-110 opacity-90 hover:opacity-100"
+                className="ml-2 border-0 bg-transparent text-black dark:text-white hover:bg-gray-50/40 dark:hover:bg-primary/10 hover:shadow-[2px_-4px_12px_0_rgba(0,0,0,0.07)] hover:scale-110 opacity-90 hover:opacity-100"
                 title={showUnbiased ? "Show Biased Title" : "Unbias Title with AI"}
                 disabled={loadingUnbiased}
               >
@@ -200,7 +202,7 @@ export function ArticleCard({ article, isBookmarked, toggleBookmark, cardSize, o
             <div className={`${isSingleColumn ? 'grid grid-cols-[2fr_1fr] gap-6 flex-1' : 'flex flex-col gap-2 sm:gap-4'} h-full`}>
               <div className="flex gap-2 sm:gap-4 items-start">
                 <div className="flex-1">
-                  <h3 className="text-lg font-bold leading-tight group-hover:text-primary transition-colors duration-300 min-h-[2.5rem]">
+                  <h3 className="text-lg font-bold leading-tight transition-colors duration-300 min-h-[2.5rem]">
                     {loadingUnbiased ? (
                       <span className="flex flex-col items-start">
                         <span className="inline-flex items-center gap-2 my-2">
@@ -246,7 +248,7 @@ export function ArticleCard({ article, isBookmarked, toggleBookmark, cardSize, o
               {!isCompactLayout && (
                 <div ref={contentRef} className="flex-grow">
                   <span
-                    className="text-base text-gray-500 dark:text-gray-400"
+                    className="text-base text-gray-900 dark:text-gray-200"
                     dangerouslySetInnerHTML={{ __html: snippetText }}
                   />
                 </div>
@@ -274,7 +276,7 @@ export function ArticleCard({ article, isBookmarked, toggleBookmark, cardSize, o
           {isCompactLayout && (
             <CardContent className="p-2 sm:p-4 pt-1 sm:pt-2 flex-grow">
               <span
-                className="text-base text-gray-500 dark:text-gray-400"
+                className="text-base text-black dark:text-gray-300"
                 dangerouslySetInnerHTML={{ __html: snippetText }}
               />
             </CardContent>
@@ -293,11 +295,11 @@ export function ArticleCard({ article, isBookmarked, toggleBookmark, cardSize, o
               e.stopPropagation();
               toggleBookmark(article.id);
             }}
-            className={
-                isBookmarked
-                  ? "text-amber-500 hover:bg-green-50/40 hover:text-amber-500 dark:text-amber-500 dark:hover:bg-primary/10 hover:shadow-[2px_-4px_12px_0_rgba(0,0,0,0.07)] hover:scale-110 opacity-90 hover:opacity-100"
-                  : "text-black hover:text-gray-700 hover:bg-green-50/40 dark:text-gray-200 dark:hover:bg-primary/10 hover:shadow-[2px_-4px_12px_0_rgba(0,0,0,0.07)] hover:scale-110 opacity-90 hover:opacity-100"
-            }
+            className={`mt-1 ${
+              isBookmarked
+                ? "text-amber-500 hover:bg-green-50/40 hover:text-amber-500 dark:text-amber-500 dark:hover:bg-primary/10 hover:shadow-[2px_-4px_12px_0_rgba(0,0,0,0.07)] hover:scale-110 opacity-90 hover:opacity-100"
+                : "text-black hover:text-gray-700 hover:bg-green-50/40 dark:text-gray-200 dark:hover:bg-primary/10 hover:shadow-[2px_-4px_12px_0_rgba(0,0,0,0.07)] hover:scale-110 opacity-90 hover:opacity-100"
+            }`}
           >
               <Bookmark className={`h-4 w-4 ${isBookmarked ? "fill-current" : ""}`} />
           </Button>

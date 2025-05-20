@@ -2,6 +2,7 @@ import type React from "react"
 import "./globals.css"
 import { ThemeProvider } from "@/components/theme-provider"
 import { Analytics } from '@vercel/analytics/react';
+import { Toaster } from "@/components/ui/sonner"
 
 export const metadata = {
   title: 'BiasBrief - Understand Media Bias',
@@ -23,6 +24,8 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
             {children}
           </div>
           <Analytics />
+          <Toaster />
+          {/* Using Sonner Toaster now */}
         </ThemeProvider>
       </body>
     </html>

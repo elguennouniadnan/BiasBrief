@@ -11,7 +11,7 @@ import { useTheme } from "next-themes"
 import { AuthProvider } from "@/lib/auth"
 import { motion } from "framer-motion"
 import { trackEvents } from "@/lib/analytics"
-import { useToast } from "@/components/ui/use-toast"
+import { toast } from "sonner"
 import { Navbar } from "@/components/navbar"
 import { SettingsDialog } from "@/components/settings-dialog"
 import React from "react"
@@ -60,7 +60,6 @@ export default function ArticlePage() {
     return false;
   });
   const fetchInProgress = React.useRef(false)
-  const { toast } = useToast()
 
   const [summaryDialogOpen, setSummaryDialogOpen] = useState(false)
   const [summarizedHtml, setSummarizedHtml] = useState<string | null>(null)

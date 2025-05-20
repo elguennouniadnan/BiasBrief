@@ -9,6 +9,7 @@ import { Input } from "@/components/ui/input"
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form"
 import { useAuth } from "@/lib/auth"
 import { Loader2 } from "lucide-react"
+import { FcGoogle } from "react-icons/fc"
 
 const formSchema = z.object({
   email: z.string().email({ message: "Please enter a valid email address" }),
@@ -20,10 +21,12 @@ type FormValues = z.infer<typeof formSchema>
 interface SignInFormProps {
   onSuccess: () => void
   onSignUpClick?: () => void
+  loading?: 'email' | 'google' | null
+  setLoading?: (val: 'email' | 'google' | null) => void
 }
 
-export function SignInForm({ onSuccess, onSignUpClick }: SignInFormProps) {
-  const { signIn, signInWithGoogle, isLoading } = useAuth()
+export function SignInForm({ onSuccess, onSignUpClick, loading, setLoading }: SignInFormProps) {
+  const { signIn, signInWithGoogle } = useAuth()
   const [error, setError] = useState<string | null>(null)
 
   const form = useForm<FormValues>({
@@ -34,20 +37,21 @@ export function SignInForm({ onSuccess, onSignUpClick }: SignInFormProps) {
     },
   })
 
-  const onSubmit = async (values: FormValues) => {
-    setError(null)
-    const success = await signIn(values.email, values.password)
-
-    if (success) {
-      onSuccess()
-    } else {
-      setError("Invalid email or password. Please try again.")
-    }
-  }
-
   return (
     <Form {...form}>
-      <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
+      <form onSubmit={async (e) => {
+        e.preventDefault();
+        if (setLoading) setLoading('email');
+        setError(null)
+        const values = form.getValues();
+        const success = await signIn(values.email, values.password)
+        if (success) {
+          onSuccess()
+        } else {
+          setError("Invalid email or password. Please try again.")
+        }
+        if (setLoading) setLoading(null);
+      }} className="space-y-4">
         {error && <div className="p-3 text-sm bg-red-50 text-red-500 rounded-md">{error}</div>}
 
         <FormField
@@ -78,8 +82,8 @@ export function SignInForm({ onSuccess, onSignUpClick }: SignInFormProps) {
           )}
         />
 
-        <Button type="submit" className="w-full" disabled={isLoading}>
-          {isLoading ? (
+        <Button type="submit" className="w-full" disabled={!!loading}>
+          {loading === 'email' ? (
             <>
               <Loader2 className="mr-2 h-4 w-4 animate-spin" />
               Signing in...
@@ -91,10 +95,11 @@ export function SignInForm({ onSuccess, onSignUpClick }: SignInFormProps) {
 
         <Button
           type="button"
-          className="w-full mt-2"
+          className="w-full mt-2 flex items-center justify-center gap-2"
           variant="outline"
-          disabled={isLoading}
+          disabled={!!loading}
           onClick={async () => {
+            if (setLoading) setLoading('google');
             setError(null)
             const success = await signInWithGoogle()
             if (success) {
@@ -102,15 +107,19 @@ export function SignInForm({ onSuccess, onSignUpClick }: SignInFormProps) {
             } else {
               setError("Google sign-in failed. Please try again.")
             }
+            if (setLoading) setLoading(null);
           }}
         >
-          {isLoading ? (
+          {loading === 'google' ? (
             <>
               <Loader2 className="mr-2 h-4 w-4 animate-spin" />
               Signing in with Google...
             </>
           ) : (
-            "Sign in with Google"
+            <>
+              <FcGoogle className="h-5 w-5" />
+              Sign in with Google
+            </>
           )}
         </Button>
 

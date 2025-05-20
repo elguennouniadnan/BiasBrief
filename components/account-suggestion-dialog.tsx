@@ -17,7 +17,7 @@ export function AccountSuggestionDialog({ onSignUp }: { onSignUp: () => void }) 
   return (
     <Dialog open={open} onOpenChange={setOpen} modal>
       <DialogContent
-        className="max-w-md rounded-xl shadow-xl border-0 bg-gradient-to-br from-white via-primary/20 to-primary/60 dark:from-gray-900 dark:via-primary/30 dark:to-white/10 w-full sm:w-auto"
+        className="max-w-md rounded-xl shadow-xl border-0 bg-gradient-to-br from-white via-primary/20 to-primary/60 dark:from-primary/10 dark:via-primary/20 dark:to-primary/20 w-full sm:w-auto"
         style={{ width: '85vw', maxWidth: 400 }}
       >
         <DialogHeader>
@@ -51,7 +51,8 @@ export function AccountSuggestionDialog({ onSignUp }: { onSignUp: () => void }) 
             variant="outline"
             className="w-full bg-gray-100 dark:bg-gray-800 border border-gray-300 dark:border-gray-700 text-gray-700 dark:text-gray-200 hover:bg-gray-200 dark:hover:bg-gray-700"
             onClick={() => setOpen(false)}
-          >            Maybe later
+          >            
+            Maybe later
           </Button>
         </DialogFooter>
       </DialogContent>
