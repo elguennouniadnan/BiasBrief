@@ -415,7 +415,7 @@ export default function ArticlePage() {
 
   return (
     <AuthProvider>
-      <div className="min-h-screen bg-white dark:bg-gray-950">
+      <div className="min-h-screen relative">
         <Navbar 
           searchQuery={searchQuery}
           setSearchQuery={(query) => {
@@ -460,249 +460,260 @@ export default function ArticlePage() {
           sortOrder={sortOrder}
           setSortOrder={setSortOrder}
         />
-        <div className="container mx-auto px-4 py-8">
-          <motion.div
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.5 }}
-            className="mb-8"
+        {/* Full-bleed gradient background for the whole article page */}
+        <div
+          className="fixed inset-0 z-0 w-full h-full bg-gradient-to-br from-[#fffbe6] via-[#f0f4ff] to-[#e6fff9] dark:from-blue-950/20 dark:via-blue-950/30 dark:to-blue-950/60 dark:bg-gradient-to-br pointer-events-none"
+          aria-hidden="true"
+        />
+        <div className="relative container mx-auto px-4 py-8 z-10">
+          <div
+            className="relative w-full rounded-xl min-h-[100vh] pt-0 pb-8 px-0 sm:px-0 flex flex-col items-center justify-start"
           >
-            <Button
-              variant="ghost"
-              onClick={() => {
-                // Print the list of articles used to display the list
-                import('@/lib/article-list-cache').then(({ articlesListCache }) => {
-                  console.log('[Back to articles] articlesListCache:', articlesListCache);
-                });
-                router.back();
-              }}
-              className="mb-4 hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors"
-            >
-              <ArrowLeft className="mr-2 h-4 w-4" />
-              Back to articles
-            </Button>
-
-            <div className="flex items-center justify-between mb-2">
-              <div className="flex items-center gap-2">
-                <Badge
-                  variant="outline"
-                  className="font-medium transition-colors duration-300"
-                  style={{
-                    backgroundColor: `${categoryColor}15`,
-                    color: categoryColor,
-                    borderColor: `${categoryColor}70`, // lighter border
-                  }}
-                >
-                  {article.category || article.section || "Uncategorized"}
-                </Badge>
-                <Badge
-                  variant="outline"
-                  className="font-medium transition-colors duration-300 text-yellow-800 border-yellow-300 dark:bg-primary-600 dark:text-blue-400 dark:border-blue-400"
-                  style={{}}
-                >
-                  {showUnbiased ? "Unbiased" : "Biased"}
-                </Badge>
-              </div>
-              <div className="flex items-center gap-2">
+            <div className="container mx-auto px-4 py-8">
+              <motion.div
+                initial={{ opacity: 0, y: 20 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ duration: 0.5 }}
+                className="mb-8"
+              >
                 <Button
                   variant="ghost"
-                  size="icon"
                   onClick={() => {
-                    // Toggle bookmark state and update localStorage
-                    const articleId = article.id?.toString();
-                    if (!articleId) return;
-                    let bookmarks = [];
-                    try {
-                      bookmarks = JSON.parse(localStorage.getItem("bookmarks") || "[]");
-                    } catch {}
-                    let updated;
-                    if (bookmarks.includes(articleId)) {
-                      updated = bookmarks.filter((id: string) => id !== articleId);
-                      setIsBookmarked(false);
-                    } else {
-                      updated = [...bookmarks, articleId];
-                      setIsBookmarked(true);
-                    }
-                    localStorage.setItem("bookmarks", JSON.stringify(updated));
+                    // Print the list of articles used to display the list
+                    import('@/lib/article-list-cache').then(({ articlesListCache }) => {
+                      console.log('[Back to articles] articlesListCache:', articlesListCache);
+                    });
+                    router.back();
                   }}
-                  className={`hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors border-gray-100 border- dark:border-gray-800 ${isBookmarked ? 'text-primary' : ''}`}
-                  style={{ borderWidth: 1 }}
+                  className="mb-4 hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors"
                 >
-                  <Bookmark className={`h-5 w-5 ${isBookmarked ? 'fill-current' : ''}`} />
-                  <span className="sr-only">Bookmark</span>
+                  <ArrowLeft className="mr-2 h-4 w-4" />
+                  Back to articles
                 </Button>
-                {/* AI Icon for Unbias Title button */}
-                <div className="flex gap-2 items-center">
+
+                <div className="flex items-center justify-between mb-2">
+                  <div className="flex items-center gap-2">
+                    <Badge
+                      variant="outline"
+                      className="font-medium transition-colors duration-300"
+                      style={{
+                        backgroundColor: `${categoryColor}20`,
+                        color: `${categoryColor}`,
+                        borderColor: `${categoryColor}`, // lighter border
+                      }}
+                    >
+                      {article.category || article.section || "Uncategorized"}
+                    </Badge>
+                    <Badge
+                      variant="outline"
+                      className="font-medium transition-colors duration-300 text-orange-500 bg-orange-100 dark:text-primary-light border-orange-400 dark:border-primary-light dark:bg-primary-light/20"
+                      style={{}}
+                    >
+                      {showUnbiased ? "Unbiased" : "Biased"}
+                    </Badge>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <Button
+                      variant="ghost"
+                      size="icon"
+                      onClick={() => {
+                        // Toggle bookmark state and update localStorage
+                        const articleId = article.id?.toString();
+                        if (!articleId) return;
+                        let bookmarks = [];
+                        try {
+                          bookmarks = JSON.parse(localStorage.getItem("bookmarks") || "[]");
+                        } catch {}
+                        let updated;
+                        if (bookmarks.includes(articleId)) {
+                          updated = bookmarks.filter((id: string) => id !== articleId);
+                          setIsBookmarked(false);
+                        } else {
+                          updated = [...bookmarks, articleId];
+                          setIsBookmarked(true);
+                        }
+                        localStorage.setItem("bookmarks", JSON.stringify(updated));
+                      }}
+                      className={`hover:bg-white dark:hover:bg-gray-800 transition-colors border-gray-100 border- dark:border-gray-800 ${isBookmarked ? 'text-primary' : ''}`}
+                      style={{ borderWidth: 1 }}
+                    >
+                      <Bookmark className={`h-5 w-5 ${isBookmarked ? 'fill-current' : ''}`} />
+                      <span className="sr-only">Bookmark</span>
+                    </Button>
+                    {/* AI Icon for Unbias Title button */}
+                    <div className="flex gap-2 items-center">
+                      <Button
+                        variant={showUnbiased ? "default" : "outline"}
+                        size="icon"
+                        onClick={handleUnbiasClick}
+                        className="ml-2 hover:bg-white bg-transparent dark:bg-transparent dark:hover:bg-gray-800 transition-colors"
+                        title={showUnbiased ? "Show Biased Title" : "Unbias Title with AI"}
+                        disabled={loadingUnbiased}
+                      >
+                        {/* if showUnbiased is true, show the Sparkles icon in white */}
+                        <Sparkles className={`h-4 w-4 ${showUnbiased ? 'text-white' : 'text-amber-500'}`} />
+                      </Button>
+                    </div>
+                  </div>
+                </div>
+                <h1 className="text-3xl md:text-4xl font-bold bg-gradient-to-b from-gray-900 to-gray-700 dark:from-white dark:to-gray-300 bg-clip-text text-transparent flex items-center gap-2 m-0 p-0">
+                  {(loadingUnbiased || showUnbiasedLoading) ? (
+                    <div className="w-full flex justify-center items-center h-20">
+                      {theme === 'dark' ? (
+                        <DotLottieReact
+                          src="https://lottie.host/bb7e5e2b-d41b-4006-b557-038ceca5ac19/h8qTPdwZXn.lottie"
+                          loop
+                          speed={2}
+                          autoplay
+                        />
+                      ) : (
+                        <DotLottieReact
+                          src="https://lottie.host/5b37c7be-2940-4faf-bd6a-69dd69a5a115/1fj6mX7aib.lottie"
+                          loop
+                          speed={2}
+                          autoplay
+                        />
+                      )}
+                    </div>
+                  ) : displayTitle}
+                </h1>
+                {error && (
+                  <div className="text-xs text-red-500 mb-2">{error}</div>
+                )}
+
+                <div className="flex flex-wrap items-center text-sm mt-3 text-gray-500 dark:text-gray-400 mb-6 gap-x-4 gap-y-2">
+                  <div className="font-medium text-gray-700 dark:text-gray-300">{article.source}</div>
+                  <div>{article.date}</div>
+                  <div className="flex items-center">
+                    <Clock className="h-4 w-4 mr-1" />
+                    {readingTime}
+                  </div>
+                </div>
+
+
+                {/* --- End Summarize & Unbias Button --- */}
+                {article.imageHtml ? (() => {
+                  const { imgHtml, captionHtml } = extractImageAndCaption(article.imageHtml)
+                  return (
+                    <div className="mb-6 overflow-hidden rounded-lg shadow-md" style={{ maxWidth: 600, margin: '0 auto' }}>
+                      {imgHtml && (
+                        <div style={{ width: '100%' }}>
+                          <div dangerouslySetInnerHTML={{ __html: imgHtml }} style={{ width: '100%' }} />
+                        </div>
+                      )}
+                      {captionHtml && (
+                        <div className="bg-gray-50 dark:bg-gray-900 text-sm text-gray-600 dark:text-gray-300 px-4 py-2 border-t border-gray-200 dark:border-gray-800" style={{ width: '100%' }}>
+                          <div dangerouslySetInnerHTML={{ __html: captionHtml }} style={{ width: '100%' }} />
+                        </div>
+                      )}
+                    </div>
+                  )
+                })() : article.imageUrl || article.image ? (
+                  <div className="mb-6 overflow-hidden rounded-lg shadow-md">
+                    <img
+                      src={article.imageUrl || article.image}
+                      alt={title || 'Article image'}
+                      className="w-full h-auto object-cover"
+                      style={{ maxHeight: 400 }}
+                    />
+                  </div>
+                ) : (
+                  <div className="mb-6 overflow-hidden rounded-lg shadow-md bg-gray-100 dark:bg-gray-800 flex items-center justify-center" style={{height: 200}}>
+                    <img src="/placeholder.svg" alt="No image available" className="h-24 opacity-40" />
+                  </div>
+                )}
+              </motion.div>
+
+              {/* --- Summarize & Unbias Button (centered above image) --- */}
+              <div className="flex justify-center my-6">
+                <div className="flex flex-col items-center w-full">
+                  {(showSummaryLoading || summarizeLoading) && (
+                    <div className="w-full flex justify-center items-center h-20 mb-2">
+                      {theme === 'dark' ? (
+                        <DotLottieReact
+                          src="https://lottie.host/bb7e5e2b-d41b-4006-b557-038ceca5ac19/h8qTPdwZXn.lottie"
+                          loop
+                          speed={2}
+                          autoplay
+                        />
+                      ) : (
+                        <DotLottieReact
+                          src="https://lottie.host/5b37c7be-2940-4faf-bd6a-69dd69a5a115/1fj6mX7aib.lottie"
+                          loop
+                          speed={2}
+                          autoplay
+                        />
+                      )}
+                    </div>
+                  )}
                   <Button
-                    variant={showUnbiased ? "default" : "outline"}
-                    size="icon"
-                    onClick={handleUnbiasClick}
-                    className="ml-2"
-                    title={showUnbiased ? "Show Biased Title" : "Unbias Title with AI"}
-                    disabled={loadingUnbiased}
+                    variant="outline"
+                    onClick={handleSummarizeButtonClick}
+                    disabled={summarizeLoading || showSummaryLoading}
+                    className="flex items-center gap-2 text-amber-600 dark:text-amber-500"
                   >
-                    {/* if showUnbiased is true, show the Sparkles icon in white */}
-                    <Sparkles className={`h-4 w-4 ${showUnbiased ? 'text-white' : 'text-amber-500'}`} />
+                    <Sparkles className="h-5 w-5" />
+                    {(showSummaryLoading || summarizeLoading)
+                      ? "Summarizing and unbiasing..."
+                      : summaryRevealed
+                        ? "Unbiased Summary"
+                        : "Summarize & Unbias Article"}
                   </Button>
                 </div>
               </div>
-            </div>
-            <h1 className="text-3xl md:text-4xl font-bold bg-gradient-to-b from-gray-900 to-gray-700 dark:from-white dark:to-gray-300 bg-clip-text text-transparent flex items-center gap-2 m-0 p-0">
-              {(loadingUnbiased || showUnbiasedLoading) ? (
-                <div className="w-full flex justify-center items-center h-20">
-                  {theme === 'dark' ? (
-                    <DotLottieReact
-                      src="https://lottie.host/bb7e5e2b-d41b-4006-b557-038ceca5ac19/h8qTPdwZXn.lottie"
-                      loop
-                      speed={2}
-                      autoplay
-                    />
-                  ) : (
-                    <DotLottieReact
-                      src="https://lottie.host/5b37c7be-2940-4faf-bd6a-69dd69a5a115/1fj6mX7aib.lottie"
-                      loop
-                      speed={2}
-                      autoplay
-                    />
-                  )}
-                </div>
-              ) : displayTitle}
-            </h1>
-            {error && (
-              <div className="text-xs text-red-500 mb-2">{error}</div>
-            )}
 
-            <div className="flex flex-wrap items-center text-sm mt-3 text-gray-500 dark:text-gray-400 mb-6 gap-x-4 gap-y-2">
-              <div className="font-medium text-gray-700 dark:text-gray-300">{article.source}</div>
-              <div>{article.date}</div>
-              <div className="flex items-center">
-                <Clock className="h-4 w-4 mr-1" />
-                {readingTime}
-              </div>
-            </div>
-
-
-            {/* --- End Summarize & Unbias Button --- */}
-            {article.imageHtml ? (() => {
-              const { imgHtml, captionHtml } = extractImageAndCaption(article.imageHtml)
-              return (
-                <div className="mb-6 overflow-hidden rounded-lg shadow-md" style={{ maxWidth: 600, margin: '0 auto' }}>
-                  {imgHtml && (
-                    <div style={{ width: '100%' }}>
-                      <div dangerouslySetInnerHTML={{ __html: imgHtml }} style={{ width: '100%' }} />
-                    </div>
-                  )}
-                  {captionHtml && (
-                    <div className="bg-gray-50 dark:bg-gray-900 text-sm text-gray-600 dark:text-gray-300 px-4 py-2 border-t border-gray-200 dark:border-gray-800" style={{ width: '100%' }}>
-                      <div dangerouslySetInnerHTML={{ __html: captionHtml }} style={{ width: '100%' }} />
-                    </div>
-                  )}
-                </div>
-              )
-            })() : article.imageUrl || article.image ? (
-              <div className="mb-6 overflow-hidden rounded-lg shadow-md">
-                <img
-                  src={article.imageUrl || article.image}
-                  alt={title || 'Article image'}
-                  className="w-full h-auto object-cover"
-                  style={{ maxHeight: 400 }}
-                />
-              </div>
-            ) : (
-              <div className="mb-6 overflow-hidden rounded-lg shadow-md bg-gray-100 dark:bg-gray-800 flex items-center justify-center" style={{height: 200}}>
-                <img src="/placeholder.svg" alt="No image available" className="h-24 opacity-40" />
-              </div>
-            )}
-          </motion.div>
-
-          {/* --- Summarize & Unbias Button (centered above image) --- */}
-          <div className="flex justify-center my-6">
-            <div className="flex flex-col items-center w-full">
-              {(showSummaryLoading || summarizeLoading) && (
-                <div className="w-full flex justify-center items-center h-20 mb-2">
-                  {theme === 'dark' ? (
-                    <DotLottieReact
-                      src="https://lottie.host/bb7e5e2b-d41b-4006-b557-038ceca5ac19/h8qTPdwZXn.lottie"
-                      loop
-                      speed={2}
-                      autoplay
-                    />
-                  ) : (
-                    <DotLottieReact
-                      src="https://lottie.host/5b37c7be-2940-4faf-bd6a-69dd69a5a115/1fj6mX7aib.lottie"
-                      loop
-                      speed={2}
-                      autoplay
-                    />
-                  )}
-                </div>
-              )}
-              <Button
-                variant="outline"
-                onClick={handleSummarizeButtonClick}
-                disabled={summarizeLoading || showSummaryLoading}
-                className="flex items-center gap-2 text-amber-600 dark:text-amber-500"
+              <motion.div
+                initial={{ opacity: 0 }}
+                animate={{ opacity: 1 }}
+                transition={{ duration: 0.5, delay: 0.2 }}
+                className="prose dark:prose-invert max-w-none"
               >
-                <Sparkles className="h-5 w-5" />
-                {(showSummaryLoading || summarizeLoading)
-                  ? "Summarizing and unbiasing..."
-                  : summaryRevealed
-                    ? "Unbiased Summary"
-                    : "Summarize & Unbias Article"}
-              </Button>
+                {article.body ? (
+                  <div dangerouslySetInnerHTML={{ __html: article.body }} />
+                ) : (
+                  <p className="mb-4 leading-relaxed">{article.snippet}</p>
+                )}
+              </motion.div>
             </div>
+            <Dialog open={summaryDialogOpen} onOpenChange={(open) => setSummaryDialogOpen(open)}>
+              <DialogContent className="w-[85vw] max-w-5xl sm:w-[85vw] sm:max-w-5xl xs:w-[80vw] xs:max-w-full">
+                <DialogHeader className="flex items-center justify-between text-amber-500 my-2">
+                  <DialogTitle>Unbiased Summary</DialogTitle>
+                </DialogHeader>
+                {showSummaryLoading && (
+                  <div className="flex flex-col items-center py-8">
+                    <div className="w-full flex justify-center items-center h-20">
+                      {theme === 'dark' ? (
+                        <DotLottieReact
+                          src="https://lottie.host/bb7e5e2b-d41b-4006-b557-038ceca5ac19/h8qTPdwZXn.lottie"
+                          loop
+                          speed={2}
+                          autoplay
+                        />
+                      ) : (
+                        <DotLottieReact
+                          src="https://lottie.host/5b37c7be-2940-4faf-bd6a-69dd69a5a115/1fj6mX7aib.lottie"
+                          loop
+                          speed={2}
+                          autoplay
+                        />
+                      )}
+                    </div>
+                    <span className="mt-2 text-gray-500 dark:text-gray-300">Summarizing...</span>
+                  </div>
+                )}
+                {summarizeError && <div className="text-red-500 py-4">{summarizeError}</div>}
+                {summarizedHtml && (
+                  <div
+                    className="prose dark:prose-invert max-w-none overflow-y-auto px-1"
+                    style={{ WebkitOverflowScrolling: 'touch', maxHeight: '60vh' }}
+                    dangerouslySetInnerHTML={{ __html: summarizedHtml }}
+                  />
+                )}
+              </DialogContent>
+            </Dialog>
           </div>
-
-          <motion.div
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            transition={{ duration: 0.5, delay: 0.2 }}
-            className="prose dark:prose-invert max-w-none"
-          >
-            {article.body ? (
-              <div dangerouslySetInnerHTML={{ __html: article.body }} />
-            ) : (
-              <p className="mb-4 leading-relaxed">{article.snippet}</p>
-            )}
-          </motion.div>
         </div>
-        <Dialog open={summaryDialogOpen} onOpenChange={(open) => setSummaryDialogOpen(open)}>
-          <DialogContent className="w-[85vw] max-w-5xl sm:w-[85vw] sm:max-w-5xl xs:w-[80vw] xs:max-w-full">
-            <DialogHeader className="flex items-center justify-between text-amber-500 my-2">
-              <DialogTitle>Summarized & Unbiased Article</DialogTitle>
-            </DialogHeader>
-            {showSummaryLoading && (
-              <div className="flex flex-col items-center py-8">
-                <div className="w-full flex justify-center items-center h-20">
-                  {theme === 'dark' ? (
-                    <DotLottieReact
-                      src="https://lottie.host/bb7e5e2b-d41b-4006-b557-038ceca5ac19/h8qTPdwZXn.lottie"
-                      loop
-                      speed={2}
-                      autoplay
-                    />
-                  ) : (
-                    <DotLottieReact
-                      src="https://lottie.host/5b37c7be-2940-4faf-bd6a-69dd69a5a115/1fj6mX7aib.lottie"
-                      loop
-                      speed={2}
-                      autoplay
-                    />
-                  )}
-                </div>
-                <span className="mt-2 text-gray-500 dark:text-gray-300">Summarizing...</span>
-              </div>
-            )}
-            {summarizeError && <div className="text-red-500 py-4">{summarizeError}</div>}
-            {summarizedHtml && (
-              <div
-                className="prose dark:prose-invert max-w-none overflow-y-auto px-1"
-                style={{ WebkitOverflowScrolling: 'touch', maxHeight: '60vh' }}
-                dangerouslySetInnerHTML={{ __html: summarizedHtml }}
-              />
-            )}
-          </DialogContent>
-        </Dialog>
       </div>
     </AuthProvider>
   )

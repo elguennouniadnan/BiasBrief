@@ -556,7 +556,7 @@ export function NewsApp() {
           allCategories={allCategories}
         />
 
-        <main className="flex-1 container px-1 py-6">
+        <main className="flex-1 container px-1 py-2">
           {/* Show back button if search is active, otherwise show category filter */}
           {searchQuery.trim() ? (
             <div className="flex items-center justify-between px-4 py-2">

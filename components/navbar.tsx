@@ -151,14 +151,14 @@ export function Navbar({
 
   return (
     <>
-      {!user && showAccountSuggestionDialog && (
+      {!user && showAccountSuggestionDialog && !authModalOpen && (
         <AccountSuggestionDialog onSignUp={() => {
           setAuthModalTab("sign-up");
           setAuthModalOpen(true);
           setShowAccountSuggestionDialog(false);
         }} />
       )}
-      <header className={`sticky top-0 z-50 pb-2 w-full bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60 ${
+      <header className={`sticky top-0 z-50 pb-3 rounded-full w-full backdrop-blur supports-[backdrop-filter]:bg-background/40 shadow-sm ${
         scrolled ? "shadow-sm border-b border-border/50" : ""
       }`}>
         <div className="w-full md:container md:px-4 mx-auto">

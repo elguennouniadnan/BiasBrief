@@ -140,7 +140,7 @@ export function ArticleCard({ article, isBookmarked, toggleBookmark, cardSize, o
       setUnbiasedTitle(article.title)
       setShowUnbiased(true)
       setError('Failed to unbias title. Please try again.')
-      toast('Unbias failed', { description: 'Failed to unbias title. Please try again.', variant: 'destructive' });
+      toast('Unbias failed', { description: 'Failed to unbias title. Please try again.' });
     } finally {
       setLoadingUnbiased(false)
       fetchInProgress.current = false
@@ -172,16 +172,16 @@ export function ArticleCard({ article, isBookmarked, toggleBookmark, cardSize, o
                   variant="outline"
                   className="self-start mb-0.5 sm:mb-1 font-medium transition-colors duration-300"
                   style={{
-                    backgroundColor: `${categoryColor}15`,
-                    color: categoryColor,
-                    borderColor: `${categoryColor}10`,
+                    backgroundColor: `${categoryColor}20`,
+                    color: `${categoryColor}`,
+                    borderColor: `${categoryColor}`
                   }}
                 >
                   {article.category || article.section}
                 </Badge>
                 <Badge
                   variant="outline"
-                  className="font-medium transition-colors mb-0.5 sm:mb-1 duration-300 text-yellow-800 border-yellow-300 dark:bg-primary-600 dark:text-blue-500 dark:border-blue-900 dark:bg-blue-95p0"
+                  className="font-medium transition-colors mb-0.5 sm:mb-1 duration-300 text-orange-900 bg-orange-200 dark:text-primary-light border-orange-400 dark:border-primary-light dark:bg-primary-light/20"
                   style={{}}
                 >
                   {showUnbiased ? "Unbiased" : "Biased"}
