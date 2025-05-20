@@ -12,12 +12,11 @@ import {
 } from "@/components/ui/dropdown-menu"
 import { Settings, LogOut, LogIn } from "lucide-react"
 import { Avatar, AvatarFallback } from "@/components/ui/avatar"
-import { useState, useEffect, useRef } from "react"
+import { useState, useEffect } from "react"
 import { AuthModal } from "@/components/auth/auth-modal"
 import { motion } from "framer-motion"
 import { useMediaQuery } from "@/hooks/use-media-query"
 import { toast } from "sonner"
-import { getAuth } from "firebase/auth"
 
 interface UserDropdownProps {
   openSettings: () => void
@@ -28,24 +27,10 @@ interface UserDropdownProps {
 }
 
 export function UserDropdown({ openSettings, showSignedOutMenu = false, onSignIn, customNewsEnabled, setCustomNewsEnabled }: UserDropdownProps) {
-  const { user, signOut, isEmailVerified, providerId, resendVerificationEmail, signIn, refreshEmailVerificationStatus } = useAuth()
+  const { user, signOut, providerId } = useAuth()
   const [authModalOpen, setAuthModalOpen] = useState(false)
   const [authModalTab, setAuthModalTab] = useState<"sign-in" | "sign-up">("sign-in")
-  const [verificationSent, setVerificationSent] = useState(false)
-  const [verificationLoading, setVerificationLoading] = useState(false)
-  const [verificationError, setVerificationError] = useState<string | null>(null)
-  const [checkboxAnim, setCheckboxAnim] = useState<any>(null)
   const isMobile = useMediaQuery("(max-width: 768px)")
-  const pollingRef = useRef<NodeJS.Timeout | null>(null)
-
-  useEffect(() => {
-    function handleOpenAuthModal(e: CustomEvent) {
-      setAuthModalTab("sign-in")
-      setAuthModalOpen(true)
-    }
-    window.addEventListener("open-auth-modal", handleOpenAuthModal as EventListener)
-    return () => window.removeEventListener("open-auth-modal", handleOpenAuthModal as EventListener)
-  }, [])
 
   const handleOpenAuthModal = (tab: "sign-in" | "sign-up") => {
     setAuthModalTab(tab)
@@ -81,30 +66,6 @@ export function UserDropdown({ openSettings, showSignedOutMenu = false, onSignIn
       }
     }
   }
-
-  useEffect(() => {
-    // Automatic polling for email verification
-    if (user && providerId === "password" && !isEmailVerified) {
-      if (!pollingRef.current) {
-        pollingRef.current = setInterval(async () => {
-          try {
-            await refreshEmailVerificationStatus();
-          } catch (err) {
-            // Ignore errors
-          }
-        }, 3000)
-      }
-    } else if (pollingRef.current) {
-      clearInterval(pollingRef.current)
-      pollingRef.current = null
-    }
-    return () => {
-      if (pollingRef.current) {
-        clearInterval(pollingRef.current)
-        pollingRef.current = null
-      }
-    }
-  }, [user, providerId, isEmailVerified])
 
   if (!user && showSignedOutMenu) {
     return (
@@ -181,39 +142,6 @@ export function UserDropdown({ openSettings, showSignedOutMenu = false, onSignIn
         </DropdownMenuTrigger>
         <DropdownMenuContent align="end" className="max-w-56 mr-2 overflow-hidden">
           <motion.div initial={{ opacity: 0, y: -10 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.2 }}>
-            {/* Email verification warning */}
-            {providerId === "password" && !isEmailVerified && (
-              <div className="p-3 bg-yellow-50 text-yellow-800 text-xs rounded mb-2 flex flex-col gap-2">
-                <span>
-                  Please verify your email address to unlock all features. Check your inbox for a verification link.
-                </span>
-                <Button
-                  size="sm"
-                  variant="outline"
-                  disabled={verificationLoading}
-                  onClick={async () => {
-                    setVerificationLoading(true)
-                    setVerificationError(null)
-                    try {
-                      await resendVerificationEmail()
-                      setVerificationSent(true)
-                    } catch (err: any) {
-                      setVerificationError(err?.message || "Failed to send verification email.")
-                    } finally {
-                      setVerificationLoading(false)
-                    }
-                  }}
-                >
-                  {verificationLoading ? "Sending..." : "Resend Verification Email"}
-                </Button>
-                {verificationSent && (
-                  <span className="text-green-600 text-xs mt-1">Verification email sent!</span>
-                )}
-                {verificationError && (
-                  <span className="text-red-600 text-xs mt-1">{verificationError}</span>
-                )}
-              </div>
-            )}
             <DropdownMenuLabel>
               <div className="flex flex-col space-y-1">
                 <p className="text-sm font-medium leading-none">{user.name}</p>
