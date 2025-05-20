@@ -12,11 +12,12 @@ import {
 } from "@/components/ui/dropdown-menu"
 import { Settings, LogOut, LogIn } from "lucide-react"
 import { Avatar, AvatarFallback } from "@/components/ui/avatar"
-import { useState, useEffect } from "react"
+import { useState, useEffect, useRef } from "react"
 import { AuthModal } from "@/components/auth/auth-modal"
 import { motion } from "framer-motion"
 import { useMediaQuery } from "@/hooks/use-media-query"
 import { toast } from "sonner"
+import { getAuth } from "firebase/auth"
 
 interface UserDropdownProps {
   openSettings: () => void
@@ -27,7 +28,7 @@ interface UserDropdownProps {
 }
 
 export function UserDropdown({ openSettings, showSignedOutMenu = false, onSignIn, customNewsEnabled, setCustomNewsEnabled }: UserDropdownProps) {
-  const { user, signOut, isEmailVerified, providerId, resendVerificationEmail, signIn } = useAuth()
+  const { user, signOut, isEmailVerified, providerId, resendVerificationEmail, signIn, refreshEmailVerificationStatus } = useAuth()
   const [authModalOpen, setAuthModalOpen] = useState(false)
   const [authModalTab, setAuthModalTab] = useState<"sign-in" | "sign-up">("sign-in")
   const [verificationSent, setVerificationSent] = useState(false)
@@ -35,6 +36,7 @@ export function UserDropdown({ openSettings, showSignedOutMenu = false, onSignIn
   const [verificationError, setVerificationError] = useState<string | null>(null)
   const [checkboxAnim, setCheckboxAnim] = useState<any>(null)
   const isMobile = useMediaQuery("(max-width: 768px)")
+  const pollingRef = useRef<NodeJS.Timeout | null>(null)
 
   useEffect(() => {
     function handleOpenAuthModal(e: CustomEvent) {
@@ -79,6 +81,30 @@ export function UserDropdown({ openSettings, showSignedOutMenu = false, onSignIn
       }
     }
   }
+
+  useEffect(() => {
+    // Automatic polling for email verification
+    if (user && providerId === "password" && !isEmailVerified) {
+      if (!pollingRef.current) {
+        pollingRef.current = setInterval(async () => {
+          try {
+            await refreshEmailVerificationStatus();
+          } catch (err) {
+            // Ignore errors
+          }
+        }, 3000)
+      }
+    } else if (pollingRef.current) {
+      clearInterval(pollingRef.current)
+      pollingRef.current = null
+    }
+    return () => {
+      if (pollingRef.current) {
+        clearInterval(pollingRef.current)
+        pollingRef.current = null
+      }
+    }
+  }, [user, providerId, isEmailVerified])
 
   if (!user && showSignedOutMenu) {
     return (

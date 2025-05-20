@@ -43,6 +43,7 @@ interface AuthContextType {
   providerId: string | null
   isEmailVerified: boolean
   resendVerificationEmail: () => Promise<void>
+  refreshEmailVerificationStatus: () => Promise<void>
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined)
@@ -233,6 +234,13 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     }
   }
 
+  const refreshEmailVerificationStatus = async () => {
+    if (auth.currentUser) {
+      await auth.currentUser.reload();
+      setIsEmailVerified(auth.currentUser.emailVerified);
+    }
+  }
+
   const value = {
     user,
     isLoading,
@@ -246,6 +254,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     providerId,
     isEmailVerified,
     resendVerificationEmail,
+    refreshEmailVerificationStatus,
   }
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>
