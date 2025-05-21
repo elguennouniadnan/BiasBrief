@@ -4,22 +4,21 @@ import { useTheme } from "next-themes"
 export function Footer() {
   const { theme } = useTheme();
   return (
-    <footer className="w-full mx-2 mt-10 mb-3 pb-6 pt-8 flex flex-col items-center gap-1 md:gap-2 text-[8px] md:text-[10px] text-muted-foreground select-none">
-      <div className="w-full max-w-5xl mx-auto flex flex-col md:flex-row items-center md:items-stretch justify-between gap-1 md:gap-2">
+    <footer className="w-full mt-10 mb-3 pb-2 pt-8 flex flex-col items-center gap-x-1 md:gap-2 text-[8px] md:text-[10px] text-muted-foreground select-none">
+      <div className="w-full max-w-5xl mx-auto flex flex-col md:flex-row items-center md:items-stretch justify-between gap-x-1 md:gap-2">
         {/* Left: Made by */}
-        <div className="flex flex-row items-center gap-1 min-w-0 flex-1 w-full md:w-auto md:justify-start justify-center py-1 md:py-0">
-          <span>Made by</span>
-          <span>Adnan El Guennouni</span>
+        <div className="flex flex-row items-center md:mt-1 gap-1 min-w-0 flex-1 w-full md:w-auto md:justify-start justify-center">
+          <span>Made by Adnan El Guennouni</span>
         </div>
         {/* Center: Powered by and icons */}
         <div className="flex flex-row items-center gap-1 flex-1 w-full md:w-auto md:justify-center justify-center py-1 md:py-0">
           {/* Inline flex for all tech icons, always in one row */}
-          <span className="flex flex-row items-center gap-x-3 md:gap-x-3 gap-y-1 mt-0.5 flex-wrap md:flex-nowrap justify-center w-full">
+          <span className="flex flex-row items-center gap-x-3 md:gap-x-3 md:mt-0.5 md:mr-3 flex-wrap md:flex-nowrap justify-center w-full">
             <span className="text-[8px] content-center md:text-[10px] whitespace-nowrap pr-2">Powered by:</span>
             {/* React */}
             <span title="React" className="inline-flex items-center gap-1">
               <span className="hidden md:inline text-[8px] md:text-[10px] text-muted-foreground">React</span>
-              <img src="https://upload.wikimedia.org/wikipedia/commons/a/a7/React-icon.svg" alt="React icon" width="20" height="20" style={{display:'inline',verticalAlign:'middle'}} />
+              <img src="https://upload.wikimedia.org/wikipedia/commons/a/a7/React-icon.svg" alt="React icon" width="18" height="18" style={{display:'inline',verticalAlign:'middle'}} />
             </span>
             <span className="text-base md:text-lg ms-4 text-muted-foreground select-none hidden md:inline">|</span>
             {/* Next.js */}
@@ -64,7 +63,7 @@ export function Footer() {
           </span>
         </div>
         {/* Right: Copyright */}
-        <div className="flex flex-row items-center gap-1 min-w-0 flex-1 w-full md:w-auto md:justify-end justify-center py-1 md:py-0">
+        <div className="flex flex-row items-center gap-1 min-w-0 flex-1 w-full md:w-auto md:justify-end justify-center">
           <span className="text-[8px] md:text-[10px]">© {new Date().getFullYear()} BiasBrief. All rights reserved.</span>
         </div>
       </div>
