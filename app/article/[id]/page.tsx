@@ -695,7 +695,7 @@ export default function ArticlePage() {
                         disabled={loadingUnbiased}
                       >
                         {/* if showUnbiased is true, show the Sparkles icon in white */}
-                        <Sparkles className={`h-4 w-4 ${showUnbiased ? 'text-white' : 'text-amber-500'}`} />
+                        <Sparkles className={`h-4 w-4 ${showUnbiased ? 'text-amber-500' : 'dark:text-white text-black'}`} />
                       </Button>
                     </div>
                   </div>

@@ -248,7 +248,7 @@ export function Navbar({
                       className={cn(
                         "h-9 w-9 rounded-full p-0 transition-all duration-200 flex items-center justify-center",
                         showBookmarksOnly
-                          ? "dark:bg-gray-300 text-gray-100 hover:bg-primary dark:text-gray-900 dark:hover:bg-gray-300 shadow-md hover:shadow-md hover:scale-110 opacity-90 hover:opacity-100"
+                          ? "dark:bg-primary-200 text-gray-100 hover:bg-primary dark:text-gray-900 dark:hover:bg-primary-300 shadow-md hover:shadow-md hover:scale-110 opacity-90 hover:opacity-100"
                           : "text-black hover:text-gray-700 hover:bg-gray-100 dark:text-gray-200 dark:hover:bg-gray-700 hover:shadow-md hover:scale-110 opacity-90 hover:opacity-100"
                       )}
                     >
