@@ -104,11 +104,9 @@ export function formatDateInUserTimezone(dateString: string) {
       }
     }
     if (isNaN(date.getTime())) {
-      console.log('[formatDateInUserTimezone] Invalid date input:', dateString);
       return dateString;
     }
     const userTimeZone = Intl.DateTimeFormat().resolvedOptions().timeZone;
-    console.log('[formatDateInUserTimezone] Browser timezone:', userTimeZone);
     const formatted = date.toLocaleString(undefined, {
       year: 'numeric',
       month: 'long',
@@ -120,10 +118,8 @@ export function formatDateInUserTimezone(dateString: string) {
       timeZone: userTimeZone,
       timeZoneName: 'short',
     });
-    console.log('[formatDateInUserTimezone] Input:', dateString, 'Parsed:', date, 'User TZ:', userTimeZone, 'Output:', formatted);
     return formatted.replace(',', '');
   } catch (e) {
-    console.log('[formatDateInUserTimezone] Exception:', e, 'Input:', dateString);
     return dateString;
   }
 }

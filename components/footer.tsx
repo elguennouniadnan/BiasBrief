@@ -1,5 +1,6 @@
 "use client"
 import { useTheme } from "next-themes"
+import React, { useEffect, useState } from "react";
 
 export function Footer() {
   const { theme } = useTheme();
@@ -24,23 +25,33 @@ export function Footer() {
             {/* Next.js */}
             <span title="Next.js" className="inline-flex items-center gap-1">
               <span className="hidden md:inline text-[8px] md:text-[10px] text-muted-foreground">Next.js</span>
-              {theme === 'dark' ? (
-                <img
-                  src="https://img.icons8.com/fluent-systems-filled/512/FFFFFF/nextjs.png"
-                  alt="Next.js logo dark"
-                  width="20"
-                  height="20"
-                  style={{ display: 'inline', verticalAlign: 'middle', borderRadius: '6px' }}
-                />
-              ) : (
-                <img
-                  src="https://images.seeklogo.com/logo-png/39/1/next-js-logo-png_seeklogo-394608.png"
-                  alt="Next.js logo"
-                  width="20"
-                  height="20"
-                  style={{ display: 'inline', verticalAlign: 'middle', borderRadius: '6px' }}
-                />
-              )}
+              {/* Hydration-safe Next.js logo rendering */}
+              {/* Use a mounted state to only render the logo on the client, avoiding SSR/client mismatch */}
+              {(() => {
+                const [mounted, setMounted] = useState(false);
+                useEffect(() => { setMounted(true); }, []);
+                if (!mounted) {
+                  // Render nothing on server and during hydration
+                  return <span style={{ width: 20, height: 20, display: 'inline-block' }} />;
+                }
+                return theme === 'dark' ? (
+                  <img
+                    src="/nextjs.png"
+                    alt="Next.js logo dark"
+                    width="20"
+                    height="20"
+                    style={{ display: 'inline', verticalAlign: 'middle', borderRadius: '6px' }}
+                  />
+                ) : (
+                  <img
+                    src="/nextjs-light.png"
+                    alt="Next.js logo"
+                    width="20"
+                    height="20"
+                    style={{ display: 'inline', verticalAlign: 'middle', borderRadius: '6px' }}
+                  />
+                );
+              })()}
             </span>
             <span className="text-base ms-4 md:text-lg text-muted-foreground select-none hidden md:inline">|</span>
             {/* Firebase */}
