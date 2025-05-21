@@ -1,8 +1,8 @@
-import { clsx, type ClassValue } from "clsx"
-import { twMerge } from "tailwind-merge"
+import { clsx, type ClassValue } from "clsx";
+import { twMerge } from "tailwind-merge";
 
 export function cn(...inputs: ClassValue[]) {
-  return twMerge(clsx(inputs))
+  return twMerge(clsx(inputs));
 }
 
 //this function should return a color even if the category is not in the list
@@ -50,4 +50,80 @@ export function getReadingTime(content: string): string {
   const words = content.trim().split(/\s+/).length
   const minutes = Math.ceil(words / wordsPerMinute)
   return `${minutes} min read`
+}
+
+// Utility to format date in user's local timezone
+export function formatDateInUserTimezone(dateString: string) {
+  if (!dateString) return '';
+  try {
+    let date: Date;
+    // Try ISO and date-only first
+    if (/\d{4}-\d{2}-\d{2}T\d{2}:\d{2}/.test(dateString)) {
+      date = new Date(dateString);
+    } else if (/\d{4}-\d{2}-\d{2}/.test(dateString)) {
+      date = new Date(dateString + 'T00:00:00Z');
+    } else {
+      // Try to parse format: May 21, 2025 at 2:22:39 AM EDT
+      const match = dateString.match(/([A-Za-z]+ \d{1,2}, \d{4}) at (\d{1,2}:\d{2}:\d{2} [AP]M) ([A-Z]{2,4})/);
+      if (match) {
+        const [_, datePart, timePart, tzAbbr] = match;
+        // Map common US timezones to offsets
+        const tzOffsets: Record<string, string> = {
+          'EST': '-05:00',
+          'EDT': '-04:00',
+          'CST': '-06:00',
+          'CDT': '-05:00',
+          'MST': '-07:00',
+          'MDT': '-06:00',
+          'PST': '-08:00',
+          'PDT': '-07:00',
+        };
+        const offset = tzOffsets[tzAbbr] || '-04:00'; // Default to EDT if unknown
+        // Convert to ISO string: 2025-05-21T02:22:39-04:00
+        const usLocale = 'en-US';
+        const parsed = new Date(Date.parse(`${datePart} ${timePart}`));
+        if (!isNaN(parsed.getTime())) {
+          // Build ISO string manually
+          const yyyy = parsed.getFullYear();
+          const mm = String(parsed.getMonth() + 1).padStart(2, '0');
+          const dd = String(parsed.getDate()).padStart(2, '0');
+          const [hms, ampm] = timePart.split(' ');
+          let [hh, mi, ss] = hms.split(':').map(Number);
+          if (ampm === 'PM' && hh !== 12) hh += 12;
+          if (ampm === 'AM' && hh === 12) hh = 0;
+          const HH = String(hh).padStart(2, '0');
+          const MI = String(mi).padStart(2, '0');
+          const SS = String(ss).padStart(2, '0');
+          const isoString = `${yyyy}-${mm}-${dd}T${HH}:${MI}:${SS}${offset}`;
+          date = new Date(isoString);
+        } else {
+          date = new Date(dateString);
+        }
+      } else {
+        date = new Date(dateString);
+      }
+    }
+    if (isNaN(date.getTime())) {
+      console.log('[formatDateInUserTimezone] Invalid date input:', dateString);
+      return dateString;
+    }
+    const userTimeZone = Intl.DateTimeFormat().resolvedOptions().timeZone;
+    console.log('[formatDateInUserTimezone] Browser timezone:', userTimeZone);
+    const formatted = date.toLocaleString(undefined, {
+      year: 'numeric',
+      month: 'long',
+      day: 'numeric',
+      hour: 'numeric',
+      minute: '2-digit',
+      second: '2-digit',
+      hour12: true,
+      timeZone: userTimeZone,
+      timeZoneName: 'short',
+    });
+    console.log('[formatDateInUserTimezone] Input:', dateString, 'Parsed:', date, 'User TZ:', userTimeZone, 'Output:', formatted);
+    return formatted.replace(',', '');
+  } catch (e) {
+    console.log('[formatDateInUserTimezone] Exception:', e, 'Input:', dateString);
+    return dateString;
+  }
 }

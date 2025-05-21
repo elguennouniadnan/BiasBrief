@@ -5,7 +5,7 @@ import { useParams, useRouter } from "next/navigation"
 import { ArrowLeft, Bookmark, Share2, Clock } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
-import { getCategoryColor, getReadingTime } from "@/lib/utils"
+import { getCategoryColor, getReadingTime, formatDateInUserTimezone } from "@/lib/utils"
 import type { Article } from "@/lib/types"
 import { useTheme } from "next-themes"
 import { AuthProvider } from "@/lib/auth"
@@ -583,7 +583,7 @@ export default function ArticlePage() {
 
                 <div className="flex flex-wrap items-center text-sm mt-3 text-gray-500 dark:text-gray-400 mb-6 gap-x-4 gap-y-2">
                   <div className="font-medium text-gray-700 dark:text-gray-300">{article.source}</div>
-                  <div>{article.date}</div>
+                  <div>{formatDateInUserTimezone(article.date)}</div>
                   <div className="flex items-center">
                     <Clock className="h-4 w-4 mr-1" />
                     {readingTime}
