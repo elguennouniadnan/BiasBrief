@@ -1,8 +1,8 @@
 "use client"
 
-import { useEffect, useState, useRef } from "react"
+import { useEffect, useRef, useState } from "react"
 import { useParams, useRouter } from "next/navigation"
-import { ArrowLeft, Bookmark, Share2, Clock } from "lucide-react"
+import { ArrowLeft, Bookmark, Share2, Clock, Bot } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
 import { getCategoryColor, getReadingTime, formatDateInUserTimezone } from "@/lib/utils"
@@ -386,12 +386,175 @@ export default function ArticlePage() {
     if (!summarizedHtml && !summarizeLoading) handleSummarize();
   };
 
+  // --- Chatbot UI state ---
+  const [chatInput, setChatInput] = useState("");
+  const [chatMessages, setChatMessages] = useState<{role: string, content: string}[]>([]);
+  const [chatOpen, setChatOpen] = useState(false);
+  const [chatLoading, setChatLoading] = useState(false);
+  const [chatError, setChatError] = useState<string | null>(null);
+  const [suggestedQuestions, setSuggestedQuestions] = useState<string[]>([]);
+
+  // Helper to strip HTML and truncate to 600 words
+  function getTruncatedText(html: string, wordLimit: number) {
+    if (!html) return '';
+    // Remove HTML tags
+    const text = html.replace(/<[^>]*>/g, ' ');
+    const words = text.split(/\s+/).filter(Boolean);
+    return words.slice(0, wordLimit).join(' ');
+  }
+
+  // Fetch possible questions when chat opens
   useEffect(() => {
-    return () => {
-      if (unbiasedLoadingTimeout.current) clearTimeout(unbiasedLoadingTimeout.current)
-      if (summaryLoadingTimeout.current) clearTimeout(summaryLoadingTimeout.current)
+    if (!chatOpen) return;
+    // Only fetch if no messages yet
+    if (chatMessages.length > 0) return;
+    if (!article) return;
+    setChatLoading(true);
+    setChatError(null);
+
+    // If article.possibleQuestions exists and is not empty, use it
+    let possibleQuestionsArr = article.possibleQuestions;
+    if (typeof possibleQuestionsArr === 'string') {
+      let str = possibleQuestionsArr.trim();
+      // Remove leading/trailing brackets and quotes if present
+      if (str.startsWith('[') && str.endsWith(']')) {
+        str = str.slice(1, -1);
+      }
+      // Remove leading/trailing quotes from each question
+      let arr = str.split(',').map(q => q.trim().replace(/^['"]|['"]$/g, '')).filter(Boolean);
+      try {
+        // Try to parse as JSON array
+        possibleQuestionsArr = JSON.parse(possibleQuestionsArr);
+      } catch {
+        possibleQuestionsArr = arr;
+      }
     }
-  }, [])
+    if (Array.isArray(possibleQuestionsArr) && possibleQuestionsArr.length > 0) {
+      let questions: string[] = [];
+      possibleQuestionsArr.forEach((q: any) => {
+        if (typeof q === 'string' && q.trim() !== '') {
+          questions.push(q.trim());
+        } else if (q && typeof q === 'object') {
+          Object.values(q).forEach((val) => {
+            if (typeof val === 'string' && val.trim() !== '') {
+              questions.push(val.trim());
+            }
+          });
+        }
+      });
+      if (questions.length > 0) {
+        setChatMessages([{ role: 'bot', content: 'Here are some questions you can ask:' }]);
+        setSuggestedQuestions(questions);
+      } else {
+        setChatMessages([{ role: 'bot', content: 'No suggested questions found for this article.' }]);
+        setSuggestedQuestions([]);
+      }
+      setChatLoading(false);
+      return;
+    }
+
+    const fetchQuestions = async () => {
+      try {
+        const truncatedBody = getTruncatedText(article.body || '', 600);
+        const res = await fetch("https://rizgap5i.rpcl.app/webhook/get-possible-questions-about-article", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            id: article.id,
+            title: article.titleBiased,
+            snippet: article.snippet,
+            body: truncatedBody,
+            summary: article.unbiased_summary,
+          })
+        });
+        if (!res.ok) throw new Error("Failed to fetch questions");
+        const data = await res.json();
+        console.log('[Chatbot] fetched questions:', data);
+        // Accept object with question1, question2, ... or array of such objects
+        let questions: string[] = [];
+        if (data && typeof data === 'object' && !Array.isArray(data)) {
+          Object.values(data).forEach((val) => {
+            if (typeof val === 'string' && val.trim() !== '') {
+              questions.push(val.trim());
+            }
+          });
+        } else if (Array.isArray(data) && data.length > 0 && typeof data[0] === 'object') {
+          data.forEach((obj: any) => {
+            Object.values(obj).forEach((val) => {
+              if (typeof val === 'string' && val.trim() !== '') {
+                questions.push(val.trim());
+              }
+            });
+          });
+        } else if (Array.isArray(data)) {
+          questions = data;
+        } else if (data && Array.isArray(data.questions)) {
+          questions = data.questions;
+        }
+        if (questions.length > 0) {
+          setChatMessages([{ role: 'bot', content: 'Here are some questions you can ask:' }]);
+          setSuggestedQuestions(questions);
+        } else {
+          setChatMessages([{ role: 'bot', content: 'No suggested questions found for this article.' }]);
+          setSuggestedQuestions([]);
+        }
+      } catch (err: any) {
+        setChatError(err.message || 'Failed to load questions.');
+        setChatMessages([{ role: 'bot', content: 'Sorry, I could not load suggested questions.' }]);
+      } finally {
+        setChatLoading(false);
+      }
+    };
+    fetchQuestions();
+  }, [chatOpen, article]);
+
+  // Helper to send user question to AI and display answer
+  async function handleUserQuestion(question: string) {
+    setChatMessages(msgs => [...msgs, { role: 'user', content: question }]);
+    setChatLoading(true);
+    setSuggestedQuestions([]);
+    if (!article) {
+      setChatMessages(msgs => [...msgs, { role: 'bot', content: 'Article data is not available.' }]);
+      setChatLoading(false);
+      return;
+    }
+    try {
+      const truncatedBody = getTruncatedText(article.body || '', 600);
+      const res = await fetch("https://rizgap5i.rpcl.app/webhook/chat-with-ai-about-a-news-article", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          question,
+          article: {
+            titleBiased: article.titleBiased,
+            snippet: article.snippet,
+            body: truncatedBody,
+            summary: article.unbiased_summary,
+          }
+        })
+      });
+      if (!res.ok) throw new Error("Failed to get AI answer");
+      const data = await res.json();
+      console.log('[Chatbot] AI response:', data);
+      let answer = '';
+      if (typeof data === 'string') {
+        answer = data;
+      } else if (data && typeof data.answer === 'string') {
+        answer = data.answer;
+      } else if (data && typeof data.output === 'string') {
+        answer = data.output;
+      } else if (data && data.response) {
+        answer = data.response;
+      } else {
+        answer = 'Sorry, I could not get an answer.';
+      }
+      setChatMessages(msgs => [...msgs, { role: 'bot', content: answer }]);
+    } catch (err: any) {
+      setChatMessages(msgs => [...msgs, { role: 'bot', content: err.message || 'Failed to get answer.' }]);
+    } finally {
+      setChatLoading(false);
+    }
+  }
 
   if (!article) {
     return (
@@ -714,6 +877,94 @@ export default function ArticlePage() {
             </Dialog>
           </div>
         </div>
+        {/* --- Chatbot UI Trigger --- */}
+        <button
+          className="fixed bottom-6 right-6 z-50 bg-blue-600 hover:bg-blue-700 text-white rounded-full shadow-lg p-3 flex items-center justify-center focus:outline-none focus:ring-2 focus:ring-blue-400 transition md:bottom-6 md:right-6"
+          style={{ display: chatOpen ? 'none' : 'flex' }}
+          aria-label="Open AI Chatbot"
+          onClick={() => setChatOpen(true)}
+        >
+          <Bot className="w-7 h-7" />
+        </button>
+        {/* --- Chatbot UI --- */}
+        {chatOpen && (
+          <div className="fixed bottom-0 right-0 w-full md:w-[400px] md:bottom-6 md:right-6 z-50 flex flex-col items-end">
+            <div className="bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-700 rounded-lg shadow-lg w-full md:w-[400px] max-h-[60vh] flex flex-col">
+              <div className="flex items-center justify-between p-3 border-b border-gray-100 dark:border-gray-800 font-semibold text-sm text-gray-700 dark:text-gray-200">
+                <span>Ask the AI Bot</span>
+                <button
+                  className="ml-2 p-1 rounded hover:bg-gray-100 dark:hover:bg-gray-800 transition"
+                  aria-label="Close chatbot"
+                  onClick={() => setChatOpen(false)}
+                  type="button"
+                >
+                  <span className="text-lg">×</span>
+                </button>
+              </div>
+              <div className="flex-1 overflow-y-auto p-3 space-y-2 text-sm" style={{ minHeight: 120, maxHeight: 240 }}>
+                {chatError ? (
+                  <div className="text-red-500 text-xs text-center">{chatError}</div>
+                ) : chatMessages.length === 0 ? (
+                  <div className="text-gray-400 text-xs text-center">Start a conversation about this article...</div>
+                ) : (
+                  chatMessages.map((msg, idx) => (
+                    <div key={idx} className={msg.role === 'user' ? 'text-right' : 'text-left'}>
+                      <span className={msg.role === 'user' ? 'bg-blue-100 dark:bg-blue-900 text-blue-900 dark:text-blue-100 rounded-lg px-2 py-1 inline-block' : 'bg-gray-100 dark:bg-gray-800 text-gray-800 dark:text-gray-200 rounded-lg px-2 py-1 inline-block'}>
+                        {msg.content}
+                      </span>
+                    </div>
+                  ))
+                )}
+                {/* 3 dots animation for bot typing */}
+                {chatLoading && (
+                  <div className="flex justify-start mt-2">
+                    <span className="inline-block bg-gray-100 dark:bg-gray-800 text-gray-800 dark:text-gray-200 rounded-lg px-2 py-1">
+                      <span className="inline-block w-2 h-2 bg-gray-400 dark:bg-gray-500 rounded-full animate-bounce mr-1" style={{ animationDelay: '0ms' }}></span>
+                      <span className="inline-block w-2 h-2 bg-gray-400 dark:bg-gray-500 rounded-full animate-bounce mr-1" style={{ animationDelay: '150ms' }}></span>
+                      <span className="inline-block w-2 h-2 bg-gray-400 dark:bg-gray-500 rounded-full animate-bounce" style={{ animationDelay: '300ms' }}></span>
+                    </span>
+                  </div>
+                )}
+              </div>
+              {/* Suggested questions at the bottom, above input */}
+              {suggestedQuestions.length > 0 && (
+                <div className="flex flex-wrap gap-2 px-3 pb-2">
+                  {suggestedQuestions.map((q, i) => (
+                    <button
+                      key={i}
+                      className="bg-blue-50 dark:bg-blue-950 text-blue-700 dark:text-blue-200 border border-blue-200 dark:border-blue-800 rounded-full px-3 py-1 text-xs hover:bg-blue-100 dark:hover:bg-blue-900 transition cursor-pointer"
+                      type="button"
+                      onClick={() => {
+                        console.log('[Chatbot] Question clicked:', q);
+                        handleUserQuestion(q);
+                      }}
+                    >
+                      {q}
+                    </button>
+                  ))}
+                </div>
+              )}
+              <form className="flex items-center border-t border-gray-100 dark:border-gray-800 p-2" onSubmit={e => {
+                e.preventDefault();
+                if (!chatInput.trim()) return;
+                handleUserQuestion(chatInput);
+                setChatInput("");
+              }}>
+                <input
+                  type="text"
+                  className="flex-1 rounded-md border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-900 px-3 py-2 text-xs focus:outline-none focus:ring-2 focus:ring-blue-400"
+                  placeholder="Type your question..."
+                  value={chatInput}
+                  onChange={e => setChatInput(e.target.value)}
+                  autoComplete="off"
+                  disabled={chatLoading}
+                />
+                <button type="submit" className="ml-2 px-3 py-2 bg-blue-600 text-white rounded-md text-xs font-semibold hover:bg-blue-700 transition" disabled={chatLoading}>Send</button>
+              </form>
+            </div>
+          </div>
+        )}
+        {/* --- End Chatbot UI --- */}
       </div>
     </AuthProvider>
   )
