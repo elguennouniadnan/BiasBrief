@@ -889,11 +889,11 @@ export default function ArticlePage() {
         {/* --- Chatbot UI --- */}
         {chatOpen && (
           <div className="fixed bottom-0 right-0 w-[90vw] md:w-[400px] md:bottom-6 md:right-6 z-50 flex flex-col items-end left-1/2 -translate-x-1/2 md:left-auto md:translate-x-0 mb-2 md:mb-0">
-            <div className="bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-700 rounded-lg shadow-lg w-full md:w-[400px] max-h-[60vh] flex flex-col">
-              <div className="flex items-center justify-between p-3 border-b border-gray-100 dark:border-gray-800 font-semibold text-sm text-gray-700 dark:text-gray-200">
-                <span>Ask the AI Bot</span>
+            <div className="bg-gradient-to-br from-blue-100/90 via-white/90 to-blue-200/90 dark:from-blue-900/90 dark:via-gray-900/90 dark:to-blue-950/90 border border-blue-200 dark:border-blue-800 rounded-2xl shadow-2xl w-full md:w-[400px] max-h-[60vh] flex flex-col backdrop-blur-md">
+              <div className="flex items-center justify-between p-4 border-b border-blue-100 dark:border-blue-800 font-semibold text-base text-blue-900 dark:text-blue-100 rounded-t-2xl bg-gradient-to-r from-blue-200/60 via-white/60 to-blue-100/60 dark:from-blue-950/60 dark:via-gray-900/60 dark:to-blue-900/60">
+                <span className="flex items-center gap-2"><Bot className="w-5 h-5 text-blue-500 dark:text-blue-300 animate-pulse" /> Ask the AI Bot</span>
                 <button
-                  className="ml-2 p-1 rounded hover:bg-gray-100 dark:hover:bg-gray-800 transition"
+                  className="ml-2 p-1 rounded-full hover:bg-blue-100 dark:hover:bg-blue-800 transition"
                   aria-label="Close chatbot"
                   onClick={() => setChatOpen(false)}
                   type="button"
@@ -901,15 +901,17 @@ export default function ArticlePage() {
                   <span className="text-lg">×</span>
                 </button>
               </div>
-              <div className="flex-1 overflow-y-auto p-3 space-y-2 text-sm" style={{ minHeight: 120, maxHeight: 240 }}>
+              <div className="flex-1 overflow-y-auto p-4 space-y-3 text-sm custom-scrollbar" style={{ minHeight: 120, maxHeight: 240 }}>
                 {chatError ? (
                   <div className="text-red-500 text-xs text-center">{chatError}</div>
                 ) : chatMessages.length === 0 ? (
                   <div className="text-gray-400 text-xs text-center">Start a conversation about this article...</div>
                 ) : (
                   chatMessages.map((msg, idx) => (
-                    <div key={idx} className={msg.role === 'user' ? 'text-right' : 'text-left'}>
-                      <span className={msg.role === 'user' ? 'bg-blue-100 dark:bg-blue-900 text-blue-900 dark:text-blue-100 rounded-lg px-2 py-1 inline-block' : 'bg-gray-100 dark:bg-gray-800 text-gray-800 dark:text-gray-200 rounded-lg px-2 py-1 inline-block'}>
+                    <div key={idx} className={msg.role === 'user' ? 'flex justify-end' : 'flex justify-start'}>
+                      <span className={msg.role === 'user'
+                        ? 'bg-gradient-to-r from-blue-400/80 to-blue-600/80 text-white rounded-2xl px-4 py-2 shadow-md max-w-[80%] break-words'
+                        : 'bg-gradient-to-r from-gray-100/80 to-blue-100/80 dark:from-blue-950/80 dark:to-gray-900/80 text-blue-900 dark:text-blue-100 rounded-2xl px-4 py-2 shadow max-w-[80%] break-words'}>
                         {msg.content}
                       </span>
                     </div>
@@ -918,24 +920,23 @@ export default function ArticlePage() {
                 {/* 3 dots animation for bot typing */}
                 {chatLoading && (
                   <div className="flex justify-start mt-2">
-                    <span className="inline-block bg-gray-100 dark:bg-gray-800 text-gray-800 dark:text-gray-200 rounded-lg px-2 py-1">
-                      <span className="inline-block w-2 h-2 bg-gray-400 dark:bg-gray-500 rounded-full animate-bounce mr-1" style={{ animationDelay: '0ms' }}></span>
-                      <span className="inline-block w-2 h-2 bg-gray-400 dark:bg-gray-500 rounded-full animate-bounce mr-1" style={{ animationDelay: '150ms' }}></span>
-                      <span className="inline-block w-2 h-2 bg-gray-400 dark:bg-gray-500 rounded-full animate-bounce" style={{ animationDelay: '300ms' }}></span>
+                    <span className="inline-block bg-gradient-to-r from-gray-100/80 to-blue-100/80 dark:from-blue-950/80 dark:to-gray-900/80 text-gray-800 dark:text-gray-200 rounded-2xl px-4 py-2">
+                      <span className="inline-block w-2 h-2 bg-blue-400 rounded-full animate-bounce mr-1" style={{ animationDelay: '0ms' }}></span>
+                      <span className="inline-block w-2 h-2 bg-blue-400 rounded-full animate-bounce mr-1" style={{ animationDelay: '150ms' }}></span>
+                      <span className="inline-block w-2 h-2 bg-blue-400 rounded-full animate-bounce" style={{ animationDelay: '300ms' }}></span>
                     </span>
                   </div>
                 )}
               </div>
               {/* Suggested questions at the bottom, above input */}
               {suggestedQuestions.length > 0 && (
-                <div className="flex flex-wrap gap-2 px-3 pb-2">
+                <div className="flex flex-wrap gap-2 px-4 pb-2">
                   {suggestedQuestions.map((q, i) => (
                     <button
                       key={i}
-                      className="bg-blue-50 dark:bg-blue-950 text-blue-700 dark:text-blue-200 border border-blue-200 dark:border-blue-800 rounded-full px-3 py-1 text-xs hover:bg-blue-100 dark:hover:bg-blue-900 transition cursor-pointer"
+                      className="bg-blue-50 dark:bg-blue-950 text-blue-700 dark:text-blue-200 border border-blue-200 dark:border-blue-800 rounded-full px-3 py-1 text-xs hover:bg-blue-200 dark:hover:bg-blue-900 transition cursor-pointer shadow-sm"
                       type="button"
                       onClick={() => {
-                        console.log('[Chatbot] Question clicked:', q);
                         handleUserQuestion(q);
                       }}
                     >
@@ -944,7 +945,7 @@ export default function ArticlePage() {
                   ))}
                 </div>
               )}
-              <form className="flex items-center border-t border-gray-100 dark:border-gray-800 p-2" onSubmit={e => {
+              <form className="flex items-center border-t border-blue-100 dark:border-blue-800 p-3 bg-gradient-to-r from-blue-50/60 via-white/60 to-blue-100/60 dark:from-blue-950/60 dark:via-gray-900/60 dark:to-blue-900/60 rounded-b-2xl" onSubmit={e => {
                 e.preventDefault();
                 if (!chatInput.trim()) return;
                 handleUserQuestion(chatInput);
@@ -952,14 +953,14 @@ export default function ArticlePage() {
               }}>
                 <input
                   type="text"
-                  className="flex-1 rounded-md border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-900 px-3 py-2 text-xs focus:outline-none focus:ring-2 focus:ring-blue-400"
+                  className="flex-1 rounded-full border border-blue-200 dark:border-blue-800 bg-white dark:bg-gray-900 px-4 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-400 shadow-sm"
                   placeholder="Type your question..."
                   value={chatInput}
                   onChange={e => setChatInput(e.target.value)}
                   autoComplete="off"
                   disabled={chatLoading}
                 />
-                <button type="submit" className="ml-2 px-3 py-2 bg-blue-600 text-white rounded-md text-xs font-semibold hover:bg-blue-700 transition" disabled={chatLoading}>Send</button>
+                <button type="submit" className="ml-2 px-4 py-2 bg-gradient-to-r from-blue-500 to-blue-700 text-white rounded-full text-sm font-semibold hover:from-blue-600 hover:to-blue-800 transition shadow-md disabled:opacity-60" disabled={chatLoading}>Send</button>
               </form>
             </div>
           </div>
