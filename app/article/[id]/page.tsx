@@ -412,43 +412,17 @@ export default function ArticlePage() {
     setChatLoading(true);
     setChatError(null);
 
-    // If article.possibleQuestions exists and is not empty, use it
-    let possibleQuestionsArr = article.possibleQuestions;
-    if (typeof possibleQuestionsArr === 'string') {
-      let str = possibleQuestionsArr.trim();
-      // Remove leading/trailing brackets and quotes if present
-      if (str.startsWith('[') && str.endsWith(']')) {
-        str = str.slice(1, -1);
-      }
-      // Remove leading/trailing quotes from each question
-      let arr = str.split(',').map(q => q.trim().replace(/^['"]|['"]$/g, '')).filter(Boolean);
-      try {
-        // Try to parse as JSON array
-        possibleQuestionsArr = JSON.parse(possibleQuestionsArr);
-      } catch {
-        possibleQuestionsArr = arr;
-      }
+    // Directly read possible questions from article.possibleQuestion1 and article.possibleQuestion2
+    const questions: string[] = [];
+    if (article.possibleQuestion1 && typeof article.possibleQuestion1 === 'string' && article.possibleQuestion1.trim() !== '') {
+      questions.push(article.possibleQuestion1.trim());
     }
-    if (Array.isArray(possibleQuestionsArr) && possibleQuestionsArr.length > 0) {
-      let questions: string[] = [];
-      possibleQuestionsArr.forEach((q: any) => {
-        if (typeof q === 'string' && q.trim() !== '') {
-          questions.push(q.trim());
-        } else if (q && typeof q === 'object') {
-          Object.values(q).forEach((val) => {
-            if (typeof val === 'string' && val.trim() !== '') {
-              questions.push(val.trim());
-            }
-          });
-        }
-      });
-      if (questions.length > 0) {
-        setChatMessages([{ role: 'bot', content: 'Here are some questions you can ask:' }]);
-        setSuggestedQuestions(questions);
-      } else {
-        setChatMessages([{ role: 'bot', content: 'No suggested questions found for this article.' }]);
-        setSuggestedQuestions([]);
-      }
+    if (article.possibleQuestion2 && typeof article.possibleQuestion2 === 'string' && article.possibleQuestion2.trim() !== '') {
+      questions.push(article.possibleQuestion2.trim());
+    }
+    if (questions.length > 0) {
+      setChatMessages([{ role: 'bot', content: 'Here are some questions you can ask:' }]);
+      setSuggestedQuestions(questions);
       setChatLoading(false);
       return;
     }
@@ -465,6 +439,8 @@ export default function ArticlePage() {
             snippet: article.snippet,
             body: truncatedBody,
             summary: article.unbiased_summary,
+            possibleQuestion1: article.possibleQuestion1,
+            possibleQuestion2: article.possibleQuestion2,
           })
         });
         if (!res.ok) throw new Error("Failed to fetch questions");
@@ -526,10 +502,15 @@ export default function ArticlePage() {
         body: JSON.stringify({
           question,
           article: {
+            id: article.id,
             titleBiased: article.titleBiased,
             snippet: article.snippet,
             body: truncatedBody,
             summary: article.unbiased_summary,
+            possibleQuestion1: article.possibleQuestion1,
+            possibleQuestion2: article.possibleQuestion2,
+            answerToPossibleQuestion1: article.answerToPossibleQuestion1,
+            answerToPossibleQuestion2: article.answerToPossibleQuestion2,
           }
         })
       });
