@@ -911,7 +911,7 @@ export default function ArticlePage() {
               </div>
               {/* Suggested questions at the bottom, above input */}
               {suggestedQuestions.length > 0 && (
-                <div className="flex flex-wrap gap-2 px-4 pb-2">
+                <div className="flex flex-wrap justify-center w-full gap-2 px-4 pb-2">
                   {suggestedQuestions.map((q, i) => (
                     <button
                       key={i}
