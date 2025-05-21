@@ -888,7 +888,7 @@ export default function ArticlePage() {
         </button>
         {/* --- Chatbot UI --- */}
         {chatOpen && (
-          <div className="fixed bottom-0 right-0 w-full md:w-[400px] md:bottom-6 md:right-6 z-50 flex flex-col items-end">
+          <div className="fixed bottom-0 right-0 w-[90vw] md:w-[400px] md:bottom-6 md:right-6 z-50 flex flex-col items-end left-1/2 -translate-x-1/2 md:left-auto md:translate-x-0 mb-2 md:mb-0">
             <div className="bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-700 rounded-lg shadow-lg w-full md:w-[400px] max-h-[60vh] flex flex-col">
               <div className="flex items-center justify-between p-3 border-b border-gray-100 dark:border-gray-800 font-semibold text-sm text-gray-700 dark:text-gray-200">
                 <span>Ask the AI Bot</span>
