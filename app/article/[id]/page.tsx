@@ -606,8 +606,8 @@ export default function ArticlePage() {
         />
         {/* Full-bleed gradient background for the whole article page */}
         <div
-          className="fixed inset-0 z-0 w-full h-full bg-gradient-to-br from-[#fffbe6] via-[#f0f4ff] to-[#e6fff9] dark:from-blue-950/20 dark:via-blue-950/30 dark:to-blue-950/60 dark:bg-gradient-to-br pointer-events-none"
-          aria-hidden="true"
+          className="fixed inset-0 z-0 w-full h-full bg-gradient-to-br from-[#fffbe6] via-[#f0f4ff] to-[#e6fff9] dark:from-blue-950/20 dark:via-blue-950/10 dark:to-blue-950/10 dark:bg-gradient-to-br pointer-events-none"
+          aria-hidden="true"  
         />
         <div className="relative container mx-auto px-4 py-8 z-10">
           <div

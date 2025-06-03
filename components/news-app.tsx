@@ -527,34 +527,36 @@ export function NewsApp() {
   return (
     <AuthProvider>
       <div className="flex flex-col min-h-screen bg-background text-foreground mx-2">
-        <Navbar
-          searchQuery={searchQuery}
-          setSearchQuery={handleSearch}
-          showBookmarksOnly={showBookmarksOnly}
-          setShowBookmarksOnly={setShowBookmarksOnly}
-          preferredCategories={preferredCategories}
-          setPreferredCategories={setPreferredCategories}
-          themePreference={themePreference}
-          setThemePreference={(isDark) => {
-            setTheme(isDark ? "dark" : "light");
-            trackEvents.toggleTheme(isDark ? 'dark' : 'light');
-          }}
-          fontSize={fontSize}
-          setFontSize={setFontSize}
-          articlesPerPage={articlesPerPage}
-          setArticlesPerPage={setArticlesPerPage}
-          cardSize={cardSize}
-          setCardSize={setCardSize}
-          sortOrder={sortOrder}
-          setSortOrder={(order) => {
-            setSortOrder(order);
-            trackEvents.sortOrderChange(order);
-          }}
-          categories={categories}
-          customNewsEnabled={customNewsEnabled}
-          setCustomNewsEnabled={setCustomNewsEnabled}
-          allCategories={allCategories}
-        />
+        <div className="container px-1 sm:px-4 md:px-6 lg:px-8 w-full max-w-screen-2xl mx-auto">
+          <Navbar
+            searchQuery={searchQuery}
+            setSearchQuery={handleSearch}
+            showBookmarksOnly={showBookmarksOnly}
+            setShowBookmarksOnly={setShowBookmarksOnly}
+            preferredCategories={preferredCategories}
+            setPreferredCategories={setPreferredCategories}
+            themePreference={themePreference}
+            setThemePreference={(isDark) => {
+              setTheme(isDark ? "dark" : "light");
+              trackEvents.toggleTheme(isDark ? 'dark' : 'light');
+            }}
+            fontSize={fontSize}
+            setFontSize={setFontSize}
+            articlesPerPage={articlesPerPage}
+            setArticlesPerPage={setArticlesPerPage}
+            cardSize={cardSize}
+            setCardSize={setCardSize}
+            sortOrder={sortOrder}
+            setSortOrder={(order) => {
+              setSortOrder(order);
+              trackEvents.sortOrderChange(order);
+            }}
+            categories={categories}
+            customNewsEnabled={customNewsEnabled}
+            setCustomNewsEnabled={setCustomNewsEnabled}
+            allCategories={allCategories}
+          />
+        </div>
 
         <main className="flex-1 container px-1 py-2">
           {/* Show back button if search is active, otherwise show category filter */}

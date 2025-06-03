@@ -78,6 +78,8 @@ export function Navbar({
   const searchInputRef = React.useRef<HTMLInputElement>(null)
   const pathname = usePathname();
   const isArticlePage = pathname.startsWith('/article/');
+  // Determine if we should hide the Show Bookmarks Only button (hide on homepage)
+  const isHomePage = pathname === "/";
 
   useEffect(() => {
     setMounted(true)
@@ -161,7 +163,7 @@ export function Navbar({
       <header className={`sticky top-0 z-50 pb-3 rounded-full w-full backdrop-blur supports-[backdrop-filter]:bg-background/40 shadow-sm ${
         scrolled ? "shadow-sm border-b border-border/50" : ""
       }`}>
-        <div className="w-full md:container md:px-4 mx-auto">
+        <div className="w-full">
           <div className="flex items-center justify-between h-16">
             <div className="flex-shrink-0 mt-1 mx-1 md:mr-2 md:mt-3">
               <Logo className="w-[200px] h-[70px] md:w-[220px] md:h-[80px]" />
@@ -239,8 +241,8 @@ export function Navbar({
                 </div>
 
                 <div className="flex items-center gap-3 min-w-0">
-                  {/* Hide Show Bookmarks Only button on article page */}
-                  {!isArticlePage && (
+                  {/* Hide Show Bookmarks Only button on article page and homepage */}
+                  {!(isArticlePage || isHomePage) && (
                     <Button
                       variant={showBookmarksOnly ? "default" : "ghost"}
                       size="icon"
@@ -362,8 +364,8 @@ export function Navbar({
                   )}
                 </div>
 
-                {/* Hide Show Bookmarks Only button on article page */}
-                {!isArticlePage && (
+                {/* Hide Show Bookmarks Only button on article page and homepage */}
+                {!isArticlePage && !isHomePage && (
                   <Button
                     variant={showBookmarksOnly ? "default" : "ghost"}
                     size="icon"

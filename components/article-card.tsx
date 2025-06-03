@@ -150,7 +150,8 @@ export function ArticleCard({ article, isBookmarked, toggleBookmark, cardSize, o
   return (
     <div className="px-2 sm:px-0 select-none">
       <Card
-        className="overflow-hidden h-full flex flex-col group shadow-md p-1 border border-gray-200 dark:border-gray-700 rounded-xl hover:shadow-lg dark:shadow-blue-900/40 transition-all duration-300 border-t-2 hover:-translate-y-1 bg-gradient-to-br from-[#fffbe6] via-[#f0f4ff] to-[#e6fff9] dark:from-blue-950/20 dark:via-blue-950/30 dark:to-blue-950/60 dark:bg-gradient-to-br"
+        className="overflow-hidden h-full flex flex-col group shadow-md p-1 border border-gray-200 dark:border-gray-700 rounded-xl hover:shadow-lg dark:shadow-blue-900/40 transition-all duration-300 border-t-2 hover:-translate-y-1 bg-gradient-to-br from-[#fffbe6]/30 via-[#f0f4ff]/30 to-[#e6fff9]/20 dark:from-blue-950/5 dark:via-blue-950/10 dark:to-blue-950/30 dark:bg-gradient-to-br"
+        // className="overflow-hidden h-full flex flex-col group shadow-md p-1 border border-gray-200 dark:border-gray-700 rounded-xl hover:shadow-lg dark:shadow-blue-900/40 transition-all duration-300 border-t-2 hover:-translate-y-1 bg-gray-50/90 dark:bg-blue-950/30"
         style={{ borderTopColor: categoryColor }}
       >
         <div
@@ -202,7 +203,7 @@ export function ArticleCard({ article, isBookmarked, toggleBookmark, cardSize, o
             <div className={`${isSingleColumn ? 'grid grid-cols-[2fr_1fr] gap-6 flex-1' : 'flex flex-col gap-2 sm:gap-4'} h-full`}>
               <div className="flex gap-2 sm:gap-4 items-start">
                 <div className="flex-1">
-                  <h3 className="text-lg font-bold leading-tight transition-colors duration-300 min-h-[2.5rem]">
+                  <h3 className="text-base font-bold leading-tight transition-colors duration-300 min-h-[2.5rem]">
                     {loadingUnbiased ? (
                       <span className="flex flex-col items-start">
                         <span className="inline-flex items-center gap-2 my-2">
@@ -248,7 +249,7 @@ export function ArticleCard({ article, isBookmarked, toggleBookmark, cardSize, o
               {!isCompactLayout && (
                 <div ref={contentRef} className="flex-grow">
                   <span
-                    className="text-base text-gray-900 dark:text-gray-200"
+                    className="text-sm text-gray-900 dark:text-gray-200"
                     dangerouslySetInnerHTML={{ __html: snippetText }}
                   />
                 </div>
@@ -276,15 +277,15 @@ export function ArticleCard({ article, isBookmarked, toggleBookmark, cardSize, o
           {isCompactLayout && (
             <CardContent className="p-2 sm:p-4 pt-1 sm:pt-2 flex-grow">
               <span
-                className="text-base text-black dark:text-gray-300"
+                className="text-sm text-black dark:text-gray-300"
                 dangerouslySetInnerHTML={{ __html: snippetText }}
               />
             </CardContent>
           )}
         </div>
-        <CardFooter className="p-2 sm:p-4 pt-0 flex justify-between items-center border-t border-gray-100 dark:border-gray-800">
-          <div className="flex flex-col gap-0.5 text-sm mt-2">
-            <span className="font-medium text-gray-700 dark:text-gray-300">{article.source}</span>
+        <CardFooter className="p-1 sm:p-2 ml-2 pt-0 flex justify-between items-center border-t border-gray-100 dark:border-gray-800">
+          <div className="flex flex-col gap-1 text-sm mt-1">
+            {/* <span className="font-medium text-xs text-gray-700 dark:text-gray-300">{article.source}</span> */}
             <span className="text-gray-500 dark:text-gray-400 text-xs">{formatDateInUserTimezone(article.date)}</span>
           </div>
           <Button
