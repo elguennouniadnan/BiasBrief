@@ -189,7 +189,6 @@ export default function Home() {
             isBookmarked={bookmarks.includes(String(articles[0]?.id))}
             toggleBookmark={toggleBookmark}
             variant={isMobile ? "title-only" : isWiderThan1024 ? "hero" : "horizontal"}
-            enableUnbias={true}
           />
         )}
       </div>
@@ -274,7 +273,6 @@ export default function Home() {
             isBookmarked={bookmarks.includes(String(articles[7]?.id))}
             toggleBookmark={toggleBookmark}
             variant={isMobile ? "title-only" : isWiderThan1024 ? "hero" : "horizontal"}
-            enableUnbias={true}
           />
         )}
       </div>
