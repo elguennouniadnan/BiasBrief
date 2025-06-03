@@ -182,7 +182,6 @@ export default function Home() {
     <div className="news-grid-md-fix grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 h-[300vh] lg:h-[200vh]">
       {/* Article 1: Spans columns 1-2, rows 1-3 */}
       <div className="col-span-1 md:col-span-2 row-span-3">
-  
         {articles[0] && (
           <GridArticleCard
             article={articles[0]}
@@ -190,6 +189,7 @@ export default function Home() {
             isBookmarked={bookmarks.includes(String(articles[0]?.id))}
             toggleBookmark={toggleBookmark}
             variant={isMobile ? "title-only" : isWiderThan1024 ? "hero" : "horizontal"}
+            enableUnbias={true}
           />
         )}
       </div>
@@ -267,7 +267,6 @@ export default function Home() {
       </div>
       {/* Article 8: Rows 5-6, Columns 2-3 */}
       <div className="col-span-1 md:col-span-2 row-span-3">
-  
         {articles[7] && (
           <GridArticleCard
             article={articles[7]}
@@ -275,6 +274,7 @@ export default function Home() {
             isBookmarked={bookmarks.includes(String(articles[7]?.id))}
             toggleBookmark={toggleBookmark}
             variant={isMobile ? "title-only" : isWiderThan1024 ? "hero" : "horizontal"}
+            enableUnbias={true}
           />
         )}
       </div>
