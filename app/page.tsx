@@ -364,8 +364,8 @@ export default function Home() {
             setSearchQuery={(q) => {
               setSearchQuery(q)
               if (typeof window !== 'undefined' && q.trim() && window.location.pathname === '/') {
-                // Redirect to /list-page with search param
-                window.location.href = `/list-page?search=${encodeURIComponent(q)}`
+                // Redirect to /stories with search param
+                window.location.href = `/stories?search=${encodeURIComponent(q)}`
               }
             }}
             showBookmarksOnly={showBookmarksOnly}
@@ -399,7 +399,7 @@ export default function Home() {
 
             {renderGrid(filteredArticles)}
             <div className="text-center mt-12">
-              <Link href="/list-page">
+              <Link href="/stories">
                 <Button size="lg" className="px-8">
                   Read more stories
                   <ArrowRight className="ml-2 h-5 w-5" />

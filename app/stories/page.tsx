@@ -1,4 +1,4 @@
-import ListPageClient from "./ListPageClient";
+import StoriesPageClient from "./StoriesPageClient";
 import { headers } from "next/headers";
 
 async function getBaseUrl() {
@@ -30,5 +30,5 @@ export default async function Page() {
     fetchArticles(),
     fetchCategories(),
   ]);
-  return <ListPageClient initialArticles={initialArticles} initialCategories={initialCategories} />;
+  return <StoriesPageClient initialArticles={initialArticles} initialCategories={initialCategories} />;
 }

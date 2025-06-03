@@ -1,4 +1,4 @@
-// ListPageClient.tsx
+// StoriesPageClient.tsx
 "use client"
 
 import { useEffect, useState, useMemo } from "react"
@@ -12,12 +12,12 @@ import type { Article } from "@/lib/types"
 import { Button } from "@/components/ui/button"
 import { useRouter, useSearchParams } from "next/navigation"
 
-interface ListPageClientProps {
+interface StoriesPageClientProps {
   initialArticles: Article[]
   initialCategories: string[]
 }
 
-export default function ListPageClient({ initialArticles, initialCategories }: ListPageClientProps) {
+export default function StoriesPageClient({ initialArticles, initialCategories }: StoriesPageClientProps) {
   const [articles, setArticles] = useState<Article[]>(initialArticles)
   const [searchQuery, setSearchQuery] = useState("")
   const [selectedCategory, setSelectedCategory] = useState("All")
