@@ -640,11 +640,7 @@ export default function ArticlePage() {
                     <Badge
                       variant="outline"
                       className="font-medium transition-colors duration-300"
-                      style={{
-                        backgroundColor: `${categoryColor}20`,
-                        color: `${categoryColor}`,
-                        borderColor: `${categoryColor}`, // lighter border
-                      }}
+                      style={article.category ? { backgroundColor: `${getCategoryColor(article.category)}20`, color: getCategoryColor(article.category), borderColor: getCategoryColor(article.category) } : {}}
                     >
                       {article.category || article.section || "Uncategorized"}
                     </Badge>

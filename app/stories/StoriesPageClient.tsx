@@ -11,6 +11,7 @@ import { Pagination } from "@/components/pagination"
 import type { Article } from "@/lib/types"
 import { Button } from "@/components/ui/button"
 import { useRouter, useSearchParams } from "next/navigation"
+import { getCategoryColor } from "@/lib/utils"
 
 interface StoriesPageClientProps {
   initialArticles: Article[]

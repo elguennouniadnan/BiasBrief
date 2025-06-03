@@ -6,7 +6,7 @@ import { Card } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
 import type { Article } from "@/lib/types"
-import { formatDateInUserTimezone } from "@/lib/utils"
+import { formatDateInUserTimezone, getCategoryColor } from "@/lib/utils"
 import Link from "next/link"
 import { useEffect, useRef, useState } from "react"
 
@@ -141,6 +141,8 @@ export function GridArticleCard({
   if (!article) return null
 
   if (variant === "hero") {
+    // Get category color utility if available
+    const categoryColor = article.category ? undefined : undefined; // Replace with getCategoryColor(article.category) if you have it
     return (
       <Card className="h-full relative overflow-hidden group hover:shadow-lg transition-all duration-300">
         <Link href={`/article/${article.id}`} className="block h-full">
@@ -153,14 +155,28 @@ export function GridArticleCard({
               />
             </div>
           )}
+          {/* Move badges row to bottom left, with category badge left of bias/unbias badge/button */}
           <div className="absolute bottom-0 left-0 w-full flex flex-col justify-end items-baseline px-5 py-7" style={{ background: 'linear-gradient(to top, rgba(0,0,0,0.7) 98.5%, rgba(0,0,0,0.0) 100%)' }}>
             <div className="flex items-center gap-2 mb-2">
-              <Badge
-                variant="outline"
-                className="font-medium transition-colors duration-300 text-orange-500 bg-orange-100 dark:text-primary-light border-orange-400 dark:border-primary-light dark:bg-primary-light/20"
-              >
-                {showUnbiased ? "Unbiased" : "Biased"}
-              </Badge>
+              {/* Category badge leftmost */}
+              {article.category && (
+                <Badge
+                  variant="outline"
+                  className="font-medium transition-colors duration-300"
+                  style={{ backgroundColor: `${getCategoryColor(article.category)}20`, color: getCategoryColor(article.category), borderColor: getCategoryColor(article.category) }}
+                >
+                  {article.category}
+                </Badge>
+              )}
+              {/* Bias/Unbias badge */}
+              {(showUnbiased !== null) && (
+                <Badge
+                  variant="outline"
+                  className="font-medium transition-colors duration-300 text-orange-500 bg-orange-100 dark:text-primary-light border-orange-400 dark:border-primary-light dark:bg-primary-light/20"
+                >
+                  {showUnbiased ? "Unbiased" : "Biased"}
+                </Badge>
+              )}
               <Button
                 variant={showUnbiased ? "default" : "outline"}
                 size="icon"
@@ -186,17 +202,32 @@ export function GridArticleCard({
   }
 
   if (variant === "title-only") {
+    // Get category color utility if available
+    const categoryColor = article.category ? undefined : undefined; // Replace with getCategoryColor(article.category) if you have it
     return (
       <Card className="h-full min-h-[160px] lg:max-h-[180px] flex flex-row group hover:shadow-md transition-all duration-300  bg-gradient-to-br from-gray-50/40 via-[#f0f4ff]/30 to-[#e6fff9]/20 dark:from-blue-950/5 dark:via-blue-950/10 dark:to-blue-950/30 dark:bg-gradient-to-br relative overflow-hidden">
         <Link href={`/article/${article.id}`} className="flex flex-1 flex-row justify-center relative z-5">
-          <div ref={containerRef} className="flex flex-col items-center justify-center">
-            <div className="flex items-center gap-2 mb-1">
-              <Badge
-                variant="outline"
-                className="font-medium transition-colors duration-300 text-orange-500 bg-orange-100 dark:text-primary-light border-orange-400 dark:border-primary-light dark:bg-primary-light/20"
-              >
-                {showUnbiased ? "Unbiased" : "Biased"}
-              </Badge>
+          <div ref={containerRef} className="flex flex-col items-center justify-center w-full">
+            <div className="flex items-center gap-2 mb-1 justify-start w-full ml-5">
+              {/* Category badge */}
+              {article.category && (
+                <Badge
+                  variant="outline"
+                  className="font-medium transition-colors duration-300"
+                  style={{ backgroundColor: `${getCategoryColor(article.category)}20`, color: getCategoryColor(article.category), borderColor: getCategoryColor(article.category) }}
+                >
+                  {article.category}
+                </Badge>
+              )}
+              {/* Bias/Unbias badge */}
+              {(showUnbiased !== null) && (
+                <Badge
+                  variant="outline"
+                  className="font-medium transition-colors duration-300 text-orange-500 bg-orange-100 dark:text-primary-light border-orange-400 dark:border-primary-light dark:bg-primary-light/20"
+                >
+                  {showUnbiased ? "Unbiased" : "Biased"}
+                </Badge>
+              )}
               <Button
                 variant={showUnbiased ? "default" : "outline"}
                 size="icon"
@@ -281,12 +312,14 @@ export function GridArticleCard({
           )}
           <div className="absolute bottom-0 left-0 w-full flex flex-col justify-end items-baseline px-5 py-7" style={{ background: 'linear-gradient(to top, rgba(0,0,0,0.5) 98.5%, rgba(0,0,0,0.0) 100%)' }}>
             <div className="flex items-center gap-2 mb-2">
-              <Badge
-                variant="outline"
-                className="font-medium transition-colors duration-300 text-orange-500 bg-orange-100 dark:text-primary-light border-orange-400 dark:border-primary-light dark:bg-primary-light/20"
-              >
-                {showUnbiased ? "Unbiased" : "Biased"}
-              </Badge>
+              {(showUnbiased !== null) && (
+                <Badge
+                  variant="outline"
+                  className="font-medium transition-colors duration-300 text-orange-500 bg-orange-100 dark:text-primary-light border-orange-400 dark:border-primary-light dark:bg-primary-light/20"
+                >
+                  {showUnbiased ? "Unbiased" : "Biased"}
+                </Badge>
+              )}
               <Button
                 variant={showUnbiased ? "default" : "outline"}
                 size="icon"
