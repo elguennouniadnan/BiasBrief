@@ -442,7 +442,9 @@ export default function Home() {
 
             {renderGrid(filteredArticles)}
             <div className="text-center mt-12">
-              <Link href="/stories">
+              <Link
+                href={selectedCategory && selectedCategory !== "All" ? `/stories?category=${encodeURIComponent(selectedCategory)}` : "/stories"}
+              >
                 <Button size="lg" className="px-8">
                   Read more stories
                   <ArrowRight className="ml-2 h-5 w-5" />

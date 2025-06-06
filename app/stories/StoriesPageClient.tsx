@@ -66,8 +66,14 @@ export default function StoriesPageClient({ initialArticles, initialCategories, 
   const router = useRouter();
   const searchParams = useSearchParams();
 
-  // On mount, check for ?search= param and set searchQuery
+  // On mount, check for ?category= param and set selectedCategory
   useEffect(() => {
+    const urlCategory = searchParams?.get("category");
+    if (urlCategory && urlCategory !== selectedCategory) {
+      setSelectedCategory(urlCategory);
+      setCurrentPage(1); // Always reset to page 1 on category change
+    }
+    // Also handle ?search= param as before
     const urlSearch = searchParams?.get("search") || "";
     if (urlSearch && urlSearch !== searchQuery) {
       setSearchQuery(urlSearch);
