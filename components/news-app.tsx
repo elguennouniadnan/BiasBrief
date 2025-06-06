@@ -141,365 +141,64 @@ export function NewsApp() {
     trackEvents.bookmarkToggle(articleId, newIsBookmarked);
   };
 
-  // Fetch main feed articles from API
-  const fetchArticles = async () => {
-    try {
-      setIsLoading(true)
-      const params = new URLSearchParams()
-      if (searchQuery) params.append('q', searchQuery)
-      params.append('page', String(currentPage))
-      params.append('pageSize', String(articlesPerPage))
-      params.append('sortOrder', sortOrder)
-      if (searchQuery) {
-        // No preferredCategories/category param
-      } else if (customNewsEnabled && preferredCategories.length > 0 && (!selectedCategory || selectedCategory === 'All')) {
-        params.append('preferredCategories', preferredCategories.join(','))
-      } else if (selectedCategory && selectedCategory !== 'All') {
-        params.append('category', selectedCategory)
-      }
-      const response = await fetch(`/api/news?${params.toString()}`)
-      if (!response.ok) throw new Error('Failed to fetch articles')
-      const data = await response.json()
-      setMainFeedArticles(data.articles)
-      setTotalCount(data.totalCount)
-      setTotalPages(Math.max(1, Math.ceil(data.totalCount / articlesPerPage)))
+  // --- FRONT PAGE ARTICLES CACHE LOGIC ---
+  const FRONT_PAGE_CACHE_KEY = 'frontPageArticlesCache';
+  const FRONT_PAGE_CACHE_TTL = 30 * 60 * 1000; // 30 minutes
+  const frontPageArticlesCacheRef = useRef<Record<string, { articles: Article[]; timestamp: number }>>({});
 
-    } catch (error) {
-      console.error('Error fetching articles:', error)
-    } finally {
-      setIsLoading(false)
-    }
-  }
-
+  // Hydrate in-memory cache from localStorage on mount
   useEffect(() => {
-    if (typeof window !== "undefined") {
-      const biasMode = localStorage.getItem("biasMode") === "true"
-      if (biasMode !== null) {
-        setIsBiasedMode(biasMode)
-      }
-
-      const savedTheme = localStorage.getItem("theme")
-      if (savedTheme) {
-        setTheme(savedTheme)
-      }
-
-      const savedBookmarks = localStorage.getItem("bookmarks")
-      if (savedBookmarks) {
-        setBookmarks(JSON.parse(savedBookmarks))
-      }
-
-      const savedPreferredCategories = localStorage.getItem("preferredCategories")
-      if (savedPreferredCategories) {
-        let parsed: unknown
+    if (typeof window !== 'undefined') {
+      const raw = localStorage.getItem(FRONT_PAGE_CACHE_KEY);
+      if (raw) {
         try {
-          parsed = JSON.parse(savedPreferredCategories)
-        } catch {
-          parsed = []
-        }
-        if (Array.isArray(parsed) && parsed.every((c: unknown): c is string => typeof c === 'string')) {
-          setPreferredCategories(parsed)
-        }
-      }
-
-      const savedCustomNews = localStorage.getItem("customNewsEnabled")
-      if (savedCustomNews !== null) {
-        setCustomNewsEnabled(JSON.parse(savedCustomNews))
-      }
-
-      setMounted(true)
-    }
-  }, [])
-
-  // --- ARTICLES LIST CACHE LOGIC ---
-  // On mount, restore articles list from cache if available and matches current filters/page
-  const cacheKey = getArticlesListCacheKey({
-    page: currentPage,
-    selectedCategory,
-    searchQuery,
-    articlesPerPage,
-    sortOrder,
-    customNewsEnabled,
-    preferredCategories,
-  });
-
-  // On mount or when main feed filters/page change, restore or fetch main feed articles
-  useEffect(() => {
-    if (!mounted || showBookmarksOnly) return;
-    const cache = getArticlesListCache(cacheKey);
-    if (cache) {
-      setMainFeedArticles(cache.articles);
-      setTotalPages(cache.totalPages);
-      setTotalCount(cache.totalCount);
-      setIsLoading(false);
-    } else {
-      fetchArticles();
-    }
-  }, [mounted, cacheKey, showBookmarksOnly]);
-
-  // After fetching main feed articles, update the cache
-  useEffect(() => {
-    if (!isLoading && mainFeedArticles.length > 0 && !showBookmarksOnly) {
-      setArticlesListCache(cacheKey, {
-        articles: mainFeedArticles,
-        page: currentPage,
-        totalPages,
-        totalCount,
-        filters: {
-          searchQuery,
-          selectedCategory,
-          articlesPerPage,
-          sortOrder,
-          customNewsEnabled,
-          preferredCategories: [...preferredCategories],
-        },
-        timestamp: Date.now(),
-      });
-    }
-  }, [mainFeedArticles, isLoading, cacheKey, totalPages, totalCount, showBookmarksOnly]);
-
-  // Prevent resetting to page 1 if restoring from history.state
-  useEffect(() => {
-    // Only reset to page 1 if NOT restoring from history.state
-    if (
-      typeof window !== 'undefined' &&
-      (!window.history.state || !window.history.state.lastPage)
-    ) {
-      setCurrentPage(1);
-    }
-  }, [selectedCategory, showBookmarksOnly, preferredCategories, searchQuery])
-
-  // Remove only obsolete localStorage keys
-  useEffect(() => {
-    if (mounted) {
-      const keysToRemove = ["cardSize", "defaultBiasMode", "biasMode"]
-      keysToRemove.forEach((key) => {
-        localStorage.removeItem(key)
-      })
-    }
-  }, [mounted])
-
-  // Sync preferredCategories from localStorage when customNewsEnabled is toggled on
-  useEffect(() => {
-    if (customNewsEnabled) {
-      let stored: unknown = []
-      if (typeof window !== 'undefined') {
-        try {
-          stored = JSON.parse(localStorage.getItem("preferredCategories") || "[]")
-        } catch {
-          stored = []
-        }
-      }
-      if (Array.isArray(stored) && JSON.stringify(stored) !== JSON.stringify(preferredCategories)) {
-        setPreferredCategories(stored)
-      }
-    }
-  }, [customNewsEnabled])
-
-  // Listen for changes to preferredCategories in localStorage when customNewsEnabled is on
-  useEffect(() => {
-    if (!customNewsEnabled) return;
-    const handleStorage = (event: StorageEvent) => {
-      if (event.key === "preferredCategories") {
-        let stored: unknown = [];
-        try {
-          stored = JSON.parse(event.newValue || "[]");
-        } catch {
-          stored = [];
-        }
-        if (Array.isArray(stored) && JSON.stringify(stored) !== JSON.stringify(preferredCategories)) {
-          if (Array.isArray(stored) && stored.every((item) => typeof item === 'string')) {
-            if (Array.isArray(stored) && stored.every((item) => typeof item === 'string')) {
-              setPreferredCategories(stored);
-            }
-          }
-        }
-      }
-    };
-    window.addEventListener("storage", handleStorage);
-    return () => window.removeEventListener("storage", handleStorage);
-  }, [customNewsEnabled, preferredCategories]);
-
-  // Also, when customNewsEnabled is on, poll localStorage for changes (for same-tab updates)
-  useEffect(() => {
-    if (!customNewsEnabled) return;
-    let last = JSON.stringify(preferredCategories);
-    const interval = setInterval(() => {
-      let stored: unknown = [];
-      try {
-        stored = JSON.parse(localStorage.getItem("preferredCategories") || "[]");
-      } catch {
-        stored = [];
-      }
-      const current = JSON.stringify(stored);
-      if (current !== last) {
-        if (Array.isArray(stored) && stored.every((item) => typeof item === 'string')) {
-          setPreferredCategories(stored);
-        }
-        last = current;
-      }
-    }, 1000);
-    return () => clearInterval(interval);
-  }, [customNewsEnabled, preferredCategories]);
-
-  // When showBookmarksOnly is enabled, use allArticles directly (already fetched from API by IDs)
-  const allTabArticles = useMemo(() => {
-    return mainFeedArticles.filter((article) => {
-      const matchesCategory = selectedCategory === "All" || article.section === selectedCategory
-      return matchesCategory
-    })
-  }, [mainFeedArticles, selectedCategory])
-
-  // Always extract all categories from allArticles, not just preferred
-  useEffect(() => {
-    if (mainFeedArticles.length > 0) {
-      const sections = ['All', ...Array.from(new Set(mainFeedArticles.map((a) => String(a.section || ''))))]
-      setCategories(sections)
-    }
-  }, [mainFeedArticles])
-
-  const customTabArticles = useMemo(() => {
-    if (!preferredCategories.length) return []
-    return mainFeedArticles.filter((article) => {
-      const matchesPreferences = article.category && preferredCategories.includes(article.category)
-      const matchesBookmarks = !showBookmarksOnly || bookmarks.includes(article.id)
-      return matchesPreferences && matchesBookmarks
-    })
-  }, [mainFeedArticles, preferredCategories, showBookmarksOnly, bookmarks])
-
-  useEffect(() => {
-    if (mounted) {
-      const fontSizes = {
-        small: "0.925rem",
-        medium: "1rem",
-        large: "1.125rem"
-      }
-      document.documentElement.style.fontSize = fontSizes[fontSize as keyof typeof fontSizes] || "1rem"
-    }
-  }, [fontSize, mounted])
-
-  // New: fetch all categories/sections from /api/sections (1 doc read)
-  useEffect(() => {
-    async function fetchAllCategories() {
-      let cached = null;
-      if (typeof window !== 'undefined') {
-        try {
-          cached = JSON.parse(localStorage.getItem('allCategories') || 'null');
+          frontPageArticlesCacheRef.current = JSON.parse(raw);
         } catch {}
       }
-      if (Array.isArray(cached) && cached.length > 0) {
-        setAllCategories(cached);
-        return;
-      }
-      try {
-        const response = await fetch('/api/sections')
-        if (!response.ok) return
-        const data = await response.json()
-        if (Array.isArray(data.categories) && data.categories.length > 0) {
-          const categories = ['All', ...data.categories.filter((c: string) => c && c !== 'All')];
-          setAllCategories(categories)
-          if (typeof window !== 'undefined') {
-            localStorage.setItem('allCategories', JSON.stringify(categories));
-          }
-        }
-      } catch (e) {
-        // ignore
-      }
     }
-    fetchAllCategories()
-  }, [])
+  }, []);
 
-  // Calculate totalPages and totalCount based on bookmarks when showBookmarksOnly is enabled
+  // Persist in-memory cache to localStorage when it changes
   useEffect(() => {
-    if (showBookmarksOnly) {
-      const count = bookmarks.length;
-      setTotalCount(count);
-      setTotalPages(Math.max(1, Math.ceil(count / articlesPerPage)));
-      // If currentPage is out of range after bookmarks change, reset to 1
-      if (currentPage > Math.ceil(count / articlesPerPage)) {
-        setCurrentPage(1);
-      }
-    }
-  }, [showBookmarksOnly, bookmarks, articlesPerPage]);
-
-  // Remove bookmarksListCache and related logic
-  // useEffect to fetch all bookmarked articles when showBookmarksOnly is enabled
-  useEffect(() => {
-    if (!showBookmarksOnly) return;
-    // Always fetch all bookmarked articles from API
-    const fetchAllBookmarkedArticles = async () => {
-      if (bookmarks.length > 0) {
-        try {
-          const response = await fetch(`/api/news?ids=${bookmarks.join(',')}`);
-          if (!response.ok) throw new Error('Failed to fetch bookmarked articles');
-          const data = await response.json();
-          setBookmarksArticles(data.articles);
-        } catch (error) {
-          setBookmarksArticles([]);
-        }
-      } else {
-        setBookmarksArticles([]);
-      }
-    };
-    fetchAllBookmarkedArticles();
-  }, [showBookmarksOnly, bookmarks]);
-
-  // On mount, restore selectedCategory and currentPage from history.state if available
-  useEffect(() => {
-    if (typeof window !== 'undefined' && window.history.state) {
-      const { lastCategory, lastPage } = window.history.state;
-      if (lastCategory && lastCategory !== selectedCategory) {
-        setSelectedCategory(lastCategory);
-      }
-      if (lastPage && lastPage !== currentPage) {
-        setCurrentPage(lastPage);
-      }
-    }
-  }, [mounted]);
-
-  // When changing page, store lastPage, lastCategory, lastCustomNewsEnabled in history.state for restoration
-  const handlePageChange = (page: number) => {
-    setCurrentPage(page);
     if (typeof window !== 'undefined') {
-      window.history.replaceState({
-        ...(window.history.state || {}),
-        lastPage: page,
-        lastCategory: selectedCategory,
-        lastCustomNewsEnabled: customNewsEnabled,
-      }, '');
+      localStorage.setItem(FRONT_PAGE_CACHE_KEY, JSON.stringify(frontPageArticlesCacheRef.current));
+    }
+  }, [mainFeedArticles, selectedCategory]);
+
+  // Fetch front-page articles by category with 30min cache
+  const fetchFrontPageArticles = async (category: string) => {
+    setIsLoading(true);
+    const now = Date.now();
+    const cacheEntry = frontPageArticlesCacheRef.current[category];
+    if (cacheEntry && now - cacheEntry.timestamp < FRONT_PAGE_CACHE_TTL) {
+      setMainFeedArticles(cacheEntry.articles);
+      setIsLoading(false);
+      return;
+    }
+    try {
+      const response = await fetch(`/api/front-page-articles?section=${encodeURIComponent(category)}`);
+      if (!response.ok) throw new Error('Failed to fetch front page articles');
+      const data = await response.json();
+      // Always expect data.articles to be an array
+      setMainFeedArticles(Array.isArray(data.articles) ? data.articles : []);
+      frontPageArticlesCacheRef.current[category] = { articles: Array.isArray(data.articles) ? data.articles : [], timestamp: now };
+      // Persist immediately
+      if (typeof window !== 'undefined') {
+        localStorage.setItem(FRONT_PAGE_CACHE_KEY, JSON.stringify(frontPageArticlesCacheRef.current));
+      }
+    } catch (error) {
+      setMainFeedArticles([]);
+    } finally {
+      setIsLoading(false);
     }
   };
 
-  // Only show correct pagination for bookmarks or main feed
-  const paginationTotalPages = showBookmarksOnly ? Math.max(1, Math.ceil(bookmarks.length / articlesPerPage)) : totalPages;
-
-  // Always sync customNewsEnabled to localStorage when it changes
+  // Replace fetchArticles logic for front page (no search, no bookmarks)
   useEffect(() => {
-    if (typeof window !== 'undefined') {
-      localStorage.setItem("customNewsEnabled", JSON.stringify(customNewsEnabled));
-    }
-  }, [customNewsEnabled]);
+    if (!mounted || showBookmarksOnly || searchQuery.trim()) return;
+    fetchFrontPageArticles(selectedCategory);
+  }, [mounted, selectedCategory, showBookmarksOnly, searchQuery]);
 
-  // Fix: Remove updatePreferredCategories (use setPreferredCategories directly)
-  // Fix: Define displayedArticles for rendering
-  const displayedArticles = useMemo(() => {
-    if (showBookmarksOnly) {
-      // Show all bookmarked articles (no pagination)
-      return bookmarksArticles;
-    } else if (customNewsEnabled && (!selectedCategory || selectedCategory === 'All')) {
-      return mainFeedArticles.filter((article) => {
-        const matchesPreferences = article.category && preferredCategories.includes(article.category)
-        const matchesBookmarks = !showBookmarksOnly || bookmarks.includes(article.id)
-        return matchesPreferences && matchesBookmarks
-      });
-    } else {
-      return mainFeedArticles.filter((article) => {
-        const matchesCategory = selectedCategory === "All" || article.section === selectedCategory
-        return matchesCategory
-      });
-    }
-  }, [showBookmarksOnly, bookmarksArticles, mainFeedArticles, customNewsEnabled, selectedCategory, preferredCategories, bookmarks]);
-
-  // Handler to update unbiased title in the correct article list
   const handleUnbiasTitle = (id: string, unbiasedTitle: string) => {
     if (showBookmarksOnly) {
       setBookmarksArticles(articles => {

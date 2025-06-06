@@ -1,6 +1,6 @@
 "use client"
 
-import { useEffect, useState } from "react"
+import { useEffect, useRef, useState } from "react"
 import { Navbar } from "@/components/navbar"
 import { CategoryFilter } from "@/components/category-filter"
 import { ThemeProvider } from "@/components/theme-provider"
@@ -9,8 +9,6 @@ import { GridArticleCard } from "@/components/grid-article-card"
 import { Button } from "@/components/ui/button"
 import Link from "next/link"
 import { ArrowRight } from "lucide-react"
-import { collection, getDocs, query, orderBy } from "firebase/firestore"
-import { db } from "@/lib/firebase"
 import type { Article } from "@/lib/types"
 
 export default function Home() {
@@ -26,18 +24,65 @@ export default function Home() {
   const [fontSize, setFontSize] = useState("medium")
   const [articlesPerPage, setArticlesPerPage] = useState(9)
 
+  // --- FRONT PAGE ARTICLES CACHE LOGIC ---
+  const FRONT_PAGE_CACHE_KEY = 'frontPageArticlesCache';
+  const FRONT_PAGE_CACHE_TTL = 30 * 60 * 1000; // 30 minutes
+  const frontPageArticlesCacheRef = useRef<Record<string, { articles: Article[]; timestamp: number }>>({});
+
+  // Hydrate in-memory cache from localStorage on mount
   useEffect(() => {
-    async function fetchArticles() {
-      const q = query(collection(db, "articles"), orderBy("date", "desc"))
-      const querySnapshot = await getDocs(q)
-      const fetched: Article[] = []
-      querySnapshot.forEach((doc) => {
-        fetched.push({ id: doc.id, ...doc.data() } as Article)
-      })
-      setArticles(fetched)
+    if (typeof window !== 'undefined') {
+      const raw = localStorage.getItem(FRONT_PAGE_CACHE_KEY);
+      if (raw) {
+        try {
+          frontPageArticlesCacheRef.current = JSON.parse(raw);
+        } catch {}
+      }
     }
-    fetchArticles()
-  }, [])
+  }, []);
+
+  // Normalizes a raw article object to the Article type expected by the UI
+  function normalizeArticle(raw: any): Article {
+    return {
+      id: String(raw.id || raw.fields?.id || raw._id || raw.webUrl || raw.url || ""),
+      titleBiased: raw.titleBiased || raw.webTitle || raw.title || raw.fields?.headline || "",
+      titleUnbiased: raw.titleUnbiased || raw.fields?.unbiasedTitle || raw.unbiasedTitle || "",
+      snippet: raw.snippet || raw.fields?.trailText || raw.fields?.standfirst || raw.summary || "",
+      imageUrl: raw.imageUrl || raw.fields?.thumbnail || raw.fields?.main || raw.thumbnail || "",
+      category: raw.category || raw.section || raw.sectionName || raw.sectionId || "",
+      section: raw.section || raw.sectionName || raw.sectionId || raw.category || "",
+      date: typeof raw.date === 'string' ? raw.date : (raw.webPublicationDate ? (typeof raw.webPublicationDate === "object" ? new Date(raw.webPublicationDate.seconds * 1000).toISOString() : new Date(raw.webPublicationDate).toISOString()) : ""),
+      source: raw.source || raw.publication || raw.fields?.source || "",
+      body: raw.body || raw.fields?.body || raw.content || "",
+      ...raw
+    };
+  }
+
+  // Fetch front-page articles by category with 30min cache
+  useEffect(() => {
+    const fetchFrontPageArticles = async (category: string) => {
+      const now = Date.now();
+      const cacheEntry = frontPageArticlesCacheRef.current[category];
+      if (cacheEntry && now - cacheEntry.timestamp < FRONT_PAGE_CACHE_TTL) {
+        setArticles(cacheEntry.articles);
+        return;
+      }
+      try {
+        const response = await fetch(`/api/front-page-articles?section=${encodeURIComponent(category)}`);
+        if (!response.ok) throw new Error('Failed to fetch front page articles');
+        const data = await response.json();
+        const normalized = Array.isArray(data.articles) ? data.articles.map(normalizeArticle) : [];
+        setArticles(normalized);
+        frontPageArticlesCacheRef.current[category] = { articles: normalized, timestamp: now };
+        if (typeof window !== 'undefined') {
+          localStorage.setItem(FRONT_PAGE_CACHE_KEY, JSON.stringify(frontPageArticlesCacheRef.current));
+        }
+      } catch (error) {
+        setArticles([]);
+      }
+    };
+    fetchFrontPageArticles(selectedCategory);
+  }, [selectedCategory]);
 
   useEffect(() => {
     const savedBookmarks = localStorage.getItem("bookmarks")
