@@ -1,0 +1,6 @@
+components/ui/toast-listener.tsx
+components/ui/use-toast.ts
+components/ui/toaster.tsx
+hooks/use-toast.ts
+
+# These files are now obsolete due to Sonner toast system. Remove them safely.
