@@ -1,4 +1,4 @@
-import { NewsApp } from "@/components/news-app"
+import NewsApp from "@/components/news-app"
 
 export default function Home() {
   return (

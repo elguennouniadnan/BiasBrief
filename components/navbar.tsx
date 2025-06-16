@@ -7,7 +7,6 @@ import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Switch } from "@/components/ui/switch"
 import { Label } from "@/components/ui/label"
-import { useTheme } from "next-themes"
 import { useMediaQuery } from "@/hooks/use-media-query"
 import { SettingsDialog } from "@/components/settings-dialog"
 import { UserDropdown } from "@/components/user-dropdown"
@@ -27,20 +26,18 @@ interface NavbarProps {
   setShowBookmarksOnly: (show: boolean) => void
   preferredCategories: string[]
   setPreferredCategories: (categories: string[]) => void
-  themePreference: boolean
-  setThemePreference: (dark: boolean) => void
-  fontSize: string
-  setFontSize: (size: string) => void
   articlesPerPage: number
   setArticlesPerPage: (count: number) => void
-  cardSize: number
-  setCardSize: (size: number) => void
   sortOrder: 'new-to-old' | 'old-to-new'
   setSortOrder: (order: 'new-to-old' | 'old-to-new') => void
   categories: string[]
   customNewsEnabled: boolean
   setCustomNewsEnabled: (enabled: boolean) => void
-  allCategories: string[] // Added canonical categories prop
+  allCategories: string[]
+  theme: string
+  toggleTheme: () => void
+  setTheme: (theme: string) => void
+  isLoading: boolean // <-- Added here
 }
 
 export function Navbar({
@@ -50,22 +47,20 @@ export function Navbar({
   setShowBookmarksOnly,
   preferredCategories,
   setPreferredCategories,
-  themePreference,
-  setThemePreference,
-  fontSize,
-  setFontSize,
   articlesPerPage,
   setArticlesPerPage,
-  cardSize,
-  setCardSize,
   sortOrder,
   setSortOrder,
+  categories,
   customNewsEnabled,
   setCustomNewsEnabled,
-  allCategories, // Added canonical categories prop
+  allCategories,
+  theme,
+  toggleTheme,
+  setTheme,
+  isLoading, // <-- Added here
 }: NavbarProps) {
-  const { theme, setTheme } = useTheme()
-  const { user } = useAuth()
+  const { user, updateUser } = useAuth();
   const [mounted, setMounted] = useState(false)
   const [isSettingsOpen, setIsSettingsOpen] = useState(false)
   const [scrolled, setScrolled] = useState(false)
@@ -78,6 +73,8 @@ export function Navbar({
   const searchInputRef = React.useRef<HTMLInputElement>(null)
   const pathname = usePathname();
   const isArticlePage = pathname.startsWith('/article/');
+  // Determine if we should hide the Show Bookmarks Only button (hide on homepage)
+  const isHomePage = pathname === "/latest-news";
 
   useEffect(() => {
     setMounted(true)
@@ -96,12 +93,6 @@ export function Navbar({
       searchInputRef.current.focus()
     }
   }, [searchBarOpen])
-
-  const handleThemeChange = () => {
-    const newTheme = theme === 'light' ? 'dark' : 'light'
-    setTheme(newTheme)
-    setThemePreference(newTheme === 'dark')
-  }
 
   useEffect(() => {
     const handleClickOutside = (event: MouseEvent) => {
@@ -147,7 +138,59 @@ export function Navbar({
     return () => clearTimeout(timer);
   }, [user]);
 
-  const ThemeIcon = mounted ? theme === "dark" ? Sun : Moon : null
+  // Remove this useEffect:
+  // useEffect(() => {
+  //   if (!user) return;
+  //   // Only update if user is signed in and theme changese as typeof user.preferences.theme } });
+  //   updateUser({ preferences: { ...user.preferences, theme } });
+  //   // eslint-disable-next-line react-hooks/exhaustive-deps
+  // }, [theme, user]);
+
+  // Wrap toggleTheme to update Firestore only on user action
+  const handleToggleTheme = () => {
+    toggleTheme();
+    if (user) {
+      // theme will be updated after toggleTheme, so compute the new value
+      const newTheme = theme === "dark" ? "light" : "dark";
+      updateUser({ preferences: { ...user.preferences, theme: newTheme as import("@/lib/types").ThemeOption } });
+    }
+  };
+
+  // Optimistic theme icon: show Sun by default, then correct icon after mount
+  const ThemeIcon = !mounted ? Sun : theme === "dark" ? Sun : Moon
+
+  // Sync local theme to user.preferences.theme on sign-in
+  useEffect(() => {
+    if (user && user.preferences?.theme && user.preferences.theme !== theme) {
+      setTheme(user.preferences.theme);
+    }
+    // Only run when user or theme changes
+  }, [user, theme, setTheme]);
+
+  // Sync preferredCategories from user profile to localStorage on sign-in
+  useEffect(() => {
+    if (user && user.preferences?.preferredCategories) {
+      try {
+        localStorage.setItem(
+          "preferredCategories",
+          JSON.stringify(user.preferences.preferredCategories)
+        );
+      } catch (e) {
+        // Fallback: ignore if localStorage is unavailable
+      }
+    }
+  }, [user]);
+
+  // Sync articlesPerPage from user profile to local state on sign-in
+  useEffect(() => {
+    if (
+      user &&
+      user.preferences?.articlesPerPage &&
+      user.preferences.articlesPerPage !== articlesPerPage
+    ) {
+      setArticlesPerPage(user.preferences.articlesPerPage);
+    }
+  }, [user, articlesPerPage, setArticlesPerPage]);
 
   return (
     <>
@@ -161,7 +204,7 @@ export function Navbar({
       <header className={`sticky top-0 z-50 pb-3 rounded-full w-full backdrop-blur supports-[backdrop-filter]:bg-background/40 shadow-sm ${
         scrolled ? "shadow-sm border-b border-border/50" : ""
       }`}>
-        <div className="w-full md:container md:px-4 mx-auto">
+        <div className="w-full">
           <div className="flex items-center justify-between h-16">
             <div className="flex-shrink-0 mt-1 mx-1 md:mr-2 md:mt-3">
               <Logo className="w-[200px] h-[70px] md:w-[220px] md:h-[80px]" />
@@ -239,8 +282,8 @@ export function Navbar({
                 </div>
 
                 <div className="flex items-center gap-3 min-w-0">
-                  {/* Hide Show Bookmarks Only button on article page */}
-                  {!isArticlePage && (
+                  {/* Hide Show Bookmarks Only button on article page and homepage */}
+                  {!(isArticlePage || isHomePage) && (
                     <Button
                       variant={showBookmarksOnly ? "default" : "ghost"}
                       size="icon"
@@ -260,15 +303,12 @@ export function Navbar({
                   <Button
                     variant="ghost"
                     size="icon"
-                    onClick={handleThemeChange}
+                    aria-label="Toggle theme"
+                    onClick={handleToggleTheme}
                     title="Toggle theme"
-                    className="h-9 w-9 rounded-full text-amber-500 dark:text-amber-500 dark:hover:shadow-md hover:shadow-md p-0 transition-all duration-200 hover:bg-blue-950 dark:hover:bg-amber-400 dark:hover:text-amber-700 hover:text-amber-400 hover:scale-110 opacity-90 hover:opacity-100 flex items-center justify-center"
+                    className="h-9 w-9 rounded-full text-amber-500 dark:text-amber-500 dark:hover:shadow-md hover:shadow-md p-0 transition-all duration-200 hover:bg-blue-950 dark:hover:bg-amber-500 dark:hover:opacity-95 dark:hover:text-amber-700 hover:text-amber-500 hover:scale-110 opacity-90 hover:opacity-100 flex items-center justify-center"
                   >
-                    {ThemeIcon && (
-                      <span className="h-5 w-5 inline-flex items-center justify-center dark:bg-clip-text">
-                        <ThemeIcon className="h-5 w-5 dark:bg-clip-text" />
-                      </span>
-                    )}
+                    <ThemeIcon className="w-6 h-6" />
                   </Button>
 
                   {user ? (
@@ -362,8 +402,8 @@ export function Navbar({
                   )}
                 </div>
 
-                {/* Hide Show Bookmarks Only button on article page */}
-                {!isArticlePage && (
+                {/* Hide Show Bookmarks Only button on article page and homepage */}
+                {!isArticlePage && !isHomePage && (
                   <Button
                     variant={showBookmarksOnly ? "default" : "ghost"}
                     size="icon"
@@ -383,15 +423,11 @@ export function Navbar({
                 <Button
                   variant="ghost"
                   size="icon"
-                  onClick={handleThemeChange}
-                  title="Toggle theme"
-                  className="h-9 w-9 rounded-full text-amber-500 dark:text-amber-500 dark:hover:shadow-md hover:shadow-md p-0 transition-all duration-200 hover:bg-blue-950 dark:hover:bg-amber-500 dark:hover:opacity-95 dark:hover:text-amber-700 hover:text-amber-500 hover:scale-110 opacity-90 hover:opacity-100 flex items-center justify-center mr-2"
+                  aria-label="Toggle theme"
+                  onClick={handleToggleTheme}
+                  className="rounded-full hover:bg-gray-200 dark:hover:bg-gray-800 transition-colors mr-2"
                 >
-                  {ThemeIcon && (
-                    <span className="h-5 w-5 inline-flex items-center justify-center dark:bg-clip-text">
-                      <ThemeIcon className="h-5 w-5 dark:bg-clip-text" />
-                    </span>
-                  )}
+                  <ThemeIcon className="w-6 h-6" />
                 </Button>
 
                 {/* User avatar or sign in/settings for mobile */}
@@ -428,8 +464,6 @@ export function Navbar({
           categories={Array.isArray(allCategories) ? allCategories : []}
           preferredCategories={preferredCategories}
           setPreferredCategories={setPreferredCategories}
-          themePreference={themePreference}
-          setThemePreference={setThemePreference}
           articlesPerPage={articlesPerPage}
           setArticlesPerPage={setArticlesPerPage}
           sortOrder={sortOrder}
@@ -439,6 +473,35 @@ export function Navbar({
         {/* Auth modal - separate from UserDropdown to avoid unmounting issues */}
         <AuthModal isOpen={authModalOpen} onClose={() => setAuthModalOpen(false)} defaultTab={authModalTab} />
       </header>
+
+    {searchQuery.trim() ? (
+      <main className="flex-1 container px-1 py-2">
+        {/* Show back button if search is active, otherwise show category filter */}
+          <div className="flex items-center justify-between px-4 py-2">
+            <Button
+              variant="ghost"
+              onClick={() => setSearchQuery("")}
+              className=" hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors"
+            >
+              <svg className="mr-2 h-4 w-4" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" d="M15 19l-7-7 7-7" /></svg>
+              Back to list
+            </Button>
+            <span
+              className="text-gray-600 dark:text-gray-300 font-medium truncate max-w-[60vw] text-right cursor-pointer underline hover:text-primary"
+              title="Click to edit this search"
+              onClick={() => {
+                setSearchBarOpen(true);
+                setPendingSearch(searchQuery);
+                if (searchInputRef.current) {
+                  searchInputRef.current.focus();
+                }
+              }}
+            >
+              Search results for: "{searchQuery}"
+            </span>
+          </div>
+      </main>
+    ) : null}
     </>
   )
 }

@@ -44,7 +44,6 @@ export default function ArticlePage() {
   const [preferredCategories, setPreferredCategories] = useState<string[]>([])
   const [themePreference, setThemePreference] = useState(false)
   const [articlesPerPage, setArticlesPerPage] = useState(10)
-  const [cardSize, setCardSize] = useState(1)
   const [sortOrder, setSortOrder] = useState<'new-to-old' | 'old-to-new'>('new-to-old')
   const [settingsOpen, setSettingsOpen] = useState(false)
   const [allCategories, setAllCategories] = useState<string[]>([])
@@ -560,36 +559,24 @@ export default function ArticlePage() {
   return (
     <AuthProvider>
       <div className="min-h-screen relative">
-        <Navbar 
+        <Navbar
           searchQuery={searchQuery}
-          setSearchQuery={(query) => {
-            setSearchQuery(query);
-            trackEvents.search(query);
-          }}
+          setSearchQuery={setSearchQuery}
           showBookmarksOnly={showBookmarksOnly}
           setShowBookmarksOnly={setShowBookmarksOnly}
           preferredCategories={preferredCategories}
           setPreferredCategories={setPreferredCategories}
-          themePreference={themePreference}
-          setThemePreference={(isDark) => {
-            setTheme(isDark ? "dark" : "light");
-            trackEvents.toggleTheme(isDark ? 'dark' : 'light');
-          }}
-          fontSize={fontSize}
-          setFontSize={setFontSize}
           articlesPerPage={articlesPerPage}
           setArticlesPerPage={setArticlesPerPage}
-          cardSize={cardSize}
-          setCardSize={setCardSize}
           sortOrder={sortOrder}
-          setSortOrder={(order) => {
-            setSortOrder(order);
-            trackEvents.sortOrderChange(order);
-          }}
-          categories={article.category ? [article.category] : []}
+          setSortOrder={setSortOrder}
+          categories={allCategories}
           customNewsEnabled={customNewsEnabled}
           setCustomNewsEnabled={setCustomNewsEnabled}
           allCategories={allCategories}
+          theme={theme ?? "light"}
+          toggleTheme={() => setTheme(theme === "dark" ? "light" : "dark")}
+          setTheme={setTheme}
         />
         <SettingsDialog
           open={settingsOpen}
@@ -597,8 +584,6 @@ export default function ArticlePage() {
           categories={allCategories}
           preferredCategories={preferredCategories}
           setPreferredCategories={setPreferredCategories}
-          themePreference={themePreference}
-          setThemePreference={setThemePreference}
           articlesPerPage={articlesPerPage}
           setArticlesPerPage={setArticlesPerPage}
           sortOrder={sortOrder}

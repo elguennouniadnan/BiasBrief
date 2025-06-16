@@ -5,14 +5,11 @@
  * and provide type-safety and error handling
  */
 
-import { UserPreferences, Article, User, StorageResult, ThemeOption, FontSize, ReadingHistoryItem } from './types';
+import { UserPreferences, Article, User, StorageResult, ThemeOption, ReadingHistoryItem } from './types';
 
 // Storage keys
 const STORAGE_KEYS = {
-  THEME: 'bias-brief-theme',
-  DEFAULT_BIAS_MODE: 'bias-brief-default-bias-mode',
-  FONT_SIZE: 'bias-brief-font-size',
-  CARD_SIZE: 'bias-brief-card-size',
+  THEME: 'theme',
   ARTICLES_PER_PAGE: 'bias-brief-articles-per-page',
   PREFERRED_CATEGORIES: 'bias-brief-preferred-categories',
   BOOKMARKS: 'bias-brief-bookmarks',
@@ -27,10 +24,7 @@ const STORAGE_KEYS = {
 // Default values
 const DEFAULTS = {
   THEME: 'light' as ThemeOption,
-  DEFAULT_BIAS_MODE: false,
-  FONT_SIZE: 'medium' as FontSize,
-  CARD_SIZE: 3,
-  ARTICLES_PER_PAGE: 15,
+  ARTICLES_PER_PAGE: 9,
   PREFERRED_CATEGORIES: [] as string[],
   BOOKMARKS: [] as string[],
 };
@@ -97,80 +91,7 @@ class StorageService {
       return { success: false, error: error instanceof Error ? error : new Error(String(error)) };
     }
   }
-
-  /**
-   * Get default bias mode setting
-   */
-  getDefaultBiasMode(): StorageResult<boolean> {
-    try {
-      const mode = safeStorage.getItem(STORAGE_KEYS.DEFAULT_BIAS_MODE);
-      return { success: true, data: mode === 'true' ? true : DEFAULTS.DEFAULT_BIAS_MODE };
-    } catch (error) {
-      return { success: false, error: error instanceof Error ? error : new Error(String(error)) };
-    }
-  }
-
-  /**
-   * Save default bias mode setting
-   */
-  saveDefaultBiasMode(mode: boolean): StorageResult<void> {
-    try {
-      const success = safeStorage.setItem(STORAGE_KEYS.DEFAULT_BIAS_MODE, mode.toString());
-      return { success };
-    } catch (error) {
-      return { success: false, error: error instanceof Error ? error : new Error(String(error)) };
-    }
-  }
-
-  /**
-   * Get font size preference
-   */
-  getFontSize(): StorageResult<FontSize> {
-    try {
-      const size = safeStorage.getItem(STORAGE_KEYS.FONT_SIZE);
-      const validSize = (size === 'small' || size === 'medium' || size === 'large') ? size : DEFAULTS.FONT_SIZE;
-      return { success: true, data: validSize as FontSize };
-    } catch (error) {
-      return { success: false, error: error instanceof Error ? error : new Error(String(error)) };
-    }
-  }
-
-  /**
-   * Save font size preference
-   */
-  saveFontSize(size: FontSize): StorageResult<void> {
-    try {
-      const success = safeStorage.setItem(STORAGE_KEYS.FONT_SIZE, size);
-      return { success };
-    } catch (error) {
-      return { success: false, error: error instanceof Error ? error : new Error(String(error)) };
-    }
-  }
-
-  /**
-   * Get card size preference
-   */
-  getCardSize(): StorageResult<number> {
-    try {
-      const size = safeStorage.getItem(STORAGE_KEYS.CARD_SIZE);
-      const parsedSize = size ? parseInt(size, 10) : DEFAULTS.CARD_SIZE;
-      return { success: true, data: parsedSize };
-    } catch (error) {
-      return { success: false, error: error instanceof Error ? error : new Error(String(error)) };
-    }
-  }
-
-  /**
-   * Save card size preference
-   */
-  saveCardSize(size: number): StorageResult<void> {
-    try {
-      const success = safeStorage.setItem(STORAGE_KEYS.CARD_SIZE, size.toString());
-      return { success };
-    } catch (error) {
-      return { success: false, error: error instanceof Error ? error : new Error(String(error)) };
-    }
-  }
+ 
 
   /**
    * Get articles per page preference
@@ -467,9 +388,6 @@ class StorageService {
       // Batch all operations, stopping on first failure
       const operations = [
         this.saveThemePreference(preferences.theme),
-        this.saveDefaultBiasMode(preferences.defaultBiasMode),
-        this.saveFontSize(preferences.fontSize),
-        this.saveCardSize(preferences.cardSize),
         this.saveArticlesPerPage(preferences.articlesPerPage),
         this.savePreferredCategories(preferences.preferredCategories),
         this.saveBookmarks(preferences.bookmarks)
@@ -490,19 +408,15 @@ class StorageService {
   getAllPreferences(): StorageResult<UserPreferences> {
     try {
       const themeResult = this.getThemePreference();
-      const biasModeResult = this.getDefaultBiasMode();
-      const fontSizeResult = this.getFontSize();
-      const cardSizeResult = this.getCardSize();
       const articlesPerPageResult = this.getArticlesPerPage();
       const preferredCategoriesResult = this.getPreferredCategories();
       const bookmarksResult = this.getBookmarks();
       
       // Check if any operation failed
       const results = [
-        themeResult, biasModeResult, fontSizeResult, cardSizeResult,
-        articlesPerPageResult, preferredCategoriesResult, bookmarksResult
+        themeResult, articlesPerPageResult, preferredCategoriesResult, bookmarksResult
       ];
-      
+
       const failed = results.find(result => !result.success);
       if (failed) return { 
         success: false, 
@@ -511,9 +425,6 @@ class StorageService {
       
       const preferences: UserPreferences = {
         theme: themeResult.data || DEFAULTS.THEME,
-        defaultBiasMode: biasModeResult.data ?? DEFAULTS.DEFAULT_BIAS_MODE,
-        fontSize: fontSizeResult.data || DEFAULTS.FONT_SIZE,
-        cardSize: cardSizeResult.data ?? DEFAULTS.CARD_SIZE,
         articlesPerPage: articlesPerPageResult.data ?? DEFAULTS.ARTICLES_PER_PAGE,
         preferredCategories: preferredCategoriesResult.data || DEFAULTS.PREFERRED_CATEGORIES,
         bookmarks: bookmarksResult.data || DEFAULTS.BOOKMARKS

@@ -48,7 +48,7 @@ export function useArticles({
   initialShowBookmarksOnly = false,
   initialPreferredCategories = [],
   initialSortOrder = 'new-to-old',
-  articlesPerPage = 15,
+  articlesPerPage = 9,
 }: UseArticlesProps = {}): UseArticlesReturn {
   const [allArticles, setAllArticles] = useState<Article[]>([]);
   const [categories, setCategories] = useState<string[]>(["All"]);
@@ -75,7 +75,8 @@ export function useArticles({
     if (mounted) {
       const result = storageService.getBookmarks();
       if (result.success && result.data) {
-        setBookmarks(result.data);
+        // Convert string[] to number[] if needed
+        setBookmarks((result.data as string[]).map(Number));
       }
     }
   }, [mounted]);
@@ -83,7 +84,8 @@ export function useArticles({
   // Save bookmarks to localStorage when they change
   useEffect(() => {
     if (mounted) {
-      storageService.saveBookmarks(bookmarks);
+      // Convert number[] to string[] for storage
+      storageService.saveBookmarks(bookmarks.map(String));
     }
   }, [bookmarks, mounted]);
 
@@ -100,14 +102,12 @@ export function useArticles({
     const newBookmarks = isCurrentlyBookmarked
       ? bookmarks.filter((id) => id !== articleId)
       : [...bookmarks, articleId];
-    
     setBookmarks(newBookmarks);
-    
     // Use the standardized bookmark tracking method
     if (isCurrentlyBookmarked) {
-      trackEvents.unbookmarkArticle(articleId);
+      trackEvents.unbookmarkArticle(String(articleId));
     } else {
-      trackEvents.bookmarkArticle(articleId);
+      trackEvents.bookmarkArticle(String(articleId));
     }
   };
 
@@ -195,7 +195,8 @@ export function useArticles({
       const matchesCategory = selectedCategory === "All" || article.section === selectedCategory;
       const matchesPreferences = preferredCategories.length === 0 || 
         (article.category && preferredCategories.includes(article.category));
-      const matchesBookmarks = !showBookmarksOnly || bookmarks.includes(article.id);
+      // Convert article.id to number for bookmarks.includes
+      const matchesBookmarks = !showBookmarksOnly || bookmarks.includes(Number(article.id));
       return matchesCategory && matchesPreferences && matchesBookmarks;
     });
 

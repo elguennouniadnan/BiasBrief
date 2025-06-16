@@ -284,7 +284,6 @@ export function ArticleCard({ article, isBookmarked, toggleBookmark, cardSize, o
         </div>
         <CardFooter className="p-2 sm:p-4 pt-0 flex justify-between items-center border-t border-gray-100 dark:border-gray-800">
           <div className="flex flex-col gap-0.5 text-sm mt-2">
-            <span className="font-medium text-gray-700 dark:text-gray-300">{article.source}</span>
             <span className="text-gray-500 dark:text-gray-400 text-xs">{formatDateInUserTimezone(article.date)}</span>
           </div>
           <Button

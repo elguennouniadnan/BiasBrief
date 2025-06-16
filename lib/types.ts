@@ -71,14 +71,8 @@ export interface User {
 export interface UserPreferences {
   /** User's theme preference ('dark' or 'light') */
   theme: ThemeOption;
-  /** Whether to show political bias by default */
-  defaultBiasMode: boolean;
-  /** Font size preference */
-  fontSize: FontSize;
   /** Number of articles to display per page */
   articlesPerPage: number;
-  /** Size of article cards (grid columns) */
-  cardSize: number;
   /** User's preferred article categories */
   preferredCategories: string[];
   /** User's bookmarked article IDs */

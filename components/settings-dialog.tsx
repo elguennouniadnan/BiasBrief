@@ -30,8 +30,6 @@ interface SettingsDialogProps {
   categories: string[]
   preferredCategories: string[]
   setPreferredCategories: (categories: string[]) => void
-  themePreference: boolean
-  setThemePreference: (dark: boolean) => void
   articlesPerPage: number
   setArticlesPerPage: (count: number) => void
   sortOrder: 'new-to-old' | 'old-to-new'
@@ -44,8 +42,6 @@ export function SettingsDialog({
   categories,
   preferredCategories,
   setPreferredCategories,
-  themePreference,
-  setThemePreference,
   articlesPerPage,
   setArticlesPerPage,
   sortOrder,
@@ -53,7 +49,6 @@ export function SettingsDialog({
 }: SettingsDialogProps) {
   const { user, updatePassword, updateUser, providerId } = useAuth()
   const [localPreferredCategories, setLocalPreferredCategories] = useState<string[]>(preferredCategories)
-  const [localThemePreference, setLocalThemePreference] = useState(themePreference)
   const [localArticlesPerPage, setLocalArticlesPerPage] = useState(articlesPerPage)
   const [localSortOrder, setLocalSortOrder] = useState<'new-to-old' | 'old-to-new'>(sortOrder)
   const [activeTab, setActiveTab] = useState("content")
@@ -63,7 +58,6 @@ export function SettingsDialog({
   // Reset local state when dialog opens
   useEffect(() => {
     if (open) {
-      // Always sync with localStorage when dialog opens
       let stored: unknown = []
       if (typeof window !== 'undefined') {
         try {
@@ -73,24 +67,19 @@ export function SettingsDialog({
         }
       }
       setLocalPreferredCategories(Array.isArray(stored) ? stored : [])
-      setLocalThemePreference(themePreference)
       setLocalArticlesPerPage(articlesPerPage)
       setLocalSortOrder(sortOrder)
       setPasswordUpdateSuccess(false)
     }
-  }, [open, themePreference, articlesPerPage, sortOrder, categories])
+  }, [open, articlesPerPage, sortOrder, categories])
 
   const handleSave = async () => {
     setPreferredCategories(localPreferredCategories)
-    // Always update localStorage to reflect the new preferred categories, even if empty
     if (typeof window !== 'undefined') {
       localStorage.setItem("preferredCategories", JSON.stringify(localPreferredCategories))
     }
-    setThemePreference(localThemePreference)
     setArticlesPerPage(localArticlesPerPage)
     setSortOrder(localSortOrder)
-
-    // Update user preferences if logged in
     if (user) {
       updateUser({
         preferences: {
@@ -98,16 +87,12 @@ export function SettingsDialog({
           preferredCategories: localPreferredCategories,
         },
       })
-      // Send updated user data and preferences to webhook
       try {
-        // Gather all preferences (from local state)
         const preferences = {
           ...user.preferences,
           preferredCategories: localPreferredCategories,
-          theme: localThemePreference ? 'dark' : 'light',
           articlesPerPage: localArticlesPerPage,
         }
-        // Build payload and add providerId/emailVerified
         const payload = {
           id: user.id,
           email: user.email,
@@ -126,7 +111,6 @@ export function SettingsDialog({
         console.error("Failed to send updated user data to webhook:", err)
       }
     }
-
     onOpenChange(false)
   }
 
@@ -195,9 +179,8 @@ export function SettingsDialog({
         </DialogHeader>
 
         <Tabs defaultValue="content" value={activeTab} onValueChange={setActiveTab} className="mt-4">
-          <TabsList className={`grid w-full ${user && providerId === "password" ? "grid-cols-3" : "grid-cols-2"}`}>
-            <TabsTrigger value="content">Content</TabsTrigger>
-            <TabsTrigger value="appearance">Display</TabsTrigger>
+          <TabsList className={`grid w-full ${user && providerId === "password" ? "grid-cols-2" : "grid-cols-1"}`}>
+            <TabsTrigger value="content">Preferences</TabsTrigger>
             {user && providerId === "password" && <TabsTrigger value="account">Account</TabsTrigger>}
           </TabsList>
 
@@ -252,23 +235,10 @@ export function SettingsDialog({
                 </Select>
               </div>
             </div>
-          </TabsContent>
 
-          <TabsContent value="appearance" className="space-y-6 mt-4 px-2">
-            <div>
-              <h3 className="text-sm font-medium mb-2">Theme Preference</h3>
-              <div className="flex items-center justify-between">
-                <Label htmlFor="theme-preference">Default to dark mode</Label>
-                <Switch
-                  id="theme-preference"
-                  checked={localThemePreference}
-                  onCheckedChange={setLocalThemePreference}
-                />
-              </div>
-            </div>
 
             <div>
-              <h3 className="text-sm font-medium mb-2">Articles Per Page</h3>
+              <h3 className="text-sm font-medium mb-2">Number of articles per page</h3>
               <div className="relative">
                 <select
                   className="w-full appearance-none rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50 pr-8"
@@ -286,6 +256,7 @@ export function SettingsDialog({
               </div>
             </div>
           </TabsContent>
+
 
           {user && providerId === "password" && (
             <TabsContent value="account" className="space-y-6 mt-4 px-2">

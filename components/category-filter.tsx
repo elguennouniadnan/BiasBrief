@@ -10,9 +10,10 @@ interface CategoryFilterProps {
   categories: string[]
   selectedCategory: string
   setSelectedCategory: (category: string) => void
+  loading?: boolean // Add loading prop
 }
 
-export function CategoryFilter({ categories, selectedCategory, setSelectedCategory }: CategoryFilterProps) {
+export function CategoryFilter({ categories, selectedCategory, setSelectedCategory, loading = false }: CategoryFilterProps) {
   const buttonRefs = useRef<(HTMLButtonElement | null)[]>([])
   const scrollAreaRef = useRef<HTMLDivElement | null>(null)
 
@@ -25,12 +26,30 @@ export function CategoryFilter({ categories, selectedCategory, setSelectedCatego
     }
   }, [selectedCategory, categories])
 
+  // Fallback categories to show while loading or if categories are empty
+  const fallbackCategories = [
+    "All",
+    "World news",
+    "US news",
+    "Sport",
+    "Football",
+    "Music",
+    "UK news",
+    "Society",
+    "Television & radio",
+    "Film",
+    "Education",
+    "Books",
+    "Art and design",
+    "Environment",
+  ]
+
   return (
     <div className="bg-gray-50/60 dark:bg-gray-900/80 backdrop-blur-sm border-b border-gray-300 dark:border-gray-800 sticky top-16 z-10 pt-0.5 transition-colors duration-300 rounded-full mx-4">
       <div className="px-4 my-1 w-full">
         <ScrollArea className="w-full whitespace-nowrap overflow-x-auto" ref={scrollAreaRef}>
           <div className="flex space-x-1 py-2">
-            {categories.map((category: string, idx: number) => {
+            {(loading ? fallbackCategories : categories).map((category: string, idx: number) => {
               const isSelected: boolean = selectedCategory === category
               const categoryColor: string | undefined = category !== "All" ? getCategoryColor(category) : undefined
 

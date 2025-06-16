@@ -18,16 +18,14 @@ import {
   getDoc,
   updateDoc,
 } from "firebase/firestore"
+import type { UserPreferences } from "@/lib/types"
 
 export interface User {
   id: string
   email: string
   name: string
   photoURL?: string
-  preferences: {
-    defaultBiasMode: boolean
-    preferredCategories: string[]
-  }
+  preferences: UserPreferences
 }
 
 interface AuthContextType {
@@ -44,6 +42,7 @@ interface AuthContextType {
   isEmailVerified: boolean
   resendVerificationEmail: () => Promise<void>
   refreshEmailVerificationStatus: () => Promise<void>
+  setUser: (user: User) => void
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined)
@@ -63,15 +62,17 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         let userSnap = await getDoc(userRef)
         let userData = userSnap.exists() ? userSnap.data() : null
         if (!userData) {
-          // Create new user profile
+          // Create new user profile with all preferences fields
           userData = {
             id: firebaseUser.uid,
             email: firebaseUser.email || "",
             name: firebaseUser.displayName || firebaseUser.email?.split("@")[0] || "",
             photoURL: firebaseUser.photoURL || "",
             preferences: {
-              defaultBiasMode: false,
+              theme: 'light',
+              articlesPerPage: 9,
               preferredCategories: [],
+              bookmarks: [],
             },
           }
           await setDoc(userRef, userData)
@@ -121,8 +122,10 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         name,
         photoURL: cred.user.photoURL || "",
         preferences: {
-          defaultBiasMode: false,
+          theme: 'light',
+          articlesPerPage: 9,
           preferredCategories: [],
+          bookmarks: [],
         },
       })
       // Send email verification
@@ -188,8 +191,19 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const updateUser = async (updates: Partial<User>) => {
     if (user) {
       const userRef = doc(db, "users", user.id)
-      await updateDoc(userRef, updates)
-      setUser({ ...user, ...updates })
+      // If updating preferences, merge deeply
+      if (updates.preferences) {
+        await updateDoc(userRef, {
+          preferences: {
+            ...user.preferences,
+            ...updates.preferences,
+          },
+        })
+        setUser({ ...user, preferences: { ...user.preferences, ...updates.preferences } })
+      } else {
+        await updateDoc(userRef, updates)
+        setUser({ ...user, ...updates })
+      }
     }
   }
 
@@ -255,6 +269,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     isEmailVerified,
     resendVerificationEmail,
     refreshEmailVerificationStatus,
+    setUser,
   }
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>

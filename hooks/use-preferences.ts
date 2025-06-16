@@ -8,30 +8,20 @@ import { useTheme } from 'next-themes';
 import { storageService } from '@/lib/storage-service';
 import { trackEvents } from '@/lib/analytics';
 import { UserPreferences, FontSize, ThemeOption } from '@/lib/types';
-import { useToast } from '@/components/ui/use-toast';
 
 interface UsePreferencesProps {
-  initialFontSize?: FontSize;
-  initialCardSize?: number;
   initialArticlesPerPage?: number;
-  initialDefaultBiasMode?: boolean;
 }
 
 interface UsePreferencesReturn {
+  theme: string;
+  setTheme: (theme: string) => void;
   themePreference: boolean;
-  defaultBiasMode: boolean;
-  isBiasedMode: boolean;
-  fontSize: FontSize;
-  cardSize: number;
   articlesPerPage: number;
   preferredCategories: string[];
   bookmarks: string[];
   isLoading: boolean;
   toggleTheme: () => void;
-  setDefaultBiasMode: (value: boolean) => void; 
-  setIsBiasedMode: (value: boolean) => void;
-  setFontSize: (size: FontSize) => void;
-  setCardSize: (size: number) => void;
   setArticlesPerPage: (count: number) => void;
   setPreferredCategories: (categories: string[]) => void;
   addBookmark: (articleId: string) => void;
@@ -46,22 +36,14 @@ interface UsePreferencesReturn {
  * Follows Agile best practices with proper error handling and typed returns
  */
 export function usePreferences({
-  initialFontSize = 'medium',
-  initialCardSize = 3,
-  initialArticlesPerPage = 15,
-  initialDefaultBiasMode = false
+  initialArticlesPerPage = 9,
 }: UsePreferencesProps = {}): UsePreferencesReturn {
   const { theme, setTheme } = useTheme();
   const [mounted, setMounted] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
-  const { toast } = useToast();
   
   // User preferences state
   const [themePreference, setThemePreference] = useState(false);
-  const [defaultBiasMode, setDefaultBiasMode] = useState(initialDefaultBiasMode);
-  const [isBiasedMode, setIsBiasedMode] = useState(initialDefaultBiasMode);
-  const [fontSize, setFontSize] = useState<FontSize>(initialFontSize);
-  const [cardSize, setCardSize] = useState(initialCardSize);
   const [articlesPerPage, setArticlesPerPage] = useState(initialArticlesPerPage);
   const [preferredCategories, setPreferredCategories] = useState<string[]>([]);
   const [bookmarks, setBookmarks] = useState<string[]>([]);
@@ -69,11 +51,6 @@ export function usePreferences({
   // Handle storage errors
   const handleStorageError = (error: Error | undefined, fallbackMessage: string) => {
     console.error(fallbackMessage, error);
-    toast({
-      title: "Preferences Error",
-      description: `Failed to save your preferences. ${error?.message || fallbackMessage}`,
-      variant: "destructive",
-    });
   };
 
   // Set mounted state
@@ -94,10 +71,6 @@ export function usePreferences({
         
         setTheme(prefs.theme);
         setThemePreference(prefs.theme === 'dark');
-        setDefaultBiasMode(prefs.defaultBiasMode);
-        setIsBiasedMode(prefs.defaultBiasMode);
-        setFontSize(prefs.fontSize);
-        setCardSize(prefs.cardSize);
         setArticlesPerPage(prefs.articlesPerPage);
         setPreferredCategories(prefs.preferredCategories);
         setBookmarks(prefs.bookmarks);
@@ -110,26 +83,6 @@ export function usePreferences({
         if (themeResult.success && themeResult.data) {
           setTheme(themeResult.data);
           setThemePreference(themeResult.data === 'dark');
-        }
-
-        // Bias mode
-        const biasModeResult = storageService.getDefaultBiasMode();
-        if (biasModeResult.success) {
-          const biasMode = biasModeResult.data ?? initialDefaultBiasMode;
-          setDefaultBiasMode(biasMode);
-          setIsBiasedMode(biasMode);
-        }
-
-        // Font size
-        const fontSizeResult = storageService.getFontSize();
-        if (fontSizeResult.success && fontSizeResult.data) {
-          setFontSize(fontSizeResult.data);
-        }
-
-        // Card size
-        const cardSizeResult = storageService.getCardSize();
-        if (cardSizeResult.success && cardSizeResult.data !== undefined) {
-          setCardSize(cardSizeResult.data);
         }
 
         // Articles per page
@@ -153,7 +106,7 @@ export function usePreferences({
       
       setIsLoading(false);
     }
-  }, [mounted, theme, setTheme, initialDefaultBiasMode, initialFontSize, initialArticlesPerPage, initialCardSize]);
+  }, [mounted, theme, setTheme, initialArticlesPerPage]);
 
   // Update theme preference when theme changes
   useEffect(() => {
@@ -168,52 +121,11 @@ export function usePreferences({
     setTheme(newTheme);
     const result = storageService.saveThemePreference(newTheme as ThemeOption);
     
+
     if (result.success) {
       trackEvents.toggleTheme(newTheme);
     } else {
       handleStorageError(result.error, 'Failed to save theme preference');
-    }
-  };
-
-  // Update default bias mode
-  const updateDefaultBiasMode = (value: boolean) => {
-    setDefaultBiasMode(value);
-    const result = storageService.saveDefaultBiasMode(value);
-    
-    if (result.success) {
-      trackEvents.setDefaultBiasMode(value);
-    } else {
-      handleStorageError(result.error, 'Failed to save bias mode preference');
-    }
-  };
-
-  // Update bias mode (temporary session state, not persisted)
-  const updateBiasMode = (value: boolean) => {
-    setIsBiasedMode(value);
-    trackEvents.toggleBiasMode(value);
-  };
-
-  // Update font size
-  const updateFontSize = (size: FontSize) => {
-    setFontSize(size);
-    const result = storageService.saveFontSize(size);
-    
-    if (result.success) {
-      trackEvents.setFontSize(size);
-    } else {
-      handleStorageError(result.error, 'Failed to save font size preference');
-    }
-  };
-
-  // Update card size
-  const updateCardSize = (size: number) => {
-    setCardSize(size);
-    const result = storageService.saveCardSize(size);
-    
-    if (result.success) {
-      trackEvents.setLayoutOption('cardSize', size.toString());
-    } else {
-      handleStorageError(result.error, 'Failed to save card size preference');
     }
   };
 
@@ -280,9 +192,6 @@ export function usePreferences({
     // Create a merged preferences object with current state
     const currentPreferences: UserPreferences = {
       theme: theme as ThemeOption,
-      defaultBiasMode,
-      fontSize,
-      cardSize,
       articlesPerPage,
       preferredCategories,
       bookmarks
@@ -296,23 +205,12 @@ export function usePreferences({
     if (result.success) {
       // Update local state with new preferences
       if (preferences.theme) setTheme(preferences.theme);
-      if (preferences.defaultBiasMode !== undefined) {
-        setDefaultBiasMode(preferences.defaultBiasMode);
-        setIsBiasedMode(preferences.defaultBiasMode);
-      }
-      if (preferences.fontSize) setFontSize(preferences.fontSize);
-      if (preferences.cardSize !== undefined) setCardSize(preferences.cardSize);
       if (preferences.articlesPerPage !== undefined) setArticlesPerPage(preferences.articlesPerPage);
       if (preferences.preferredCategories) setPreferredCategories(preferences.preferredCategories);
       if (preferences.bookmarks) setBookmarks(preferences.bookmarks);
       
       // Track analytics for batch update
       trackEvents.batchUpdatePreferences(Object.keys(preferences));
-      
-      toast({
-        title: "Preferences Saved",
-        description: "Your preferences have been updated successfully."
-      });
     } else {
       handleStorageError(result.error, 'Failed to save preferences');
     }
@@ -322,10 +220,7 @@ export function usePreferences({
   const resetPreferences = () => {
     const defaultPreferences: UserPreferences = {
       theme: 'light',
-      defaultBiasMode: false,
-      fontSize: 'medium',
-      cardSize: 3,
-      articlesPerPage: 15,
+      articlesPerPage: 9,
       preferredCategories: [],
       bookmarks: []
     };
@@ -335,20 +230,14 @@ export function usePreferences({
   };
 
   return {
+    theme: theme || 'light',
+    setTheme,
     themePreference,
-    defaultBiasMode,
-    isBiasedMode,
-    fontSize,
-    cardSize,
     articlesPerPage,
     preferredCategories,
     bookmarks,
     isLoading,
     toggleTheme,
-    setDefaultBiasMode: updateDefaultBiasMode,
-    setIsBiasedMode: updateBiasMode,
-    setFontSize: updateFontSize,
-    setCardSize: updateCardSize,
     setArticlesPerPage: updateArticlesPerPage,
     setPreferredCategories: updatePreferredCategories,
     addBookmark,

@@ -19,16 +19,18 @@ export function Logo({ className = "" }: LogoProps) {
     setMounted(true)
   }, [])
 
-  if (!mounted) {
-    return null
-  }
-
-  const logoSrc =
-    theme === "dark"
+  // Optimistic: use light theme logo by default, update after mount
+  const logoSrc = !mounted
+    ? "/logo2.png" // default to light theme logo for SSR/first paint
+    : theme === "dark"
       ? "/logo3.png"
       : "/logo2.png"
 
-  const logoSize = isMobile ? { width: 170, height: 92 } : { width: 220, height: 118.8 }
+  const logoSize = !mounted
+    ? { width: 220, height: 118.8 } // default desktop size for SSR
+    : isMobile
+      ? { width: 170, height: 92 }
+      : { width: 220, height: 118.8 }
 
   return (
     <Link href="/" className={`relative block ${className}`} style={logoSize}>

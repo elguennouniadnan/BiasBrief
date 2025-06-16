@@ -173,7 +173,7 @@ export function UserDropdown({ openSettings, showSignedOutMenu = false, onSignIn
                     />
                     {customNewsEnabled && (
                       <svg className="absolute right-0 top-0 h-6 w-6 pointer-events-none" viewBox="-4 3 20 18" fill="none">
-                        <path d="M5 10.5L9 14.5L15 7.5" stroke="white" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round"/>
+                        <path d="M5 10.5L9 14.5L15 6" stroke="white" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
                       </svg>
                     )}
                   </motion.span>
@@ -183,7 +183,7 @@ export function UserDropdown({ openSettings, showSignedOutMenu = false, onSignIn
                       `cursor-pointer select-none flex items-center gap-1 mt-1${isMobile ? ' ml-2' : ''}`
                     }
                   >
-                    Custom News (All Tab)
+                    Customize News
                   </label>
                 </div>
                 <DropdownMenuSeparator />
